@@ -1,0 +1,353 @@
+/* General Styles */
+html {
+    height: 100%;
+}
+body {
+    background-color: #040404;
+    margin: 0;
+    padding: 0;
+    font-family: monospace;
+    height: 100%;
+    overflow-x: hidden !important;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #040404;
+    padding: 20px 40px;
+}
+
+.navbar, .mobile-menu {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.navbar a {
+    color: white;
+    text-decoration: none;
+    font-size: 27px;
+    transition: color 0.3s;
+}
+.home {
+    margin-right: 40px;
+}
+
+.giclee {
+    margin-right: 40px;
+}
+
+.shop {
+    margin-right: 40px;
+
+}
+.navbar a:hover {
+    color: #349ef5; /* Change to your desired hover color */
+    text-decoration: underline;
+}
+
+.navbar img, .mobile-menu img {
+    width: 40px; /* Adjust size as needed */
+    height: auto;
+    cursor: pointer;
+    filter: brightness(0) invert(1); /* Change color to white */
+    transition: fill 0.3s,
+
+}
+.hamburger-menu {
+    margin-right: 10px;
+}
+
+.brigLogo img {
+    width: 150px;
+    height: auto;
+    margin: 10px;
+}
+
+.content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Adjust the minimum width of each column */
+    grid-gap: 35px; /* Keep the same gap between images */
+    justify-items: center;
+    padding-top: 20px;
+    padding-left: 70px;
+    padding-right: 70px;
+    padding-bottom: 20px;
+    overflow: hidden;
+    grid-auto-flow: dense; /* Pack items densely */
+    text-align: center;
+}
+.content a {
+    margin-top: 10px;
+    text-decoration: none !important;
+}
+
+
+/* Show the content with fade in effect */
+.content.show {
+    transform: translateX(0); 
+}
+.content.hide {
+    opacity: 0;
+}
+
+.artwork {
+    width: 100%;
+    height: auto; /* Change to auto to maintain aspect ratio */
+    max-width: 900px; /* Adjust the maximum width as needed */
+    max-height: 900px; /* Adjust the maximum height as needed */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(20px); /* Start with a bottom offset */
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    opacity: 0;
+    position: relative;
+    top: 50px;
+    overflow-x: hidden;
+    object-fit: contain; /* Change to contain to fit the image inside the container */
+}
+.artwork-name {
+    display: block;
+    color: white; /* Ensure the title and price appear on separate lines */
+    font-size: 18px; /* Adjust the font size as needed */
+    margin-bottom: 5px;
+    margin-top:70px;/* Add spacing between title and price */
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+.artwork-price {
+    font-size: 16px; /* Adjust the font size as needed */
+    text-decoration: none !important;
+    color: white;
+    margin-top: 10px;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+.fade-in {
+    opacity: 1; /* Set opacity to 1 to fade in */
+    transform: translateY(0); /* Remove bottom offset to fade in from bottom to top */
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+
+.artwork:hover {
+    transform: scale(1.04);
+}
+.glance {
+    height:300px;
+}
+.glance_inner {
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+.glance_inner h1{
+    color: white;
+    font-family: monospace;
+    font-size: 50px;
+    display: show;
+}
+
+.artwork-wrapper img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: fill;
+}
+.mobile-menu a{
+    text-decoration: none;
+}
+.cart-quantity {
+    color: white;
+    text-align: center;
+    font-size: 27px;
+    padding: 0 1px;
+}
+
+
+.footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 20px 40px;
+    background-color: #040404;
+    color: white;
+    text-align: center;
+    z-index: 999;
+}
+.contact_form {
+    align-items: flex-start;
+    margin-right: 20px;
+    text-align: left;
+}
+
+.email-input-container {
+    display: flex;
+    justify-content: center; /* Horizontally center items */
+    align-items: center; /* Vertically center items */
+    margin: auto; /* Center the container horizontally */
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+#emailInput {
+    flex: 1;
+    padding: 10px;
+    margin-right: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-top: auto; /* Push input box to the bottom */
+    margin-bottom: auto; /* Push input box to the bottom */
+}
+
+.contact_form button[type="submit"] {
+    padding: 10px;
+    background-color: #349ef5;
+    color: #040404;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.contact_form button[type="submit"]:hover {
+    background-color: #0056b3; /* Change to desired hover color */
+}
+
+.contact_info {
+    flex-basis: 30%; /* Adjust width as needed */
+    text-align: left;
+    font-size: 20px;
+}
+
+.contact_form h1 {
+    font-size: 30px; /* Adjust font size as needed */
+    margin-bottom: 10px;
+}
+
+.contact_form p {
+    margin-bottom: 20px;
+    font-size: 16px; /* Adjust font size as needed */
+}
+
+.contact_form input[type="email"] {
+    width: calc(100% - 20px); /* Subtract padding and border width */
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.container {
+    flex-basis: 100%; /* Take full width of the footer */
+    text-align: center;
+    color: white;
+    font-family: monospace;
+    margin-top: 20px;
+}
+
+.description {
+    margin-bottom: 20px;
+}
+
+.confirmation-msg {
+    margin-top: 0px; /* Adjust the margin as needed */
+    color: white; /* Color of the confirmation message */
+    font-size: 14px; /* Font size of the confirmation message */
+    /* Add any other styles as per your design */
+}
+
+.error-msg {
+    margin-top: 0px; /* Adjust the margin as needed */
+    color: white; /* Color of the error message */
+    font-size: 14px; /* Font size of the error message */
+}
+/* Media Queries */
+@media (max-width: 768px) {
+    .cart-quantity-mobile {
+        display:inline-block;
+        color: white;
+        font-size: 27px;
+        padding: 0 1px;
+    }
+    .content {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        grid-gap: 35px;
+        justify-items: center;
+        padding-top:20px;
+        padding-left:70px;
+        padding-right:70px;
+        padding-bottom:20px;
+        overflow: hidden;
+        grid-auto-flow: dense; /* Pack items densely */
+    }
+    .navbar {
+        display: none;
+    }
+    body{
+        overflow: hidden;
+    }
+    .mobile-menu {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+    }
+    .mobile-dropdown {
+        display: none;
+        flex-direction: column;
+        background-color: #040404;
+        position: fixed;
+        top: 450px; /* Center vertically */
+        left: 50%; /* Center horizontally */
+        transform: translate(-50%, -50%);
+        z-index: 999;
+        text-align: center;
+        box-sizing: border-box;
+        overflow-y: auto; /* Enable vertical scrolling if needed */
+    }
+    
+    .mobile-dropdown a {
+        color: white;
+        text-decoration: none;
+        padding: 20px;
+        font-size: 50px; /* Increase font size */
+        width: 100%;
+        transition: color 0.3s;
+        box-sizing: border-box;
+        display: block;
+        white-space: nowrap; /* Prevent text from wrapping */
+        overflow: hidden; /* Hide overflowing text */
+        text-overflow: ellipsis; /* Display ellipsis (...) for overflowing text */
+    }
+    
+    .mobile-dropdown a:hover {
+        color: #f9a825;
+        text-decoration: underline;
+    }
+    
+    .mobile-dropdown.show {
+        display: block;
+    }
+    .artwork {
+        width: 100%;
+        height: auto;
+    }
+}
+@media (min-width: 1200px) {
+    .content {
+        grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); /* Adjust the minimum width for larger screens */
+    }
+}

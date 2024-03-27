@@ -1,0 +1,179 @@
+/* General Styles */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: monospace;
+    overflow-x: hidden !important;
+    background-color: #040404;
+    display: flex;
+    flex-direction: column; /* Make the body a flex container with column direction */
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #040404;
+    padding: 20px 40px;
+}
+
+.navbar, .mobile-menu {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.navbar a {
+    color: rgb(255, 255, 255);
+    text-decoration: none;
+    margin: 0 20px;
+    font-size: 27px;
+    transition: color 0.3s;
+}
+
+.navbar a:hover {
+    color: #349ef5;
+    text-decoration: underline;
+}
+
+.navbar img, .mobile-menu img {
+    width: 40px;
+    height: auto;
+    margin: 0 10px;
+    cursor: pointer;
+    transition: fill 0.3s;
+    filter: brightness(0) invert(1); 
+}
+
+.brigLogo img {
+    width: 150px;
+    height: auto;
+    margin: 10px;
+}
+.footer {
+    flex-shrink: 0; /* Prevent the footer from shrinking */
+    background-color: #040404;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+}
+.content {
+    flex: 1; /* Make the content flex-grow to take up remaining space */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.checkout {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.checkout h1 {
+    margin-top: 0;
+    color: #333;
+}
+
+.checkout form {
+    margin-bottom: 20px;
+}
+
+.checkout label {
+    font-weight: bold;
+}
+
+.checkout input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing : border-box;
+}
+
+.purchase-btn {
+    background-color: #f9a825;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: background-color 0.3s;
+}
+
+.purchase-btn:hover {
+    background-color: #d89200;
+}
+.cart-quantity {
+    color: black;
+    text-align: center;
+    font-size: 27px;
+    padding: 0 1px;
+}
+.cart_a {
+    text-decoration: none;
+    color: white;
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+    .cart-quantity-mobile {
+        display:inline-block;
+        color: black;
+        font-size: 27px;
+        padding: 0 1px;
+    }
+    .navbar {
+        display: none;
+    }
+    .quantity-container {
+        justify-content: center;
+    }
+    .mobile-menu {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .mobile-menu.hide{
+        display: none;
+    }
+    .mobile-dropdown {
+        display: none;
+        flex-direction: column;
+        background-color: rgb(0, 0, 0);
+        position: fixed;
+        top: 450px;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 999;
+        text-align: center;
+        box-sizing: border-box;
+        overflow-y: auto;
+    }
+    .mobile-dropdown a {
+        color: rgb(255, 255, 255);
+        text-decoration: none;
+        padding: 20px;
+        font-size: 50px;
+        width: 100%;
+        transition: color 0.3s;
+        box-sizing: border-box;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .mobile-dropdown a:hover {
+        color: #f9a825;
+        text-decoration: underline;
+    }
+    .mobile-dropdown.show {
+        display: block;
+    }
+
+}
+

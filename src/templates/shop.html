@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name = "viewport" content = "width = device-width, initial-scale = 1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset = "UTF-8">
+    <title>Art Showcase</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles_shop.css') }}">
+    <script src="{{ url_for('static', path='/toggle_menu_shop.js') }}"></script>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+</head>
+<body>
+<div class="header">
+    <div class="brigLogo">
+        <img src="{{ brig_logo_url }}">
+    </div>
+    <div class="navbar">
+        <a class= "home" href="/">HOME</a>
+        <a class= "giclee" href="/giclee_prints">GICLÉE PRINTS</a>
+        <a class= "shop" href="/shop_art_menu">SHOP ART</a>
+        <a class= "cart_a" href="/shop_art">
+            <img src="{{ shopping_cart_url}}" id = "shoppingCart" class = "cart_img">           
+        </a>
+        <span id="cartQuantity" class="cart-quantity"></span>
+    </div>
+    <div class="mobile-menu">
+        
+        <img src="{{ hamburger_menu_url}}" id = "hamburgerMenu" class = "hamburger-menu" onclick="toggleMenu(); toggleDropdown(); toggleScrolllock()">
+        <a href="/shop_art">
+            <img src="{{ shopping_cart_url}}" id = "shoppingCart" class = cart>
+        </a>
+        <span id="mobileCartQuantity" class="cart-quantity-mobile"></span>
+        <div class="mobile-dropdown">
+            <a href="/">HOME</a>
+            <a href="/giclee_prints">GICLÉE PRINTS</a>
+            <a href="/shop_art_menu">SHOP ART</a>
+        </div>
+    </div>
+</div>
+<div class="content">
+        <div class="image_container">
+            <img src="{{ img_url }}" alt="Product Image">
+        </div>
+        <div class="info_container">
+            <div class="title_container">
+                <h2>{{ img_title }}</h2>
+            </div>
+            <h3>$225</h3>
+            <p>Print images are 18”W x 32”H with a ½ inch white border.</p>
+            <p>Paper is cut to 19”W x 33”H.</p>
+            <p>Prints are delivered in an acid-free clear sleeve and backing board</p>
+            <div class="quantity-box" id = "quantityBox">
+                <button class="quantity-btn-left" id="decrement-btn">-</button>
+                <input type="text" class="quantity-input" id="quantity-input" value="1">
+                <button class="quantity-btn-right" id="increment-btn">+</button>
+            </div>
+            <form method = "post" id="myForm">
+                <div class = "button-container">
+                    <a href="#" id="addToCartLink" onclick="addToCart('{{ img_url }}', '{{ img_title }}'); return false;">
+                    <button class="add-to-cart-btn" id="addToCartLink">Add to Cart</button>
+                </a>   
+                </div>
+            </form>
+        </div>
+</div>
+
+<footer class="footer">
+    <div class="contact_form">
+        <h1>Stay Connected</h1>
+        <div class="description">
+            <p>SIGN UP WITH YOUR EMAIL ADDRESS TO RECEIVE UPDATES</p>
+        </div>
+        <div class="email-input-container">
+            <input id="emailInput" type="email" placeholder="EMAIL ADDRESS">
+            <button onclick="emailListEnter()" type="submit">SIGN UP</button>
+        </div>
+        <div class="footer_navbar">
+            <a href="/">HOME</a>
+            <a href="/giclee_prints">GICLÉE PRINTS</a>
+            <a href="/shop_art_menu">SHOP ART</a>
+        </div>
+    </div>
+    <div class="contact_info">
+        <p>Carlsbad,CA</p>
+        <p>INFO@BRIGLIGHT.COM</p>
+        <p>760-613-5898</p>
+    </div>
+    <div class="container">
+        <p>UIcons by <a href="https://www.flaticon.com/uicons">Flaticon</a></p>
+        <p>&copy; <span id="currentYear"></span> Brig Light. All rights reserved.</p>
+    </div>
+</footer>
+</body>
+</html>

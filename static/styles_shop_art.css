@@ -1,0 +1,430 @@
+/* General Styles */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: monospace;
+    overflow-x: hidden !important;
+    background-color: #040404;
+    display: flex;
+    flex-direction: column; /* Make the body a flex container with column direction */
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #040404;
+    padding: 20px 40px;
+}
+
+.navbar, .mobile-menu {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.navbar a {
+    color: rgb(255, 255, 255);
+    text-decoration: none;
+    font-size: 27px;
+    transition: color 0.3s;
+}
+
+.navbar a:hover {
+    color: #349ef5;
+    text-decoration: underline;
+}
+
+.navbar img, .mobile-menu img {
+    width: 40px;
+    height: auto;
+    cursor: pointer;
+    transition: fill 0.3s;
+    filter: brightness(0) invert(1); 
+}
+.home {
+    margin-right: 40px;
+}
+
+.giclee {
+    margin-right: 40px;
+}
+
+.shop {
+    margin-right: 40px;
+
+}
+.hamburger-menu{
+    margin-right: 10px;
+}
+.brigLogo img {
+    width: 150px;
+    height: auto;
+    margin: 10px;
+}
+
+
+.content {
+    flex: 1; /* Make the content flex-grow to take up remaining space */
+    display: flex;
+    flex-direction: column;
+    background-color: #040404;
+    
+}
+.content_cart{
+    margin-left:49px;
+    margin-right:49px;
+    text-align:left;
+    background-color: #040404;
+}
+
+.content.hide{
+    display: none;
+}
+
+.footer.hide{
+    display:none;
+}
+.mobile-menu a{
+    text-decoration: none;
+}
+.info_container {
+    display: flex;
+    flex-direction: row; /* Change flex-direction to row */
+    justify-content: left /* Add space between image and title */
+}
+
+.image_container {
+    align-items: flex-start;
+}
+.title_container {
+    align-items:flex-start;
+    flex-grow: 1;
+    width:200px;
+}
+.image_container img {
+    width: 100px;
+    height: auto;
+    margin-right: 20px; /* Add margin between the image and the title */
+}
+.content_cart h1{
+    color:white;
+}
+.title_container h2 {
+    font-size: 20px;
+    margin: 0;
+    color: white;
+}
+.quantity-container {
+    display: flex;
+    justify-content: center; /* Center the content horizontally */
+    align-items: center;
+    margin-top: 10px; /* Add margin to separate from image */
+    color: white;
+    font-size: 20px;
+}
+.quantity-controls {
+    display: flex;
+    flex-direction: row; /* Keep the buttons in a row */
+    align-items: center;
+    font-size: 20px;
+    margin-right: 150px;
+}
+.price-remove-container {
+    display: flex;
+    flex-direction: row; /* Keep the price and remove button in a row */
+    align-items: center; /* Add margin between quantity controls and price/remove */
+}
+
+.quantity-container button {
+    padding: 10px 20px;
+    background-color: #349ef5;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 20px;
+    margin: 0 5px;
+    transition: background-color 0.3s;
+}
+
+.quantity-container button:hover {
+    background-color: #0056b3;
+}
+
+.quantity-container p {
+    margin: 0 10px;
+    font-size: 24px;
+}
+
+.price {
+    font-size: 16px;
+    font-weight: bold;
+    margin-left: auto;
+}
+
+.line {
+    width: 100%;
+    height: 1px;
+    background-color: white;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    /* Add border properties */
+    border: none; /* Remove default border if any */
+    border-top: 1px solid white; /* Add a top border */
+}
+.mobile-menu {
+    display: none;
+}
+.checkout-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.checkout-container button {
+    padding: 10px 20px;
+    background-color: #349ef5;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 20px;
+    transition: background-color 0.3s;
+}
+
+.checkout-container button:hover {
+    background-color: #0056b3;
+}
+
+.total {
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+}
+.cart-quantity {
+    color: white;
+    text-align: center;
+    font-size: 27px;
+    padding: 0 1px;
+}
+.footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 20px 40px;
+    background-color: #040404;
+    color: white;
+    text-align: center;
+    z-index: 999;
+    position: relative;
+}
+.contact_form {
+    align-items: flex-start;
+    margin-right: 20px;
+    text-align: left;
+}
+
+.email-input-container {
+    display: flex;
+    justify-content: center; /* Horizontally center items */
+    align-items: center; /* Vertically center items */
+    margin: auto; /* Center the container horizontally */
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+#emailInput {
+    flex: 1;
+    padding: 10px;
+    margin-right: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-top: auto; /* Push input box to the bottom */
+    margin-bottom: auto; /* Push input box to the bottom */
+}
+
+.contact_form button[type="submit"] {
+    padding: 10px;
+    background-color: #349ef5;
+    color: #040404;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.contact_form button[type="submit"]:hover {
+    background-color: #0056b3; /* Change to desired hover color */
+}
+
+.contact_info {
+    flex-basis: 30%; /* Adjust width as needed */
+    text-align: left;
+    font-size: 20px;
+}
+
+.contact_form h1 {
+    font-size: 30px; /* Adjust font size as needed */
+    margin-bottom: 10px;
+}
+
+.contact_form p {
+    margin-bottom: 20px;
+    font-size: 16px; /* Adjust font size as needed */
+}
+
+.contact_form input[type="email"] {
+    width: calc(100% - 20px); /* Subtract padding and border width */
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.container {
+    flex-basis: 100%; /* Take full width of the footer */
+    text-align: center;
+    color: white;
+    font-family: monospace;
+    margin-top: 20px;
+}
+
+.description {
+    margin-bottom: 20px;
+}
+
+.confirmation-msg {
+    margin-top: 0px; /* Adjust the margin as needed */
+    color: white; /* Color of the confirmation message */
+    font-size: 14px; /* Font size of the confirmation message */
+    /* Add any other styles as per your design */
+}
+
+.error-msg {
+    margin-top: 0px; /* Adjust the margin as needed */
+    color: white; /* Color of the error message */
+    font-size: 14px; /* Font size of the error message */
+}
+
+
+.remove-item {
+    padding: 5px 10px;
+    background-color: #349ef5; /* Example color for remove button */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-left: 10px; /* Add margin between price and remove button */
+    transition: background-color 0.3s;
+}
+.remove-item:hover {
+    background-color: #0056b3; /* Example color on hover for remove button */
+}
+.continue-shopping-container {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.more-shop-styles {
+    background-color: #349ef5;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    padding: 30px 40px 30px 40px;
+    font-size: 20px;
+    transition: background-color 0.3s;
+    text-decoration: none; /* Remove underline from anchor tag */
+}
+.more-shop-styles:hover {
+    background-color: #0056b3;
+}
+
+.continue-shopping-btn:hover {
+    background-color: #0056b3;
+}
+/* Media Queries */
+@media (max-width: 768px) {
+    .quantity-container {
+        display: flex;
+        flex-direction: column; /* Change to column layout */
+        align-items: center;
+        margin-right: 0px;
+        margin-left: auto;
+        color: white;
+    }
+    .quantity-controls {
+        justify-content: flex-end; /* Align controls to the right */
+        margin-right: 0px;
+    }
+    .price-remove-container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-end; /* Align price and remove button to the right */
+        margin-left: auto;
+        margin-right: 0px;
+        margin-top: 10px; /* Add margin between price and remove button */
+    }
+    .remove-item {
+        margin: 0; /* Add margin between price and remove button */
+    }
+    .cart-quantity-mobile {
+        display:inline-block;
+        color: white;
+        font-size: 27px;
+        padding: 0 1px;
+    }
+    .navbar {
+        display: none;
+    }
+    .mobile-menu {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .mobile-menu.hide{
+        display: none;
+    }
+    .mobile-dropdown {
+        display: none;
+        flex-direction: column;
+        background-color: rgb(0, 0, 0);
+        position: fixed;
+        top: 450px;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 999;
+        text-align: center;
+        box-sizing: border-box;
+        overflow-y: auto;
+    }
+    .mobile-dropdown a {
+        color: rgb(255, 255, 255);
+        text-decoration: none;
+        padding: 20px;
+        font-size: 50px;
+        width: 100%;
+        transition: color 0.3s;
+        box-sizing: border-box;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .mobile-dropdown a:hover {
+        color: #349ef5;
+        text-decoration: underline;
+    }
+    .mobile-dropdown.show {
+        display: block;
+    }
+    
+}
+

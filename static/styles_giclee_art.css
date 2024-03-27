@@ -1,0 +1,285 @@
+:root {
+    --base-font-size: 25px; /* Set the base font size */
+    --font-size-increase-factor: 0.01; /* Set the factor by which font size increases per pixel */
+    --base-margin-left: 25px; /* Set the base left margin */
+    --margin-left-increase-factor: 0.1; /* Set the factor by which left margin increases per pixel */
+}
+
+/* General Styles */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: monospace;
+    overflow-x: hidden !important;
+    background-color: #040404;
+    display: flex;
+    flex-direction: column; /* Make the body a flex container with column direction */
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #040404;
+    padding: 20px 40px;
+}
+
+.navbar, .mobile-menu {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.navbar a {
+    color: white;
+    text-decoration: none;
+    font-size: 27px;
+    transition: color 0.3s;
+}
+
+.navbar a:hover {
+    color: #349ef5;
+    text-decoration: underline;
+}
+
+.navbar img, .mobile-menu img {
+    width: 40px;
+    height: auto;
+    cursor: pointer;
+    transition: fill 0.3s;
+    filter: brightness(0) invert(1);
+}
+.hamburger-menu {
+    margin-right: 10px
+}
+.home {
+    margin-right: 40px;
+}
+
+.giclee {
+    margin-right: 40px;
+}
+
+.shop {
+    margin-right: 40px;
+
+}
+.brigLogo img {
+    width: 150px;
+    height: auto;
+    margin: 10px;
+}
+.content {
+    flex: 1; /* Make the content flex-grow to take up remaining space */
+    display: flex;
+    flex-direction: column;
+    background-color: #040404;
+    margin-left:25px;
+
+}
+
+.content.hide{
+    display: none;
+}
+
+.footer.hide{
+    display:none;
+}
+
+
+.content_cart{
+    margin-top: 100px;
+    margin-left:var(--base-margin-left);
+    text-align:left;
+    color:white;
+    font-size:var(--base-font-size) + 14px;
+}
+
+.content_cart h1{
+    font-size: 38px;
+}
+
+.content_cart h2{
+    font-weight: 400;
+}
+.content_cart p {
+    font-size: 25px;
+    margin-bottom:100px;
+    max-width: 1300px;
+
+}
+.cart-quantity {
+    color: white;
+    text-align: center;
+    font-size: 27px;
+}
+.footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 20px 40px;
+    background-color: #040404;
+    color: white;
+    text-align: center;
+    z-index: 999;
+}
+.contact_form {
+    align-items: flex-start;
+    margin-right: 20px;
+    text-align: left;
+}
+
+.email-input-container {
+    display: flex;
+    justify-content: center; /* Horizontally center items */
+    align-items: center; /* Vertically center items */
+    margin: auto; /* Center the container horizontally */
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+#emailInput {
+    flex: 1;
+    padding: 10px;
+    margin-right: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-top: auto; /* Push input box to the bottom */
+    margin-bottom: auto; /* Push input box to the bottom */
+}
+
+.contact_form button[type="submit"] {
+    padding: 10px;
+    background-color: #349ef5;
+    color: #040404;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.contact_form button[type="submit"]:hover {
+    background-color: #0056b3; /* Change to desired hover color */
+}
+
+.contact_info {
+    flex-basis: 30%; /* Adjust width as needed */
+    text-align: left;
+    font-size: 20px;
+}
+
+.contact_form h1 {
+    font-size: 30px; /* Adjust font size as needed */
+    margin-bottom: 10px;
+}
+
+.contact_form p {
+    margin-bottom: 20px;
+    font-size: 16px; /* Adjust font size as needed */
+}
+
+.contact_form input[type="email"] {
+    width: calc(100% - 20px); /* Subtract padding and border width */
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.container {
+    flex-basis: 100%; /* Take full width of the footer */
+    text-align: center;
+    color: white;
+    font-family: monospace;
+    margin-top: 20px;
+}
+
+.description {
+    margin-bottom: 20px;
+}
+
+.confirmation-msg {
+    margin-top: 0px; /* Adjust the margin as needed */
+    color: white; /* Color of the confirmation message */
+    font-size: 14px; /* Font size of the confirmation message */
+    /* Add any other styles as per your design */
+}
+
+.error-msg {
+    margin-top: 0px; /* Adjust the margin as needed */
+    color: white; /* Color of the error message */
+    font-size: 14px; /* Font size of the error message */
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+    .cart-quantity-mobile {
+        display:inline-block;
+        color: white;
+        font-size: 27px;
+        padding: 0 1px;
+    }
+    .navbar {
+        display: none;
+    }
+    .mobile-menu {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .mobile-menu.hide{
+        display: none;
+    }
+    .mobile-dropdown {
+        display: none;
+        flex-direction: column;
+        background-color: #040404;
+        position: fixed;
+        top: 450px;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 999;
+        text-align: center;
+        box-sizing: border-box;
+        overflow-y: auto;
+    }
+    .mobile-dropdown a {
+        color: white;
+        text-decoration: none;
+        padding: 20px;
+        font-size: 50px;
+        width: 100%;
+        transition: color 0.3s;
+        box-sizing: border-box;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .mobile-dropdown a:hover {
+        color: #f9a825;
+        text-decoration: underline;
+    }
+    .mobile-dropdown.show {
+        display: block;
+    }
+
+}
+@media (min-width: 1093px) {
+    .content_cart {
+        font-size: calc(var(--base-font-size) + (var(--font-size-increase-factor) * (100vw - 700px)));
+        margin-left: calc(30px + var(--base-margin-left) + (var(--margin-left-increase-factor) * (100vw - 700px)));
+    }
+    .content_cart h1 {
+        font-size: calc(41px + (var(--font-size-increase-factor) * (100vw - 700px)));
+    }
+    .content_cart h2 {
+        font-size: calc(25px + (var(--font-size-increase-factor) * (100vw - 700px)));
+    }
+    .content_cart p {
+        font-size: calc(19px + (var(--font-size-increase-factor) * (100vw - 700px)));
+    }
+
+}

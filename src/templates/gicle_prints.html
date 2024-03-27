@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name = "viewport" content = "width = device-width, initial-scale = 1.0">
+    <meta charset = "UTF-8">
+    <title>Art Showcase</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles_giclee_art.css') }}">
+    <script src="{{ url_for('static', path='/toggle_menu_giclee.js') }}"></script>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+</head>
+<body>
+<div class="header">
+    <div class="brigLogo">
+        <img src="{{ brig_logo_url }}">
+    </div>
+    <div class="navbar">
+        <a class= "home" href="/">HOME</a>
+        <a class= "giclee" href="/giclee_prints">GICLÉE PRINTS</a>
+        <a class= "shop" href="/shop_art_menu">SHOP ART</a>
+        <a class= "cart_a" href="/shop_art">
+            <img src="{{ shopping_cart_url}}" id = "shoppingCart" class = cart>
+        </a>
+        <span id="cartQuantity" class="cart-quantity"></span>
+    </div>
+    <div class="mobile-menu">
+        <img src="{{ hamburger_menu_url}}" id = "hamburgerMenu" class = "hamburger-menu" onclick="toggleMenu(); toggleDropdown(); toggleScrolllock()">
+        <a href="/shop_art">
+            <img src="{{ shopping_cart_url}}" id = "shoppingCart" class = cart>
+        </a>
+        <span id="mobileCartQuantity" class="cart-quantity-mobile"></span>
+        <div class="mobile-dropdown">
+            <a href="/">HOME</a>
+            <a href="/giclee_prints">GICLÉE PRINTS</a>
+            <a href="/shop_art_menu">SHOP ART</a>
+        </div>
+    </div>
+</div>
+<div class = "content">
+    <div class = "content_cart">
+        <h1>Giclée Fine Art Prints</h1>
+        <h2>PRINTING</h2>
+        <p>Archival pigment printing, EPSON UltraChrome HDX Wide Gamut Inks, 1440 X 2880 DPI printer resolution.</p>
+        <h2>PAPER</h2>
+        <p>EPSON Hot Press Bright, acid free, 100% cotton rag media with a bright smooth matte finish, 17 mil thickness. Print images are 18”W x 32”H with a ½ inch white border. Paper is cut to 19”W x 33”H. Prints are delivered in an acid-free clear sleeve and backing board. </p>
+        <h2>FRAMING</h2>
+        <p>There are a number of framing and matting options ranging in price available through the internet and local framing shops. Please email info@BrigLightArt.com if you need further assistance finding the right framing option for your needs.</p>
+
+    </div>
+</div>
+<footer class="footer">
+    <div class="contact_form">
+        <h1>Stay Connected</h1>
+        <div class="description">
+            <p>SIGN UP WITH YOUR EMAIL ADDRESS TO RECEIVE UPDATES</p>
+        </div>
+        <div class="email-input-container">
+            <input id="emailInput" type="email" placeholder="EMAIL ADDRESS">
+            <button onclick="emailListEnter()" type="submit">SIGN UP</button>
+        </div>
+        <div class="footer_navbar">
+            <a href="/">HOME</a>
+            <a href="/giclee_prints">GICLÉE PRINTS</a>
+            <a href="/shop_art_menu">SHOP ART</a>
+        </div>
+    </div>
+    <div class="contact_info">
+        <p>Carlsbad,CA</p>
+        <p>INFO@BRIGLIGHT.COM</p>
+        <p>760-613-5898</p>
+    </div>
+    <div class="container">
+        <p>UIcons by <a href="https://www.flaticon.com/uicons">Flaticon</a></p>
+        <p>&copy; <span id="currentYear"></span> Brig Light. All rights reserved.</p>
+    </div>
+</footer>
+
+</body>
+</html>
+

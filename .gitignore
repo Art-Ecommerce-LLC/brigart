@@ -1,0 +1,14 @@
+# Ignore all files in static/art as well as the folder art itself
+static/art/*
+
+# Ignore file src/payloads.py and src/website_copy.py
+src/payloads.py
+src/website_copy.py
+src/brig.py
+
+# Ignore all files in .venv and src/__pychache__ as well as the folders themselves
+.venv/*
+src/__pycache__/*
+
+# Ignore .env file in src/
+src/.env

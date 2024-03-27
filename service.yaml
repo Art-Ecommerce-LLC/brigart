@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: brigart-nodeport
+spec:
+  selector:
+    app: brigart
+  ports:
+    - protocol: TCP
+      port: 444
+      targetPort: 444
+      nodePort: 32389  # Use a specific NodePort number here if you want, or let Kubernetes allocate one
+  type: NodePort
