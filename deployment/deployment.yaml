@@ -21,7 +21,7 @@ spec:
             limits:
               cpu: "1"
               memory: "512Mi"
-          imagePullPolicy: Always
+          imagePullPolicy: Never
 
         - name: mysql-root-db
           image: mysql:8.3.0
@@ -34,7 +34,7 @@ spec:
             limits:
               cpu: "1"
               memory: "512Mi"
-          imagePullPolicy: Always
+          imagePullPolicy: Never
           volumeMounts:
             - name: mysql-db-data
               mountPath: /var/lib/mysql
@@ -50,7 +50,7 @@ spec:
             limits:
               cpu: "1"
               memory: "512Mi"
-          imagePullPolicy: Always
+          imagePullPolicy: Never
           volumeMounts:
             - name: mysql-nocodb-1
               mountPath: /usr/app/data
