@@ -169,6 +169,8 @@ async def some_middleware(request: Request, call_next):
 @app.get("/", response_class=HTMLResponse)
 async def homepage(request: Request):
 
+    print("The pod has been sucessfully updated")
+
     imgs,titles = get_nocodb_img_data()
     icons = get_nocodb_icon_data()
 
