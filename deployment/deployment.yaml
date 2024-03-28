@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: brig-art-container
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: brigart
+  template:
+    metadata:
+      labels:
+        app: brigart
+    spec:
+      containers:
+        - name: brig-art-container
+          image: brigart:latest
+          ports:
+            - containerPort: 444
+          resources:
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+          imagePullPolicy: IfNotPresent
+
+        - name: mysql-root-db
+          image: mysql:8.3.0
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "password"
+          ports:
+            - containerPort: 3306  # MySQL default port
+          resources:
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: mysql-db-data
+              mountPath: /var/lib/mysql
+
+        - name: nocodb-1
+          image: nocodb/nocodb:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "password"  # This line is optional for NoCoDB if it doesn't use MySQL internally
+          resources:
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: mysql-nocodb-1
+              mountPath: /usr/app/data
+
+      volumes:
+        - name: mysql-db-data
+          persistentVolumeClaim:
+            claimName: mysql-db-data-pvc  # Name of the PVC for the mysql_db_data volume
+
+        - name: mysql-nocodb-1
+          persistentVolumeClaim:
+            claimName: mysql-nocodb-1-pvc

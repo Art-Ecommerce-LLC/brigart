@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nocodb-nodeport
+spec:
+  selector:
+    app: brigart  # Update to match labels of nocodb-1 container
+  ports:
+    - protocol: TCP
+      port: 8090  # External port for accessing nocodb-1
+      targetPort: 8080  # Port of nocodb-1 container
+      nodePort: 32388  # Use a different NodePort number
+  type: NodePort
