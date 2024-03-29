@@ -30,9 +30,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push Docker image to Docker Hub
-        run: docker push myersben9/brigart:latest
       
       - name: Decode kubeconfig secret
         run: |
