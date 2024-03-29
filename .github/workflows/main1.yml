@@ -31,8 +31,10 @@ jobs:
       - name: Push Docker image to Docker Hub
         run: docker push myersben9/brigart:latest
       
+      - name: Decode kubeconfig secret
+        run: |
+          echo "${{ secrets.kube_config }}" | base64 --decode > kubeconfig.yaml
+
       - name: Update Kubernetes deployment
         run: |
-          kubectl set image deployment/brig-art-container-bc6f4cdfc-tcjg6 brig-art-container=myersben9/brigart:latest
-        env:
-          KUBECONFIG: ${{ secrets.kube_config }}
+          KUBECONFIG=./kubeconfig.yaml kubectl set image deployment/brig-art-container-bc6f4cdfc-tcjg6 brig-art-container=myersben9/brigart:latest
