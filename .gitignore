@@ -12,3 +12,5 @@ src/__pycache__/*
 
 # Ignore .env file in src/
 src/.env
+
+docker-desktop-config.yaml
