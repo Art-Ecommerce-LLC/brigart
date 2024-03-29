@@ -25,8 +25,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Build Docker image
-        run: docker build -t ${{ github.actor }}/brigart:latest .
+      - name: Push Docker image to Docker Hub
+        run: docker login -u ${{ github.actor }} -p "${{ secrets.GITHUB_TOKEN }}" && docker push myersben9/brigart:latest
+
       
       - name: Push Docker image to Docker Hub
         run: docker push myersben9/brigart:latest
