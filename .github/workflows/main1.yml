@@ -26,7 +26,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Build Docker image
-        run: docker build -t myersben9@brigart:latest .
+        run: docker build -t ${{ github.actor }}/brigart:latest .
       
       - name: Push Docker image to Docker Hub
         run: docker push myersben9/brigart:latest
