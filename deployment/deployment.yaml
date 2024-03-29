@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: brig-art-container
-          image: brigart:latest
+          image: myersben9/brigart:latest
           ports:
             - containerPort: 444
           resources:
