@@ -36,7 +36,5 @@ jobs:
           docker build -t myersben9/brigart:latest .
           docker push myersben9/brigart:latest
 
-      - name: Update Kubernetes deployment
-        run: |
-          kubectl set image deployment/brig-art-container brig-art-container=myersben9/brigart:latest
-    
+      - name: Debug kubectl context
+        run: kubectl config current-context
