@@ -36,6 +36,11 @@ spec:
                 secretKeyRef:
                   name: iconurl
                   key: icon_url
+            - name: nocodb_url
+              valueFrom:
+                secretKeyRef:
+                  name: nocodburl
+                  key: nocodb_url
           ports:
             - containerPort: 444
           resources:
