@@ -14,3 +14,7 @@ src/__pycache__/*
 src/.env
 
 docker-desktop-config.yaml
+
+deployment/secrets.yaml
+
+base-64-encode.ps1

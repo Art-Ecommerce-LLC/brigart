@@ -15,6 +15,27 @@ spec:
       containers:
         - name: brig-art-container
           image: myersben9/brigart:latest
+          env:
+            - name: xc_auth
+              valueFrom:
+                secretKeyRef:
+                  name: xcauth
+                  key: xc_auth
+            - name: img_url
+              valueFrom:
+                secretKeyRef:
+                  name: imgurl
+                  key: img_url
+            - name: key_url
+              valueFrom:
+                secretKeyRef:
+                  name: keyurl
+                  key: key_url
+            - name: icon_url
+              valueFrom:
+                secretKeyRef:
+                  name: iconurl
+                  key: icon_url
           ports:
             - containerPort: 444
           resources:
@@ -22,7 +43,6 @@ spec:
               cpu: "1"
               memory: "512Mi"
           imagePullPolicy: Never
-
         - name: mysql-root-db
           image: mysql:8.3.0
           env:

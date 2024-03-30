@@ -49,7 +49,7 @@ dotenv.load_dotenv()
 nocodb_key_url = os.getenv("key_url")
 nocodb_img_url = os.getenv("img_url")
 nocodb_icon_url = os.getenv("icon_url")
-xc_auth = os.getenv("xc-auth")
+xc_auth = os.getenv("xc_auth")
 nocodb_path = os.getenv("nocodb_path")
 
 # Define Security Scheme
