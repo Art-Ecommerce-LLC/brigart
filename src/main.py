@@ -2,7 +2,6 @@ from fastapi import FastAPI, Security, HTTPException, status, Request
 import urllib3
 from fastapi.security import APIKeyHeader
 import uvicorn
-import ssl
 import json
 import dotenv
 import os
@@ -63,14 +62,14 @@ def get_api_key(api_key_header: str = Security(api_key_header)) -> str:
 # Get nocodb data from their REST API
 def get_nocodb_key_data():
     headers = {
-        'xc-token': xc_auth
+        'xc-token': str(xc_auth)
     }
     response = requests.get(nocodb_key_url, headers=headers)
     return response.text
 
 def get_nocodb_img_data():
     headers = {
-        'xc-token': xc_auth
+        'xc-token': str(xc_auth)
     }
     response = requests.get(nocodb_img_url, headers=headers)
     data = response.json()
@@ -92,7 +91,7 @@ def get_nocodb_img_data():
 
 def get_nocodb_icon_data():
     headers = {
-        'xc-token': xc_auth
+        'xc-token': str(xc_auth)
     }
     response = requests.get(nocodb_icon_url, headers=headers)
     data = response.json()
@@ -177,10 +176,10 @@ async def homepage(request: Request):
     # Refresh the shopping cart because IMG URls change
 
 
-    shopping_cart_url = nocodb_path + icons[0]
-    hamburger_menu_url = nocodb_path + icons[1]
-    brig_logo_url = nocodb_path + icons[2]
-    temp_vars = [nocodb_path + each for each in imgs]
+    shopping_cart_url = str(nocodb_path) + icons[0]
+    hamburger_menu_url = str(nocodb_path) + icons[1]
+    brig_logo_url = str(nocodb_path) + icons[2]
+    temp_vars = [str(nocodb_path) + each for each in imgs]
 
     zipped_imgs_titles = zip(temp_vars, titles)
 

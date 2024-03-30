@@ -29,6 +29,3 @@ jobs:
         run: |
           docker build -t myersben9/brigart:latest .
           docker push myersben9/brigart:latest
-
-      - name: Debug kubectl context
-        run: kubectl config current-context
