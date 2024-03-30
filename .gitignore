@@ -18,3 +18,7 @@ docker-desktop-config.yaml
 deployment/secrets.yaml
 
 base-64-encode.ps1
+
+base-64-tofile.ps1
+
+kubeconfig.txt
