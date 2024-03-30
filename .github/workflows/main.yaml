@@ -9,10 +9,6 @@ jobs:
   deploy:
     runs-on: self-hosted
     steps:
-      - name: Build and push Docker image
-        run: |
-          docker build -t myersben9/brigart:latest .
-          docker push myersben9/brigart:latest
       - name: Create kubeconfig
         run: |
           mkdir ${HOME}/.kube
