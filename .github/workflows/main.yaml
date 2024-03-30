@@ -14,11 +14,4 @@ jobs:
 
       - name: Run Deployment
         run: |
-          kubectl apply -f deployment/secrets.yaml
-          kubectl apply -f deployment/deployment.yaml
-          kubectl apply -f deployment/service.yaml
-          kubectl apply -f deployment/ingress.yaml
-          kubectl apply -f deployment/hpa.yaml
-          kubectl apply -f deployment/pvc.yaml
-          kubectl apply -f deployment/pv.yaml
-          kubectl apply -f deployment/docker-desktop-config.yaml
+          kubectl apply -f C:/docker_art/deployment/secrets.yaml
