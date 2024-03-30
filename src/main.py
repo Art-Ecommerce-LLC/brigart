@@ -45,11 +45,11 @@ api_key_header = APIKeyHeader(name = 'X-API_KEY')
 
 # Load NocDB env variables from .env file
 dotenv.load_dotenv()
-nocodb_key_url = os.getenv("key_url")
-nocodb_img_url = os.getenv("img_url")
-nocodb_icon_url = os.getenv("icon_url")
-xc_auth = os.getenv("xc_auth")
-nocodb_path = os.getenv("nocodb_path")
+nocodb_key_url = str(os.getenv("key_url"))
+nocodb_img_url = str(os.getenv("img_url"))
+nocodb_icon_url = str(os.getenv("icon_url"))
+xc_auth = str(os.getenv("xc_auth"))
+nocodb_path = str(os.getenv("nocodb_path"))
 
 # Define Security Scheme
 def get_api_key(api_key_header: str = Security(api_key_header)) -> str:
@@ -62,14 +62,14 @@ def get_api_key(api_key_header: str = Security(api_key_header)) -> str:
 # Get nocodb data from their REST API
 def get_nocodb_key_data():
     headers = {
-        'xc-token': str(xc_auth)
+        'xc-token': xc_auth
     }
     response = requests.get(nocodb_key_url, headers=headers)
     return response.text
 
 def get_nocodb_img_data():
     headers = {
-        'xc-token': str(xc_auth)
+        'xc-token': xc_auth
     }
     response = requests.get(nocodb_img_url, headers=headers)
     data = response.json()
@@ -91,7 +91,7 @@ def get_nocodb_img_data():
 
 def get_nocodb_icon_data():
     headers = {
-        'xc-token': str(xc_auth)
+        'xc-token': xc_auth
     }
     response = requests.get(nocodb_icon_url, headers=headers)
     data = response.json()
@@ -176,10 +176,10 @@ async def homepage(request: Request):
     # Refresh the shopping cart because IMG URls change
 
 
-    shopping_cart_url = str(nocodb_path) + icons[0]
-    hamburger_menu_url = str(nocodb_path) + icons[1]
-    brig_logo_url = str(nocodb_path) + icons[2]
-    temp_vars = [str(nocodb_path) + each for each in imgs]
+    shopping_cart_url = nocodb_path + icons[0]
+    hamburger_menu_url = nocodb_path + icons[1]
+    brig_logo_url = nocodb_path + icons[2]
+    temp_vars = [nocodb_path + each for each in imgs]
 
     zipped_imgs_titles = zip(temp_vars, titles)
 
