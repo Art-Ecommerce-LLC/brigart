@@ -10,4 +10,4 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Deploy to K8s
-        run: kubectl apply -f deployment/ --validate=false
+        run: kubectl apply -f deployment/deployment.yaml
