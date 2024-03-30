@@ -29,3 +29,14 @@ jobs:
         run: |
           docker build -t myersben9/brigart:latest .
           docker push myersben9/brigart:latest
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Create kubeconfig
+        run: |
+          mkdir ${HOME}/.kube
+          echo ${{ secrets.KUBE_CONFIG }} | base64 --decode > ${HOME}/.kube/config
+          cat ${HOME}/.kube/config
+      - name: Use context
+        run: kubectl config use-context docker-desktop
+      - name: Deploy to K8s
+        run: kubectl apply -f k8s/
