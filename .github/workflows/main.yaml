@@ -1,4 +1,4 @@
-name: Update Kubernetes Pods
+name: Deploy to Kubernetes on Docker Desktop
 
 on:
   push:
@@ -9,8 +9,8 @@ jobs:
   deploy:
     runs-on: self-hosted
     steps:
-      - name: Deploy to K8s
-        run: 
-          |
-          cd C:/docker_art
-          kubectl apply -f deployment/deployment.yaml --request-timeout=5m
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Check kubectl version
+        run: kubectl version --short
