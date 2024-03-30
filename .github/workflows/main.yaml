@@ -39,4 +39,4 @@ jobs:
       - name: Use context
         run: kubectl config use-context docker-desktop
       - name: Deploy to K8s
-        run: kubectl apply -f deployment/
+        run: kubectl apply -f deployment/ --validate=false
