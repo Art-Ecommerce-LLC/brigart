@@ -24,3 +24,5 @@ base-64-tofile.ps1
 kubeconfig.txt
 
 watermarked_imgs/*
+
+.DS_Store
