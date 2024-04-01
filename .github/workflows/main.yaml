@@ -9,8 +9,18 @@ jobs:
   deploy:
     runs-on: self-hosted
     steps:
+      - name: Add a fake 'git' to the PATH to force checkout to download zipball instead
+        shell: cmd
+        run: |
+          echo echo hello > git.bat
+          echo ::add-path::%CD%
       - name: Checkout code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
+
+      - name: Set up kubectl
+        uses: docker://docker
+        with:
+          args: kubectl version
 
       - name: Run Deployment
         run: |
