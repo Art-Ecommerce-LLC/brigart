@@ -23,4 +23,4 @@ base-64-tofile.ps1
 
 kubeconfig.txt
 
-deployment/secrets2.yaml
+run_script.sh
