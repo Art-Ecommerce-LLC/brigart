@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, Windows , x64]
+    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v1
