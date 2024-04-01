@@ -12,6 +12,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Run Deployment Script
+      - name: Run Deployment
         run: |
-          kubectl apply -f deployment/deployment.yaml
+          kubectl apply -f C:/docker_art/deployment/deployment.yaml
+          
