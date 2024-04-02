@@ -150,12 +150,12 @@ def refresh_shop_cart(request: Request):
         for title in titles:
             if each_url["title"] == title:
                 correct_link = imgs[titles.index(title)]
-                host_string = f"http://{site_host}/{correct_link}"
+                host_string = f"https://{site_host}/{correct_link}"
                 each_url["img_url"] = host_string
                 request.session["img_quantity_list"] = img_quant_list
 
 
-@app.middleware("http")
+@app.middleware("https")
 async def some_middleware(request: Request, call_next):
     response = await call_next(request)
 
