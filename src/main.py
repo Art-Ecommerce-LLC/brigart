@@ -1,5 +1,4 @@
 from fastapi import FastAPI, Security, HTTPException, status, Request
-import urllib3
 from fastapi.security import APIKeyHeader
 import uvicorn
 import json
@@ -15,8 +14,6 @@ from starlette.middleware.sessions import SessionMiddleware
 import json
 from urllib.parse import unquote
 
-
-urllib3.disable_warnings()
 
 class Url(BaseModel):
     url: str
