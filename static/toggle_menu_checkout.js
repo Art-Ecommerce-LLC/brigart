@@ -77,7 +77,7 @@ function toggleMenu() {
     // Toggle the mobile menu
     if (window.innerWidth <= 768) {
         navbar.style.display = 'none';
-        mobileMenu.style.display = 'block';
+        mobileMenu.style.display = 'flex';
         document.body.style.overflow = 'auto';
         if (dropdown.classList.contains('show')) {
             content.classList.add('hide');

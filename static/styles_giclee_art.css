@@ -4,7 +4,11 @@
     --base-margin-left: 25px; /* Set the base left margin */
     --margin-left-increase-factor: 0.1; /* Set the factor by which left margin increases per pixel */
 }
-
+a:link,
+a:visited {
+    text-decoration: none; /* Remove underline for both unvisited and visited links */
+    color: #349ef5; /* Inherit the color from the parent element */
+}
 /* General Styles */
 html, body {
     margin: 0;

@@ -13,31 +13,14 @@ from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 import json
 from urllib.parse import unquote
+import urllib3
+import ssl
+
+urllib3.disable_warnings()
 
 
-class Url(BaseModel):
-    url: str
-    title1: str
-
-class UrlQuantity(BaseModel):
-    url: str
-    quantity: str
-    title2 : str
 
 # Define FastAPI App
-
-desc = "Backend platform for BRIG ART"
-app = FastAPI(
-    title = "Brig API",
-    description= desc
-)
-app.add_middleware(SessionMiddleware, secret_key="some-random-string")
-
-# Mount StaticFiles instance to serve files from the "src" directory
-# app.mount("/", StaticFiles(directory="src", html=True), name="src")
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="src/templates")
-# Define API Key Header
 api_key_header = APIKeyHeader(name = 'X-API_KEY')
 
 # Load NocDB env variables from .env file
@@ -70,7 +53,6 @@ def get_nocodb_img_data():
     }
     response = requests.get(nocodb_img_url, headers=headers)
     data = response.json()
-
     images = []
     titles = []
     for item in data['list']:
@@ -138,6 +120,28 @@ host = env_dict["host"]
 port = env_dict["port"]
 site_host = env_dict["site_host"]
 api_keys = [fastapi_password]
+http = env_dict["http"]
+middleware_string = env_dict["middleware_string"]
+openapi_url = env_dict["openapi_url"]
+
+# Initialize FastAPI App
+desc = "Backend platform for BRIG ART"
+
+if openapi_url == "None":
+    openapi_url = None
+
+app = FastAPI(
+    title = "Brig API",
+    description= desc,
+    openapi_url = openapi_url,
+)
+app.add_middleware(SessionMiddleware, secret_key=middleware_string)
+
+# Mount StaticFiles instance to serve files from the "src" directory
+# app.mount("/", StaticFiles(directory="src", html=True), name="src")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="src/templates")
+# Define API Key Header
 
 def refresh_shop_cart(request: Request):
     
@@ -150,22 +154,34 @@ def refresh_shop_cart(request: Request):
         for title in titles:
             if each_url["title"] == title:
                 correct_link = imgs[titles.index(title)]
-                host_string = f"https://{site_host}/{correct_link}"
+                host_string = f"{http}://{site_host}/{correct_link}"
                 each_url["img_url"] = host_string
                 request.session["img_quantity_list"] = img_quant_list
 
 
-@app.middleware("https")
+
+class Url(BaseModel):
+    url: str
+    title1: str
+
+    
+
+class UrlQuantity(BaseModel):
+    url: str
+    quantity: str
+    title2 : str
+
+
+@app.middleware(http)
 async def some_middleware(request: Request, call_next):
     response = await call_next(request)
 
     # No need to manually handle session cookies here
     return response
 
+
 @app.get("/", response_class=HTMLResponse)
 async def homepage(request: Request):
-
-    print("The pod has been sucessfully updated")
 
     imgs,titles = get_nocodb_img_data()
     icons = get_nocodb_icon_data()
@@ -195,10 +211,20 @@ async def homepage(request: Request):
 @app.post("/shop")
 async def shop_img_url(request: Request, url: Url):
 
-    request.session["img_url"] = url.url
-    request.session["title"] = url.title1
+    imgs, titles = get_nocodb_img_data()
 
-    return url
+    # By default if the match string doesn't change to true the url is invalid
+    match = False
+    for item in imgs:
+        url_string = f"{http}://" + f"{site_host}/" + item
+        if url.url == url_string:
+            match = True
+    
+    if match == True:
+        request.session["img_url"] = url.url
+        request.session["title"] = url.title1
+    else:
+        raise(HTTPException(status_code=400, detail="Invalid URL in Shop Request"))
 
 @app.get("/shop", response_class=HTMLResponse)
 async def shop(request: Request):
@@ -227,47 +253,50 @@ async def shop(request: Request):
 @app.post("/shop_art")
 async def shop_art_url(request: Request, url_quant: UrlQuantity):
 
-    
+    imgs, titles  = get_nocodb_img_data()
+    match = False
+    for item in imgs:
+        url_string = f"{http}://" + f"{site_host}/" + item
+        if url_string == url_quant.url:
+            match = True
 
-    img_url = url_quant.url
-    quantity = url_quant.quantity
-    title = url_quant.title2
-    
-    img_quantity_list = request.session.get("img_quantity_list")
+    if match == True:
+        img_url = url_quant.url
+        quantity = url_quant.quantity
+        title = url_quant.title2
+        
+        img_quantity_list = request.session.get("img_quantity_list")
 
-    
+        
 
-    quant_img_dict = {
-        "img_url": img_url,
-        "quantity": quantity,
-        "title": title
-    }
+        quant_img_dict = {
+            "img_url": img_url,
+            "quantity": quantity,
+            "title": title
+        }
 
-    
-    
-    if img_quantity_list is None or []:
-        img_quantity_list = []
-        img_quantity_list.append(quant_img_dict)
-        request.session["img_quantity_list"] = img_quantity_list
-    else:
-        for each_item in img_quantity_list:
-            if title == each_item["title"]:
-                new_quantity = int(each_item["quantity"]) + int(quantity)
-                temp_quant_dict = {
-                    "img_url": img_url,
-                    "quantity": new_quantity,
-                    "title": title
-                }
-                request.session["img_quantity_list"].remove(each_item)
-                request.session["img_quantity_list"].append(temp_quant_dict)
-                break
+        
+        
+        if img_quantity_list is None or []:
+            img_quantity_list = []
+            img_quantity_list.append(quant_img_dict)
+            request.session["img_quantity_list"] = img_quantity_list
         else:
-            request.session["img_quantity_list"].append(quant_img_dict)
-    
-
-
-    return {"status_code": "200"}
-
+            for each_item in img_quantity_list:
+                if title == each_item["title"]:
+                    new_quantity = int(each_item["quantity"]) + int(quantity)
+                    temp_quant_dict = {
+                        "img_url": img_url,
+                        "quantity": new_quantity,
+                        "title": title
+                    }
+                    request.session["img_quantity_list"].remove(each_item)
+                    request.session["img_quantity_list"].append(temp_quant_dict)
+                    break
+            else:
+                request.session["img_quantity_list"].append(quant_img_dict)
+    else:
+        raise(HTTPException(status_code=400, detail="Invalid URL in Shop_Art Request"))
 
 
 @app.get("/shop_art", response_class=HTMLResponse)
@@ -370,47 +399,75 @@ async def shop(request: Request):
 @app.post("/increase_quantity")
 async def increase_quantity(request: Request, url:Url):
 
+    imgs,titles = get_nocodb_img_data()
 
-    img_quantity_list = request.session.get("img_quantity_list")
-    img_url = url.url
-    title = url.title1
-    # Parse over img_quantity_list and increase the quantity of the item
+    match = False
+    for item in imgs:
+        url_string = f"{http}://" + f"{site_host}/" + item
+        if url.url == url_string:
+            match = True
+    
+    if match == True:
 
-    for each_url in img_quantity_list:
-        if each_url["img_url"] == img_url:
-            each_url["quantity"] = str(int(each_url["quantity"]) + 1)
-            break
-    return {"status_code": 200, "message": "Quantity increased successfully"}
+        img_quantity_list = request.session.get("img_quantity_list")
+        img_url = url.url
+        
+
+        # Parse over img_quantity_list and increase the quantity of the item
+
+        for each_url in img_quantity_list:
+            if each_url["img_url"] == img_url:
+                each_url["quantity"] = str(int(each_url["quantity"]) + 1)
+                break
+    
+    else:
+        raise(HTTPException(status_code=400, detail="Invalid URL in Increase Quantity Request"))
 
 @app.post("/decrease_quantity")
 async def decrease_quantity(request: Request, url: Url):
 
+    imgs,titles = get_nocodb_img_data()
 
-    img_quantity_list = request.session.get("img_quantity_list")
-    img_url = url.url
-    # Parse over img_quantity_list and increase the quantity of the item
+    match = False
+    for item in imgs:
+        url_string = f"{http}://" + f"{site_host}/" + item
+        if url.url == url_string:
+            match = True
+    
+    if match == True:
+        img_quantity_list = request.session.get("img_quantity_list")
+        img_url = url.url
+        # Parse over img_quantity_list and increase the quantity of the item
 
-    for each_url in img_quantity_list:
-        if each_url["img_url"] == img_url:
-            each_url["quantity"] = str(int(each_url["quantity"]) - 1)
-            break
-
-    return {"status_code": 200, "message": "Quantity increased successfully"}
+        for each_url in img_quantity_list:
+            if each_url["img_url"] == img_url:
+                each_url["quantity"] = str(int(each_url["quantity"]) - 1)
+                break
+    else:
+        raise(HTTPException(status_code=400, detail="Invalid URL in Decrease Quantity Request"))
 
 @app.post("/delete_item")
 async def delete_item(request: Request, url: Url):
     # find the item attatched ot the url and delete the item
 
-    img_quantity_list = request.session.get("img_quantity_list")
-    img_url = url.url
+    imgs, titles = get_nocodb_img_data()
 
-    for item in img_quantity_list:
-        if item["img_url"] == img_url:
-            img_quantity_list.remove(item)
-            break
-    print(img_quantity_list)
-    return "item removed"
-    # return JSONResponse(status_code=200, content={"message": "Item deleted successfully"})
+    match = False
+    for item in imgs:
+        url_string = f"{http}://" + f"{site_host}/" + item
+        if url.url == url_string:
+            match = True
+    
+    if match == True:
+        img_quantity_list = request.session.get("img_quantity_list")
+        img_url = url.url
+
+        for item in img_quantity_list:
+            if item["img_url"] == img_url:
+                img_quantity_list.remove(item)
+                break
+    else:
+        raise(HTTPException(status_code=400, detail="Invalid URL in Delete Item Request"))
 
 @app.get("/get_cart_quantity")
 async def get_cart_quantity(request: Request):
@@ -438,7 +495,6 @@ async def shop(request: Request):
     brig_logo_url = nocodb_path + icons[2]
 
     img_quant_list = request.session.get("img_quantity_list")
-    print(img_quant_list)
     total_quantity = sum(int(item['quantity']) for item in img_quant_list)
     total_price = 225 * total_quantity
 
@@ -479,6 +535,8 @@ async def process_checkout(request: Request):
 
         # Check if payment processing was successful (you can add your own conditions here)
         if payment_processed_successfully(json_body):
+            # Turn cookies list into empty list
+            request.session["img_quantity_list"] = []
             return {"payment_processed": True, "message": "Payment processed successfully."}
         else:
             # If payment processing failed
@@ -501,11 +559,10 @@ def payment_processed_successfully(payment_data):
     return True
 
 
-
+# Development Server
 # Run the app
-# if __name__ == "__main__":
-#     uvicorn.run(app = "main:app",
-#                 host = host, 
-#                 port = int(port), 
-#                 http = "auto",
-#                 reload= True)
+if __name__ == "__main__":
+    uvicorn.run(app = "main:app",
+                host = host, 
+                port = int(port),
+                reload= True)

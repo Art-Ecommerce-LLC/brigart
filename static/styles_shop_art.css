@@ -9,7 +9,11 @@ html, body {
     display: flex;
     flex-direction: column; /* Make the body a flex container with column direction */
 }
-
+a:link,
+a:visited {
+    text-decoration: none; /* Remove underline for both unvisited and visited links */
+    color: #349ef5; /* Inherit the color from the parent element */
+}
 .header {
     display: flex;
     justify-content: space-between;
@@ -395,7 +399,7 @@ html, body {
     .mobile-dropdown {
         display: none;
         flex-direction: column;
-        background-color: rgb(0, 0, 0);
+        background-color: #040404;
         position: fixed;
         top: 450px;
         left: 50%;
