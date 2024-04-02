@@ -507,8 +507,5 @@ if __name__ == "__main__":
     uvicorn.run(app = "main:app",
                 host = host, 
                 port = int(port), 
-                # ssl_version = ssl.PROTOCOL_TLSv1_2, 
-                # ssl_certfile = fastapi_certfile, 
-                # ssl_keyfile = fastapi_keyfile,
-                log_level = "info",
+                http = "auto"
                 reload= True)
