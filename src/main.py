@@ -507,5 +507,5 @@ if __name__ == "__main__":
     uvicorn.run(app = "main:app",
                 host = host, 
                 port = int(port), 
-                http = "auto"
+                http = "auto",
                 reload= True)
