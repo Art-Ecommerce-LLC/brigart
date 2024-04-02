@@ -123,6 +123,7 @@ api_keys = [fastapi_password]
 http = env_dict["http"]
 middleware_string = env_dict["middleware_string"]
 openapi_url = env_dict["openapi_url"]
+scene = env_dict["scene"]
 
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
@@ -561,7 +562,7 @@ def payment_processed_successfully(payment_data):
 
 # Development Server
 # Run the app
-if __name__ == "__main__":
+if __name__ == "__main__" and scene == "dev":
     uvicorn.run(app = "main:app",
                 host = host, 
                 port = int(port),
