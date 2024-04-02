@@ -503,9 +503,9 @@ def payment_processed_successfully(payment_data):
 
 
 # Run the app
-if __name__ == "__main__":
-    uvicorn.run(app = "main:app",
-                host = host, 
-                port = int(port), 
-                http = "auto",
-                reload= True)
+# if __name__ == "__main__":
+#     uvicorn.run(app = "main:app",
+#                 host = host, 
+#                 port = int(port), 
+#                 http = "auto",
+#                 reload= True)
