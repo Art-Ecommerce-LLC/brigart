@@ -394,7 +394,7 @@ function toggleMenu() {
 
 // Initial toggle when the page loads
 document.addEventListener('DOMContentLoaded', function() {
-    updateCartQuantity();
+    updateCartQuantity(true);
     toggleMenu();
     document.getElementById('currentYear').innerText = new Date().getFullYear();
     updateTotalPrice();
