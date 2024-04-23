@@ -113,7 +113,7 @@ function displayTotalQuantityError(message) {
     totalElement.parentNode.insertBefore(errorMessageElement, totalElement);
 
 }
-async function updateCartQuantity(lockPage = false) {
+function updateCartQuantity(lockPage = false) {
     if (lockPage) {
         // Lock the user from clicking anything
         document.body.style.pointerEvents = 'none';
@@ -155,7 +155,6 @@ async function updateCartQuantity(lockPage = false) {
             }
         });
 }
-
 function increaseQuantity(button) {
     getCartQuantity().then(cartQuantity => {
         console.log(cartQuantity);

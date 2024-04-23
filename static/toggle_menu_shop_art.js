@@ -97,7 +97,7 @@ function isValidEmail(email) {
     return emailRegex.test(email);
 }
 
-async function updateCartQuantity(lockPage = false) {
+function updateCartQuantity(lockPage = false) {
     if (lockPage) {
         // Lock the user from clicking anything
         document.body.style.pointerEvents = 'none';
@@ -119,25 +119,7 @@ async function updateCartQuantity(lockPage = false) {
             if (data.quantity !== 0) {
                 document.getElementById('cartQuantity').innerText = data.quantity;
                 document.getElementById('mobileCartQuantity').innerText = data.quantity;
-            } else {
-                document.getElementById('cartQuantity').innerText = '';
-                document.getElementById('mobileCartQuantity').innerText = '';
-                // Add a button right below h1 with id more shopp that leads to /shop_art_menu 
-                const moreShop = document.createElement('button');
-                moreShop.innerText = 'Continue Shopping';
-                moreShop.addEventListener('click', () => {
-                    window.location.href = '/shop_art_menu';
-                });
-                moreShop.classList.add('more-shop-styles');
-                // put inside the shop-more div
-                document.querySelector('.shop-more').appendChild(moreShop);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        })
-        .finally(() => {
-            if (lockPage) {
+
                 // Unlock the page after the cart quantity is updated
                 document.body.style.pointerEvents = 'auto';
 
@@ -146,10 +128,42 @@ async function updateCartQuantity(lockPage = false) {
                 const loadingBar = document.querySelector('.loading-bar');
                 if (overlay) overlay.remove();
                 if (loadingBar) loadingBar.remove();
+            } else {
+                document.getElementById('cartQuantity').innerText = '';
+                document.getElementById('mobileCartQuantity').innerText = '';
+                // Add a button right below h1 with id more shop that leads to /shop_art_menu 
+                const moreShop = document.createElement('button');
+                moreShop.innerText = 'Continue Shopping';
+                moreShop.addEventListener('click', () => {
+                    window.location.href = '/shop_art_menu';
+                });
+                moreShop.classList.add('more-shop-styles');
+                // put inside the shop-more div
+                document.querySelector('.shop-more').appendChild(moreShop);
+
+                // Unlock the page even if cart quantity is 0
+                document.body.style.pointerEvents = 'auto';
+
+                // Remove the overlay and loading bar
+                const overlay = document.querySelector('.overlay');
+                const loadingBar = document.querySelector('.loading-bar');
+                if (overlay) overlay.remove();
+                if (loadingBar) loadingBar.remove();
             }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+
+            // Unlock the page on error
+            document.body.style.pointerEvents = 'auto';
+
+            // Remove the overlay and loading bar
+            const overlay = document.querySelector('.overlay');
+            const loadingBar = document.querySelector('.loading-bar');
+            if (overlay) overlay.remove();
+            if (loadingBar) loadingBar.remove();
         });
 }
-
 function updateTotalPrice() {
     let totalPrice = 0;
     // Loop through each item in the cart
