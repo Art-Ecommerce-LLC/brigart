@@ -181,8 +181,6 @@ function increaseQuantity(button) {
         
         let currentQuantity = parseInt(quantityElement.value);
 
-
-
         if (cartQuantity  >= 1000) {
             // Display a message above the total price
             displayTotalQuantityError('The maximum quantity allowed is 1000.');
@@ -219,18 +217,20 @@ function increaseQuantity(button) {
 
         fetch('/increase_quantity', requestOptions)
             .then(response => {
-
                 if (!response.ok) {
-                    return;
-                } else {
-                    updateTotalPrice();
-                    updateCartQuantity();
+                    throw new Error('Failed to increase quantity');
                 }
+                return response.json(); // Parse the JSON response
+            })
+            .then(data => {
+                // Update cart quantity after successful response
+                updateCartQuantity();
+                updateTotalPrice();
             })
             .catch(error => {
                 console.error('Error:', error);
             });
-        });
+    });
 }
 
 function decreaseQuantity(button) {
@@ -254,21 +254,20 @@ function decreaseQuantity(button) {
         };
 
         fetch('/decrease_quantity', requestOptions)
-        .then(response => {
-            if (!response.ok) {
-                console.error('Failed to decrease quantity');
-            }
-            else {
-                updateTotalPrice();
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to decrease quantity');
+                }
+                return response.json(); // Parse the JSON response
+            })
+            .then(data => {
+                // Update cart quantity after successful response
                 updateCartQuantity();
-                // Remove the error message if it exists
-                removeMaxQuantityErrorMessage(); // Remove the error message here
-            }
-            
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
+                updateTotalPrice();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
     
     } else {
         removeItem(button);
@@ -276,7 +275,6 @@ function decreaseQuantity(button) {
         removeMaxQuantityErrorMessage(); // Remove the error message here as well
     }
 }
-
 function removeItem(button) {
     // Remove the line element
 

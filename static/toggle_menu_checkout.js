@@ -25,7 +25,7 @@ function updateCartQuantity() {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            console.error('Error updating cart quantity:', error);
         });
 }
 //Create a second toggle for the mobile menu to be a dropdown menu when hamburger icon is clicked
@@ -44,26 +44,22 @@ function handlePurchase(button) {
     const state = document.getElementById("state").value;
     const zip = document.getElementById("zip").value;
 
-    // Now you have all the form data stored in variables
-    // You can use this data to process the purchase, send it to the server, etc.
-    // For example, you can make a fetch request to a backend endpoint to process the payment
-
     const formData = {
-        email : email,
-        phone : phone,
-        cardName : cardName,
-        cardNumber : cardNumber,
-        expiryDate : expiryDate,
-        cvv : cvv,
-        fullname : fullname,
-        address1 : address1,
-        address2 : address2,
-        city : city,
-        state : state,
-        zip : zip,
+        email: email,
+        phone: phone,
+        cardName: cardName,
+        cardNumber: cardNumber,
+        expiryDate: expiryDate,
+        cvv: cvv,
+        fullname: fullname,
+        address1: address1,
+        address2: address2,
+        city: city,
+        state: state,
+        zip: zip,
     };
 
-    // Make a fetch request to send the form data to the backend
+    // Make a fetch request to send the form data to the backend for payment processing
     fetch('/process_payment', {
         method: 'POST',
         headers: {
@@ -80,9 +76,10 @@ function handlePurchase(button) {
     .then(data => {
         // Handle the response data
         console.log(data);
+        // Update cart quantity after successful payment
+        updateCartQuantity();
         // Redirect to a success page, display a success message, etc.
         window.location.href = '/';
-
     })
     .catch(error => {
         console.error('Error processing payment:', error);
@@ -129,13 +126,10 @@ function displayTotalQuantityError(message) {
 function increaseQuantity(button) {
     getCartQuantity().then(cartQuantity => {
         console.log(cartQuantity);
-        removeErrorMessage();
         let quantityElement = button.parentElement.querySelector('.quantity-input');
         let quantityPrice = button.parentElement.parentElement.parentElement.querySelector('.price');
         
         let currentQuantity = parseInt(quantityElement.value);
-
-
 
         if (cartQuantity  >= 1000) {
             // Display a message above the total price
@@ -173,27 +167,22 @@ function increaseQuantity(button) {
 
         fetch('/increase_quantity', requestOptions)
             .then(response => {
-
                 if (!response.ok) {
-                    return;
-                } else {
-                    updateTotalPrice();
-                    updateCartQuantity();
+                    throw new Error('Failed to increase quantity');
                 }
+                return response.json(); // Parse the JSON response
+            })
+            .then(data => {
+                // Update cart quantity after successful response
+                updateCartQuantity();
+                updateTotalPrice();
             })
             .catch(error => {
                 console.error('Error:', error);
             });
-        });
+    });
 }
-function removeMaxQuantityErrorMessage() {
-    // Check if there is an existing error message element for maximum quantity
-    const errorMessage = document.querySelector('.error-message');
-    if (errorMessage) {
-        // Remove the error message
-        errorMessage.remove();
-    }
-}
+
 function decreaseQuantity(button) {
     let quantityElement = button.parentElement.querySelector('.quantity-input');
     let quantityPrice = button.parentElement.parentElement.querySelector('.price');
@@ -215,26 +204,33 @@ function decreaseQuantity(button) {
         };
 
         fetch('/decrease_quantity', requestOptions)
-        .then(response => {
-            if (!response.ok) {
-                console.error('Failed to decrease quantity');
-            }
-            else {
-                updateTotalPrice();
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to decrease quantity');
+                }
+                return response.json(); // Parse the JSON response
+            })
+            .then(data => {
+                // Update cart quantity after successful response
                 updateCartQuantity();
-                // Remove the error message if it exists
-                removeMaxQuantityErrorMessage(); // Remove the error message here
-            }
-            
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
+                updateTotalPrice();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
     
     } else {
         removeItem(button);
         // Remove the error message when quantity reaches 0
         removeMaxQuantityErrorMessage(); // Remove the error message here as well
+    }
+}
+function removeMaxQuantityErrorMessage() {
+    // Check if there is an existing error message element for maximum quantity
+    const errorMessage = document.querySelector('.error-message');
+    if (errorMessage) {
+        // Remove the error message
+        errorMessage.remove();
     }
 }
 
