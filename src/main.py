@@ -530,7 +530,6 @@ async def get_cart_quantity(request: Request):
         
     return JSONResponse({"quantity": total_quantity})
 
-
 @app.get("/checkout", response_class=HTMLResponse)
 async def shop_checkout(request: Request):
 

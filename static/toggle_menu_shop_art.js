@@ -97,73 +97,29 @@ function isValidEmail(email) {
     return emailRegex.test(email);
 }
 
-function updateCartQuantity(lockPage = false) {
-    if (lockPage) {
-        // Lock the user from clicking anything
-        document.body.style.pointerEvents = 'none';
+function updateCartQuantity(cart_quantity) {
+    if (cart_quantity !== 0) {
+        
+        document.getElementById('cartQuantity').innerText = cart_quantity;
+        document.getElementById('mobileCartQuantity').innerText = cart_quantity;
 
-        // Dim the entire page
-        const overlay = document.createElement('div');
-        overlay.classList.add('overlay');
-        document.body.appendChild(overlay);
-
-        // Display the loading bar
-        const loadingBar = document.createElement('div');
-        loadingBar.classList.add('loading-bar');
-        document.body.appendChild(loadingBar);
     }
-
-    fetch('/get_cart_quantity') // Assuming you have an endpoint to get cart quantity
-        .then(response => response.json())
-        .then(data => {
-            if (data.quantity !== 0) {
-                document.getElementById('cartQuantity').innerText = data.quantity;
-                document.getElementById('mobileCartQuantity').innerText = data.quantity;
-
-                // Unlock the page after the cart quantity is updated
-                document.body.style.pointerEvents = 'auto';
-
-                // Remove the overlay and loading bar
-                const overlay = document.querySelector('.overlay');
-                const loadingBar = document.querySelector('.loading-bar');
-                if (overlay) overlay.remove();
-                if (loadingBar) loadingBar.remove();
-            } else {
-                document.getElementById('cartQuantity').innerText = '';
-                document.getElementById('mobileCartQuantity').innerText = '';
-                // Add a button right below h1 with id more shop that leads to /shop_art_menu 
-                const moreShop = document.createElement('button');
-                moreShop.innerText = 'Continue Shopping';
-                moreShop.addEventListener('click', () => {
-                    window.location.href = '/shop_art_menu';
-                });
-                moreShop.classList.add('more-shop-styles');
-                // put inside the shop-more div
-                document.querySelector('.shop-more').appendChild(moreShop);
-
-                // Unlock the page even if cart quantity is 0
-                document.body.style.pointerEvents = 'auto';
-
-                // Remove the overlay and loading bar
-                const overlay = document.querySelector('.overlay');
-                const loadingBar = document.querySelector('.loading-bar');
-                if (overlay) overlay.remove();
-                if (loadingBar) loadingBar.remove();
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-
-            // Unlock the page on error
-            document.body.style.pointerEvents = 'auto';
-
-            // Remove the overlay and loading bar
-            const overlay = document.querySelector('.overlay');
-            const loadingBar = document.querySelector('.loading-bar');
-            if (overlay) overlay.remove();
-            if (loadingBar) loadingBar.remove();
+    else {
+        document.getElementById('cartQuantity').innerText = '';
+        document.getElementById('mobileCartQuantity').innerText = '';
+        // Add a button right below h1 with id more shopp that leads to /shop_art_menu 
+        const moreShop = document.createElement('button');
+        moreShop.innerText = 'Continue Shopping';
+        moreShop.addEventListener('click', () => {
+            window.location.href = '/shop_art_menu';
         });
+        moreShop.classList.add('more-shop-styles');
+        // put inside the shop-more div
+        document.querySelector('.shop-more').appendChild(moreShop);
+            
+    }
 }
+
 function updateTotalPrice() {
     let totalPrice = 0;
     // Loop through each item in the cart
@@ -211,7 +167,6 @@ function displayTotalQuantityError(message) {
 }
 function increaseQuantity(button) {
     getCartQuantity().then(cartQuantity => {
-        console.log(cartQuantity);
         let quantityElement = button.parentElement.querySelector('.quantity-input');
         let quantityPrice = button.parentElement.parentElement.parentElement.querySelector('.price');
         
@@ -260,97 +215,96 @@ function increaseQuantity(button) {
                     return;
                 } else {
                     updateTotalPrice();
+                    updateCartQuantity(cartQuantity + 1);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
             });
         });
-        updateCartQuantity(true);
+}
+function decreaseQuantity(button) {
+    getCartQuantity().then(cartQuantity => { // Fetch the cart quantity
+        let quantityElement = button.parentElement.querySelector('.quantity-input');
+        let quantityPrice = button.parentElement.parentElement.querySelector('.price');
+
+        let currentQuantity = parseInt(quantityElement.value);
+
+        if (currentQuantity > 1) {
+            quantityElement.value = currentQuantity - 1;
+            quantityPrice.innerText = '$' + (currentQuantity - 1) * 225;
+            let img_url = button.parentElement.parentElement.parentElement.querySelector('img').src;
+            let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
+
+            let requestOptions = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ url: img_url, title1: img_title})
+            };
+
+            fetch('/decrease_quantity', requestOptions)
+            .then(response => {
+                if (!response.ok) {
+                    console.error('Failed to decrease quantity');
+                }
+                else {
+                    updateTotalPrice();
+                    updateCartQuantity(cartQuantity - 1); // Update cart quantity after decrease
+                    // Remove the error message if it exists
+                    removeMaxQuantityErrorMessage(); // Remove the error message here
+                }
+                
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        
+        } else {
+            removeItem(button);
+            // Remove the error message when quantity reaches 0
+            removeMaxQuantityErrorMessage(); // Remove the error message here as well
+        }
+    });
 }
 
-function decreaseQuantity(button) {
-    let quantityElement = button.parentElement.querySelector('.quantity-input');
-    let quantityPrice = button.parentElement.parentElement.querySelector('.price');
+function removeItem(button) {
+    getCartQuantity().then(cartQuantity => {
+        // Remove the line element
 
-    let currentQuantity = parseInt(quantityElement.value);
+        // Remove the item from the UI
+        button.parentElement.parentElement.parentElement.remove();
 
-    if (currentQuantity > 1) {
-        quantityElement.value = currentQuantity - 1;
-        quantityPrice.innerText = '$' + (currentQuantity - 1) * 225;
+        // Make the API call to delete the item
         let img_url = button.parentElement.parentElement.parentElement.querySelector('img').src;
         let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
-
+        
         let requestOptions = {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ url: img_url, title1: img_title})
+            body: JSON.stringify({ url: img_url, title1 : img_title})
         };
 
-        fetch('/decrease_quantity', requestOptions)
+        fetch('/delete_item', requestOptions)
         .then(response => {
             if (!response.ok) {
-                console.error('Failed to decrease quantity');
+                console.error('Failed to delete item');
             }
             else {
                 updateTotalPrice();
-                
+                updateCartQuantity(cartQuantity);
+
                 // Remove the error message if it exists
                 removeMaxQuantityErrorMessage(); // Remove the error message here
             }
-            
         })
         .catch(error => {
             console.error('Error:', error);
         });
-        
-        updateCartQuantity(true);
-
-    } else {
-        removeItem(button);
-        // Remove the error message when quantity reaches 0
-        updateCartQuantity(true);
-        removeMaxQuantityErrorMessage(); // Remove the error message here as well
-    }
-}
-
-function removeItem(button) {
-    // Remove the line element
-
-    // Remove the item from the UI
-    button.parentElement.parentElement.parentElement.remove();
-
-    // Make the API call to delete the item
-    let img_url = button.parentElement.parentElement.parentElement.querySelector('img').src;
-    let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
-    
-    let requestOptions = {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ url: img_url, title1 : img_title})
-    };
-
-    fetch('/delete_item', requestOptions)
-    .then(response => {
-        if (!response.ok) {
-            console.error('Failed to delete item');
-        }
-        else {
-            updateTotalPrice();
-            
-
-            // Remove the error message if it exists
-            removeMaxQuantityErrorMessage(); // Remove the error message here
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
     });
-    updateCartQuantity(true);
 }
 
 //Create a second toggle for the mobile menu to be a dropdown menu when hamburger icon is clicked
@@ -398,42 +352,44 @@ function toggleMenu() {
 
 // Initial toggle when the page loads
 document.addEventListener('DOMContentLoaded', function() {
-    updateCartQuantity(true);
-    toggleMenu();
-    document.getElementById('currentYear').innerText = new Date().getFullYear();
-    updateTotalPrice();
-    let isMessageDisplayed = false;
-    // Add event listener to the checkout button
-    document.querySelector('.checkout-btn').addEventListener('click', function() {
-        // Redirect to the /checkout endpoint
-        let totalPrice = parseFloat(document.getElementById('total-price').innerText.replace('$', ''));
-        if (totalPrice === 0 && !isMessageDisplayed) {
-            // Instead of an alert, display a message above checkout-btn class saying Add Items To Cart to Checkout in the checkout-container class div only once if the button is clicked
+    getCartQuantity().then(cartQuantity => {
+        updateCartQuantity(cartQuantity);
+        toggleMenu();
+        document.getElementById('currentYear').innerText = new Date().getFullYear();
+        updateTotalPrice();
+        let isMessageDisplayed = false;
+        // Add event listener to the checkout button
+        document.querySelector('.checkout-btn').addEventListener('click', function() {
+            // Redirect to the /checkout endpoint
+            let totalPrice = parseFloat(document.getElementById('total-price').innerText.replace('$', ''));
+            if (totalPrice === 0 && !isMessageDisplayed) {
+                // Instead of an alert, display a message above checkout-btn class saying Add Items To Cart to Checkout in the checkout-container class div only once if the button is clicked
+                const checkoutContainer = document.querySelector('.checkout-container');
+                const checkoutBtn = document.querySelector('.checkout-btn');
+                const checkoutMessage = document.createElement('p');
+                checkoutMessage.innerText = 'Add Items to Checkout';
+                checkoutMessage.classList.add('empty-cart-message');
+                checkoutContainer.insertBefore(checkoutMessage, checkoutBtn);
+
+                isMessageDisplayed = true; // Set the flag to true after displaying the message
+
+                return;
+            } else if (totalPrice === 0 && isMessageDisplayed) {
+                return; // Don't do anything if the message is already displayed
+            } else {
+                window.location.href = '/checkout';
+            }
+        });
+        // Add event listener to the image click event
+        const cartImage = document.querySelector('.cart-image');
+        cartImage.addEventListener('click', function() {
             const checkoutContainer = document.querySelector('.checkout-container');
-            const checkoutBtn = document.querySelector('.checkout-btn');
-            const checkoutMessage = document.createElement('p');
-            checkoutMessage.innerText = 'Add Items to Checkout';
-            checkoutMessage.classList.add('empty-cart-message');
-            checkoutContainer.insertBefore(checkoutMessage, checkoutBtn);
-
-            isMessageDisplayed = true; // Set the flag to true after displaying the message
-
-            return;
-        } else if (totalPrice === 0 && isMessageDisplayed) {
-            return; // Don't do anything if the message is already displayed
-        } else {
-            window.location.href = '/checkout';
-        }
-    });
-    // Add event listener to the image click event
-    const cartImage = document.querySelector('.cart-image');
-    cartImage.addEventListener('click', function() {
-        const checkoutContainer = document.querySelector('.checkout-container');
-        const checkoutMessage = document.querySelector('.empty-cart-message');
-        if (checkoutMessage) {
-            checkoutContainer.removeChild(checkoutMessage);
-            isMessageDisplayed = false; // Reset the flag when the message is removed
-        }
+            const checkoutMessage = document.querySelector('.empty-cart-message');
+            if (checkoutMessage) {
+                checkoutContainer.removeChild(checkoutMessage);
+                isMessageDisplayed = false; // Reset the flag when the message is removed
+            }
+        });
     });
 });
 // Toggle the menu on window resize
