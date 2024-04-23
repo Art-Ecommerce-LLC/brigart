@@ -215,6 +215,7 @@ function increaseQuantity(button) {
                 console.error('Error:', error);
             });
         });
+        updateCartQuantity(true);
 }
 function removeMaxQuantityErrorMessage() {
     // Check if there is an existing error message element for maximum quantity
@@ -251,7 +252,7 @@ function decreaseQuantity(button) {
             }
             else {
                 updateTotalPrice();
-                updateCartQuantity(true);
+                
                 // Remove the error message if it exists
                 removeMaxQuantityErrorMessage(); // Remove the error message here
             }
@@ -260,9 +261,10 @@ function decreaseQuantity(button) {
         .catch(error => {
             console.error('Error:', error);
         });
-    
+        updateCartQuantity(true);
     } else {
         removeItem(button);
+        updateCartQuantity(true);
         // Remove the error message when quantity reaches 0
         removeMaxQuantityErrorMessage(); // Remove the error message here as well
     }
@@ -294,7 +296,7 @@ function removeItem(button) {
         else {
             updateTotalPrice();
 
-            updateCartQuantity(true);
+            
 
             // Remove the error message if it exists
             removeMaxQuantityErrorMessage(); // Remove the error message here
@@ -303,6 +305,7 @@ function removeItem(button) {
     .catch(error => {
         console.error('Error:', error);
     });
+    updateCartQuantity(true);
 }
 
 

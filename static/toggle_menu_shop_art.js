@@ -260,13 +260,13 @@ function increaseQuantity(button) {
                     return;
                 } else {
                     updateTotalPrice();
-                    updateCartQuantity(true);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
             });
         });
+        updateCartQuantity(true);
 }
 
 function decreaseQuantity(button) {
@@ -296,7 +296,7 @@ function decreaseQuantity(button) {
             }
             else {
                 updateTotalPrice();
-                updateCartQuantity(true);
+                
                 // Remove the error message if it exists
                 removeMaxQuantityErrorMessage(); // Remove the error message here
             }
@@ -305,10 +305,13 @@ function decreaseQuantity(button) {
         .catch(error => {
             console.error('Error:', error);
         });
-    
+        
+        updateCartQuantity(true);
+
     } else {
         removeItem(button);
         // Remove the error message when quantity reaches 0
+        updateCartQuantity(true);
         removeMaxQuantityErrorMessage(); // Remove the error message here as well
     }
 }
@@ -338,7 +341,7 @@ function removeItem(button) {
         }
         else {
             updateTotalPrice();
-            updateCartQuantity(true);
+            
 
             // Remove the error message if it exists
             removeMaxQuantityErrorMessage(); // Remove the error message here
@@ -347,6 +350,7 @@ function removeItem(button) {
     .catch(error => {
         console.error('Error:', error);
     });
+    updateCartQuantity(true);
 }
 
 //Create a second toggle for the mobile menu to be a dropdown menu when hamburger icon is clicked
