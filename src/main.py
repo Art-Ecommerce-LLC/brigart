@@ -14,7 +14,6 @@ from starlette.middleware.sessions import SessionMiddleware
 import json
 from urllib.parse import unquote
 import urllib3
-import ssl
 import re
 from smartystreets_python_sdk import SharedCredentials, StaticCredentials, exceptions, ClientBuilder
 from smartystreets_python_sdk.us_street import Lookup as StreetLookup
