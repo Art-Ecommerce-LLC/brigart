@@ -1,34 +1,4 @@
-function getActiveCookies() {
-    // Get the cookies from the python backend /get_cookies endpoint and then update the cart quantity, price, total price whenver the page loads or a button is clicked
-    fetch('/get_cookies')
-        .then(response => response.json())
-        .then(data => {
-            // Update the cart quantity, price, total price
-            // the cookies likes like ajson return JSONResponse({"cookies": img_quantity_list}) where img_quant_list is a list of dictionaries with the image url and quantity and title
-            let totalPrice = 0;
-            let totalQuantity = 0;
-            data.cookies.forEach(cookie => {
-                let quantity = cookie.quantity;
-                let price = quantity * 225;
-                totalPrice += price;
-                totalQuantity += quantity;
-            });
-            document.getElementById('cartQuantity').innerText = parseInt(totalQuantity, 10); // Parse as integer directly
-            document.getElementById('mobileCartQuantity').innerText = parseInt(totalQuantity, 10); // Parse as integer directly
-            document.getElementById('total-price').innerText = totalPrice.toFixed(2);
-            // the input quantity as well must be in sync wit hte rest
-            document.querySelectorAll('.quantity-input').forEach(quantityElement => {
-                let currentQuantity = parseInt(quantityElement.value, 10);
-                let quantityPrice = quantityElement.parentElement.parentElement.querySelector('.price');
-                quantityPrice.innerText = '$' + currentQuantity * 225;
-            });
-        })
-        .catch(error => {
-            console.error('Error:', error);
 
-        });
-
-}
 function getCartQuantity() {
     return fetch('/get_cart_quantity') // Assuming this endpoint returns the total quantity
         .then(response => {
@@ -207,9 +177,8 @@ function increaseQuantity(button) {
                 if (!response.ok) {
                     return;
                 } else {
-                    // updateTotalPrice();
-                    // updateCartQuantity();
-                    getActiveCookies();
+                    updateTotalPrice();
+                    updateCartQuantity();
                 }
             })
             .catch(error => {
@@ -251,9 +220,8 @@ function decreaseQuantity(button) {
                 console.error('Failed to decrease quantity');
             }
             else {
-                // updateTotalPrice();
-                // updateCartQuantity();
-                getActiveCookies();
+                updateTotalPrice();
+                updateCartQuantity();
                 // Remove the error message if it exists
                 removeMaxQuantityErrorMessage(); // Remove the error message here
             }

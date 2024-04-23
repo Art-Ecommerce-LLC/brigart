@@ -517,7 +517,7 @@ async def delete_item(request: Request, url: Url):
         raise(HTTPException(status_code=400, detail="Invalid URL in Delete Item Request"))
 
 @app.get("/get_cart_quantity")
-async def get_cart_quantity(request: Request):
+def get_cart_quantity(request: Request):
 
 
 
