@@ -7,7 +7,7 @@
     <title>Art Showcase</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles_shop_art.css') }}">
     <script src="{{ url_for('static', path='/toggle_menu_shop_art.js') }}"></script>
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
 </head>
 <body>
 <div class="header">
@@ -46,21 +46,20 @@
                 <img src="{{ img_data.img_url }}" alt="Product Image">
             </div>
             <div class="title_container">
-                <h2>{{ img_data.img_title }}</h2>
+                <p>{{ img_data.img_title }}</p>
             </div>
             <div class="quantity-container">
                 <div class = "quantity-controls">
                     <button class="decrease-quantity" onclick="decreaseQuantity(this)">-</button>
-                        <p>{{ img_data.quantity }}</p>
+                    <input id= "price-quantity" class = "quantity-input" font-size = "16px" value = "{{ img_data.quantity }}" disabled="disabled">
                     <button class="increase-quantity" onclick="increaseQuantity(this)">+</button>
                 </div>
+                <p class="price" id="price-text">${{ img_data.price }}</p>
                 <div class="price-remove-container">
-                    <p class="price" id="price-text">${{ img_data.price }}</p>
                     <button class="remove-item" onclick="removeItem(this)">X</button>
                 </div>
             </div>
         </div>
-        <div class="line"></div>
         {% endfor %}
         <div class = "checkout-container">
             <p class="total">Total: $<span id="total-price">{{ total_price }}</span></p>

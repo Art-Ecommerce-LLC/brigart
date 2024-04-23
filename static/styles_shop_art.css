@@ -68,7 +68,6 @@ a:visited {
     margin: 10px;
 }
 
-
 .content {
     flex: 1; /* Make the content flex-grow to take up remaining space */
     display: flex;
@@ -95,18 +94,43 @@ a:visited {
 }
 .info_container {
     display: flex;
-    flex-direction: row; /* Change flex-direction to row */
-    justify-content: left /* Add space between image and title */
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    min-height: 70px;
+    margin-top: 15px;
+    width: inherit;
+    border-bottom: 1px solid hsla(0,0%,39%,.8);
 }
 
 .image_container {
-    align-items: flex-start;
+    display: inline-block;
+    flex-shrink: 0;
+    position: relative;
+    vertical-align: middle;
+    width: 132px;
+    margin-bottom: 5px;
+}
+.img_wrapper {
+    height: 0;
+    padding-bottom: 100%;
+    width: 100%;
 }
 .title_container {
-    align-items:flex-start;
-    flex-grow: 1;
-    width:200px;
+    display: inline-block; /* Change display to inline-block */
+    margin-bottom: 22px;
+    vertical-align: middle;
+    color: white;
+    font-size: 16px;
+    white-space: nowrap; /* Prevent text from wrapping */
+    overflow: hidden; /* Hide any overflow */
+    text-overflow: ellipsis; /* Show ellipsis (...) for overflowing text */ /* Adjust max-width based on your design */
 }
+
+.title_container p{
+    width: 180px;
+    margin: 0 ;
+}
+
 .image_container img {
     width: 100px;
     height: auto;
@@ -115,69 +139,85 @@ a:visited {
 .content_cart h1{
     color:white;
 }
-.title_container h2 {
-    font-size: 20px;
-    margin: 0;
-    color: white;
-}
+
 .quantity-container {
-    display: flex;
-    justify-content: center; /* Center the content horizontally */
-    align-items: center;
-    margin-top: 10px; /* Add margin to separate from image */
+    display:flex;
+    flex-direction: row;
+    white-space: nowrap;
     color: white;
-    font-size: 20px;
+    flex-wrap: wrap;
+    margin-top:5px;
+    max-height:40px;
+    margin-left:auto;
+
 }
 .quantity-controls {
     display: flex;
-    flex-direction: row; /* Keep the buttons in a row */
-    align-items: center;
+    flex-direction: row;
     font-size: 20px;
-    margin-right: 150px;
+    margin-right: 50px;
+    margin-bottom:150px;
+    margin-left:auto;
 }
 .price-remove-container {
-    display: flex;
-    flex-direction: row; /* Keep the price and remove button in a row */
-    align-items: center; /* Add margin between quantity controls and price/remove */
+    display: inline-block;
+
 }
 
 .quantity-container button {
-    padding: 10px 20px;
-    background-color: #349ef5;
+    background: transparent;
+    border: medium;
+    padding: 0px;
+    color: inherit;
+    position: relative;
+    cursor: pointer;
     color: black;
     border: none;
     border-radius: 5px;
-    cursor: pointer;
-    font-size: 20px;
-    margin: 0 5px;
-    transition: background-color 0.3s;
+    padding: 10px 20px;
+    background-color: #349ef5;
 }
-
+.quantity-input {
+    color: inherit;
+    font-size: 16px;
+    text-align: center;
+    background-color: transparent;
+    flex: 1 1 0%;
+    font-family: inherit;
+    line-height: 22px;
+    padding: 0px;
+    border: medium;
+    caret-color: black;
+    vertical-align: top;
+    width: 10%;
+    max-width: 75px;
+    min-width: 65px;
+    margin: 0px;
+}
 .quantity-container button:hover {
     background-color: #0056b3;
 }
 
-.quantity-container p {
-    margin: 0 10px;
-    font-size: 24px;
+.quantity-container p {   
+    margin-top:10px;
 }
 
 .price {
+    display: inline-block;
     font-size: 16px;
-    font-weight: bold;
-    margin-left: auto;
+    text-align: right;
+    vertical-align: middle;
+    white-space: nowrap;
+    margin-right:15px;
+    width:250px;
+}
+.empty-cart-message {
+    color: white;
+    font-size: 20px;
+    margin : 10px 0;
+    text-align: center;
 }
 
-.line {
-    width: 100%;
-    height: 1px;
-    background-color: white;
-    margin-top: 20px;
-    margin-bottom: 20px;
-    /* Add border properties */
-    border: none; /* Remove default border if any */
-    border-top: 1px solid white; /* Add a top border */
-}
 .mobile-menu {
     display: none;
 }
@@ -186,7 +226,7 @@ a:visited {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    margin-top: 20px;
+    margin: 20px 0;
 }
 
 .checkout-container button {
@@ -208,6 +248,7 @@ a:visited {
     font-size: 20px;
     font-weight: bold;
     color: white;
+    margin: 8px 0;
 }
 .cart-quantity {
     color: white;
@@ -314,17 +355,21 @@ a:visited {
     color: white; /* Color of the error message */
     font-size: 14px; /* Font size of the error message */
 }
-
+.error-message {
+    margin-top: 0px;
+    margin-bottom:5px; /* Adjust the margin as needed */
+    color: white; /* Color of the error message */
+    font-size: 14px; /* Font size of the error message */
+}
 
 .remove-item {
-    padding: 5px 10px;
+    padding: 5px 6px;
     background-color: #349ef5; /* Example color for remove button */
     color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 16px;
-    margin-left: 10px; /* Add margin between price and remove button */
+    font-size: 16px; /* Add margin between price and remove button */
     transition: background-color 0.3s;
 }
 .remove-item:hover {
@@ -354,37 +399,8 @@ a:visited {
     background-color: #0056b3;
 }
 /* Media Queries */
-@media (max-width: 768px) {
-    .quantity-container {
-        display: flex;
-        flex-direction: column; /* Change to column layout */
-        align-items: center;
-        margin-right: 0px;
-        margin-left: auto;
-        color: white;
-    }
-    .quantity-controls {
-        justify-content: flex-end; /* Align controls to the right */
-        margin-right: 0px;
-    }
-    .price-remove-container {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: flex-end; /* Align price and remove button to the right */
-        margin-left: auto;
-        margin-right: 0px;
-        margin-top: 10px; /* Add margin between price and remove button */
-    }
-    .remove-item {
-        margin: 0; /* Add margin between price and remove button */
-    }
-    .cart-quantity-mobile {
-        display:inline-block;
-        color: white;
-        font-size: 27px;
-        padding: 0 1px;
-    }
+@media (max-width: 960px) {
+   
     .navbar {
         display: none;
     }
@@ -429,6 +445,25 @@ a:visited {
     .mobile-dropdown.show {
         display: block;
     }
-    
+    .content_cart {
+        line-height: 1.5em;
+    }
+    .cart-quantity-mobile {
+        display:inline-block;
+        color: white;
+        font-size: 27px;
+        padding: 0 1px;
+    }
+    .quantity-container {
+        margin-left:0;
+        width:100%;
+    }
+    .quantity-controls{
+        margin-left:0px;
+    }
+    .price{
+        margin-left:auto;
+        width: auto;
+        margin-right:3px;
+    }
 }
-

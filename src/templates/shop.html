@@ -7,7 +7,7 @@
     <title>Art Showcase</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles_shop.css') }}">
     <script src="{{ url_for('static', path='/toggle_menu_shop.js') }}"></script>
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
 </head>
 <body>
 <div class="header">
@@ -42,7 +42,7 @@
             <img src="{{ img_url }}" alt="Product Image">
         </div>
         <div class="info_container">
-            <div class="title_container">
+            <div class="title_container" id="title">
                 <h2>{{ img_title }}</h2>
             </div>
             <h3>$225</h3>

@@ -1,3 +1,20 @@
+function getCartQuantity() {
+    return fetch('/get_cart_quantity') // Assuming this endpoint returns the total quantity
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            return data.quantity; // Assuming the response has a 'quantity' property
+        })
+        .catch(error => {
+            console.error('Error fetching cart quantity:', error);
+            return 0; // Default to 0 in case of error
+        });
+}
+
 function emailListEnter() {
     // Get the email input value
     const emailInput = document.getElementById('emailInput');
@@ -83,7 +100,9 @@ function isValidEmail(email) {
 function updateCartQuantity() {
     fetch('/get_cart_quantity') // Assuming you have an endpoint to get cart quantity
         .then(response => response.json())
+        
         .then(data => {
+            console.log(data.quantity)
             if (data.quantity !== 0) {
                 document.getElementById('cartQuantity').innerText = data.quantity;
                 document.getElementById('mobileCartQuantity').innerText = data.quantity;
@@ -109,60 +128,144 @@ function decrementQuantity() {
     }
 }
 
-let messageAdded = false; // Flag to track if the message has been added
+let messageAdded = false;
+// Flag to track if the message has been added
+
 
 function addToCart(img_url, title) {
-    if (!messageAdded) {
-        let quantityInputValue = document.getElementById('quantity-input').value;
-        
-        const quantityBox = document.getElementById('quantityBox');
-        quantityBox.style.display = 'none';
-        
-        // Change the text of the button to "Checkout" and change its class
-        const addToCartButton = document.getElementById('addToCartLink');
-        addToCartButton.textContent = 'Checkout';
-        addToCartButton.classList.remove('add-to-cart-btn'); // Remove the old class
-        addToCartButton.classList.add('checkout-btn'); // Add the new class
-        addToCartButton.setAttribute('onclick', 'checkoutRedirect(); return false;'); // Add onclick event for checkout
 
-        submitPostForm(img_url, quantityInputValue, title)
-            .then(data => {
-                // Create a new div for the message container
-                
-                const messageDiv = document.createElement('div');
-                messageDiv.classList.add('message-container'); // Add a class for styling
+    let quantityInputValue = document.getElementById('quantity-input').value;
 
-                // Create the message element
-                const messageContainer = document.createElement('p');
-                messageContainer.textContent = 'Item added to cart!';
-                messageContainer.classList.add('confirmation-msg'); // Add the specified CSS class
 
-                // Append the message to the message container div
-                messageDiv.appendChild(messageContainer);
-
-                // Insert the message container after the button container
-                const buttonContainer = document.querySelector('.button-container');
-                buttonContainer.parentNode.insertBefore(messageDiv, buttonContainer.nextSibling);
-
-                // Update the cart quantity display
-                updateCartQuantity();
-
-                // Set the flag to true to indicate that the message has been added
-                messageAdded = true;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
+    // turn the input value into an integer
+    if (isNaN(quantityInputValue)) {
+        displayQuantityErrorMessage();
+        return;
     }
 
-    // Reset the quantity back to 1
-    document.getElementById('quantity-input').value = '1';
+    if (quantityInputValue > 1000 || quantityInputValue < 1 ) {
+        displayQuantityErrorMessage();
+        return;
+    }
+    // Fetch the current cart quantity
+    fetch('/get_cart_quantity')
+        .then(response => response.json())
+        .then(data => {
+            // Check if adding the selected quantity will exceed the limit
+            if (data.quantity + parseInt(quantityInputValue) > 1000) {
+                displayTotalQuantityErrorMessage();
+                return;
+            }
+            
+
+            // Proceed with adding to cart if the limit is not exceeded
+            if (!messageAdded) {
+                submitPostForm(img_url, quantityInputValue, title)
+                    .then(data => {
+                        updateCartQuantity();
+                        // delete the message-container div from the page
+                        const messageDiv = document.querySelector('.message-container1');
+                        const messageDiv2 = document.querySelector('.message-container2');
+                        if (messageDiv) {
+                            messageDiv.remove();
+                            
+                        }
+                        if (messageDiv2) {
+                            messageDiv2.remove();
+                        }
+
+                        const quantityBox = document.getElementById('quantityBox');
+                        quantityBox.style.display = 'none';
+
+                        // Change the text of the button to "Checkout" and change its class
+                        const addToCartButton = document.getElementById('addToCartLink');
+                        addToCartButton.textContent = 'Checkout';
+                        addToCartButton.classList.remove('add-to-cart-btn'); // Remove the old class
+                        addToCartButton.classList.add('checkout-btn'); // Add the new class
+                        addToCartButton.setAttribute('onclick', 'checkoutRedirect(); return false;'); // Add onclick event for checkout
+                    })
+                    .catch(error => {
+
+                        displayTotalQuantityErrorMessage();
+                        console.error('Error:', error);
+                    });
+            }
+            // Reset the quantity back to 1
+            document.getElementById('quantity-input').value = '1';
+        })
+        .catch(error => {
+            console.error('Error fetching cart quantity:', error);
+        });
+}
+let errorMessageElement = null; // Global variable to store the error message element
+
+function displayQuantityErrorMessage() {
+    // Remove any existing error message
+    removeErrorMessage();
+
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message-container1'); // Add a class for styling
+
+    // Create the message element
+    const messageContainer = document.createElement('p');
+    messageContainer.textContent = 'Please enter a valid integer between 1 and 1000';
+    messageContainer.classList.add('error-msg'); // Add the specified CSS class
+
+    // Make the message appear between the quantity box div with id quantityBox and form id myForm
+    const quantityBox = document.getElementById('quantityBox');
+    const form = document.getElementById('myForm');
+    quantityBox.parentNode.insertBefore(messageDiv, form);
+
+    // Append the message to the message container div
+    messageDiv.appendChild(messageContainer);
+
+    // Set the flag to true to indicate that the message has been added
+    messageAdded1 = true;
+
+    // Store the error message element in the global variable
+    errorMessageElement = messageDiv;
 }
 
+function displayTotalQuantityErrorMessage(img_url, title) {
+    // Remove any existing error message
+    removeErrorMessage();
+
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message-container2'); // Add a class for styling
+
+    // Create the message element
+    const messageContainer = document.createElement('p');
+    messageContainer.textContent = 'Your total quantity cannot exceed 1000';
+    messageContainer.classList.add('error-msg'); // Add the specified CSS class
+
+    // Make the message appear between the quantity box div with id quantityBox and form id myForm
+    const quantityBox = document.getElementById('quantityBox');
+    const form = document.getElementById('myForm');
+    quantityBox.parentNode.insertBefore(messageDiv, form);
+
+    // Append the message to the message container div
+    messageDiv.appendChild(messageContainer);
+
+    // Set the flag to true to indicate that the message has been added
+    messageAdded2 = true;
+
+    // Store the error message element in the global variable
+    errorMessageElement = messageDiv;
+}
+function removeErrorMessage() {
+    // Check if there is an existing error message element
+    if (errorMessageElement) {
+        // Remove the existing error message element
+        errorMessageElement.remove();
+        errorMessageElement = null; // Reset the global variable
+    }
+}
 // Function to handle the checkout redirection
 function checkoutRedirect() {
     window.location.href = '/shop_art';
 }
+// Disply a total qunatity error message if the submit post form returns an error
+
 function submitPostForm(img_url, quantityInputValue, title) {
     return new Promise((resolve, reject) => {
         let requestOptions = {
@@ -180,6 +283,7 @@ function submitPostForm(img_url, quantityInputValue, title) {
                 resolve(data); // Resolve the promise with the response data
             })
             .catch(error => {
+
                 reject(error); // Reject the promise with the error
             });
     });
@@ -210,7 +314,7 @@ function toggleMenu() {
     const footer = document.querySelector('.footer');
     const dropdown = document.querySelector('.mobile-dropdown');
     // Toggle the mobile menu
-    if (window.innerWidth <= 811) {
+    if (window.innerWidth <= 827) {
         navbar.style.display = 'none';
         mobileMenu.style.display = 'flex';
         document.body.style.overflow = 'auto';
@@ -236,6 +340,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Attach event listeners to the increment and decrement buttons
     document.getElementById('increment-btn').addEventListener('click', incrementQuantity);
     document.getElementById('decrement-btn').addEventListener('click', decrementQuantity);
+    
+    const titleDiv = document.getElementById('title');
+    const titleH2 = titleDiv.querySelector('h2');
+    if (titleH2.textContent === 'None') {
+        window.location.href = '/';
+    }
 });
 
 // Toggle the menu on window resize

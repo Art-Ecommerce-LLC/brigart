@@ -1,3 +1,20 @@
+function getCartQuantity() {
+    return fetch('/get_cart_quantity') // Assuming this endpoint returns the total quantity
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            return data.quantity; // Assuming the response has a 'quantity' property
+        })
+        .catch(error => {
+            console.error('Error fetching cart quantity:', error);
+            return 0; // Default to 0 in case of error
+        });
+}
+
 function emailListEnter() {
     // Get the email input value
     const emailInput = document.getElementById('emailInput');
@@ -120,53 +137,113 @@ function updateTotalPrice() {
     // Update the total price element
     document.getElementById('total-price').innerText = totalPrice.toFixed(2);
 }
+let errorMessageElement; 
+function removeErrorMessage() {
+    // Check if there is an existing error message element
 
+    if (errorMessageElement) {
+        // Remove the existing error message element
+        errorMessageElement.remove();
+        errorMessageElement = null; // Reset the global variable
+    }
+}
+function removeMaxQuantityErrorMessage() {
+    // Check if there is an existing error message element for maximum quantity
+    const errorMessage = document.querySelector('.error-message');
+    if (errorMessage) {
+        // Remove the error message
+        errorMessage.remove();
+    }
+}
+function displayTotalQuantityError(message) {
+    // Remove any existing error message
+    removeErrorMessage();
 
+    // Create a new error message element
+    errorMessageElement = document.createElement('p');
+    errorMessageElement.innerText = message;
+    errorMessageElement.classList.add('error-message');
+
+    // Get the parent element of the total price element
+    const totalElement = document.querySelector('.total');
+
+    // Insert the error message before the total price element
+    totalElement.parentNode.insertBefore(errorMessageElement, totalElement);
+
+    // Scroll to the new message element
+    errorMessageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 function increaseQuantity(button) {
-    let quantityElement = button.parentElement.parentElement.querySelector('p');
-    let quantityPrice = button.parentElement.parentElement.querySelector('.price');
-    let currentQuantity = parseInt(quantityElement.innerText);
+    getCartQuantity().then(cartQuantity => {
+        console.log(cartQuantity);
+        let quantityElement = button.parentElement.querySelector('.quantity-input');
+        let quantityPrice = button.parentElement.parentElement.parentElement.querySelector('.price');
+        
+        let currentQuantity = parseInt(quantityElement.value);
 
-    quantityElement.innerText = currentQuantity + 1;
-    quantityPrice.innerText = '$' + (currentQuantity + 1) * 225;
 
-    let img_url = button.parentElement.parentElement.parentElement.querySelector('img').src;
-    let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container h2').innerText;
 
-    let requestOptions = {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ url: img_url, title1 : img_title})
-    };
-
-    fetch('/increase_quantity', requestOptions)
-    .then(response => {
-        if (!response.ok) {
-            console.error('Failed to increase quantity');
+        if (cartQuantity  >= 1000) {
+            // Display a message above the total price
+            displayTotalQuantityError('The maximum quantity allowed is 1000.');
+            return; // Exit the function early to prevent further execution
         }
-        else {
-            updateTotalPrice();
-            updateCartQuantity();
+
+        // Calculate the new quantity
+        let newQuantity = currentQuantity + 1;
+
+        // Check if increasing the quantity will exceed 1000
+        if (newQuantity > 1000) {
+            // Display a message above the total price
+            displayTotalQuantityError('The maximum quantity allowed is 1000.');
+            return; // Exit the function early to prevent further execution
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
+
+        // Update the UI with the new quantity
+        quantityElement.value = newQuantity;// Update the cart quantity
+        // update the value of the input field instead of inner text
+        
+        quantityPrice.innerText = '$' + newQuantity * 225;
+
+        // Make the API call only if the new quantity is within the limit
+        let img_url = button.parentElement.parentElement.parentElement.querySelector('img').src;
+        let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
+
+        let requestOptions = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ url: img_url, title1: img_title })
+        };
+
+        fetch('/increase_quantity', requestOptions)
+            .then(response => {
+
+                if (!response.ok) {
+                    return;
+                } else {
+                    updateTotalPrice();
+                    updateCartQuantity();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
 }
 
 function decreaseQuantity(button) {
-    let quantityElement = button.parentElement.parentElement.querySelector('p');
-    let currentQuantity = parseInt(quantityElement.innerText);
+    let quantityElement = button.parentElement.querySelector('.quantity-input');
     let quantityPrice = button.parentElement.parentElement.querySelector('.price');
 
+    let currentQuantity = parseInt(quantityElement.value);
 
     if (currentQuantity > 1) {
-        quantityElement.innerText = currentQuantity - 1;
+        quantityElement.value = currentQuantity - 1;
         quantityPrice.innerText = '$' + (currentQuantity - 1) * 225;
         let img_url = button.parentElement.parentElement.parentElement.querySelector('img').src;
-        let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container h2').innerText;
+        let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
 
         let requestOptions = {
             method: 'POST',
@@ -184,6 +261,8 @@ function decreaseQuantity(button) {
             else {
                 updateTotalPrice();
                 updateCartQuantity();
+                // Remove the error message if it exists
+                removeMaxQuantityErrorMessage(); // Remove the error message here
             }
             
         })
@@ -191,27 +270,22 @@ function decreaseQuantity(button) {
             console.error('Error:', error);
         });
     
-    
-
     } else {
         removeItem(button);
+        // Remove the error message when quantity reaches 0
+        removeMaxQuantityErrorMessage(); // Remove the error message here as well
     }
 }
 
 function removeItem(button) {
     // Remove the line element
-    let lineElement = button.parentElement.parentElement.parentElement.nextElementSibling;
-    if (lineElement && lineElement.classList.contains('line')) {
-        lineElement.remove();
-    }
 
     // Remove the item from the UI
     button.parentElement.parentElement.parentElement.remove();
 
     // Make the API call to delete the item
     let img_url = button.parentElement.parentElement.parentElement.querySelector('img').src;
-    let quantity = button.parentElement.parentElement.querySelector('p').innerText;
-    let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container h2').innerText;
+    let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
     
     let requestOptions = {
         method: 'POST',
@@ -229,6 +303,9 @@ function removeItem(button) {
         else {
             updateTotalPrice();
             updateCartQuantity();
+
+            // Remove the error message if it exists
+            removeMaxQuantityErrorMessage(); // Remove the error message here
         }
     })
     .catch(error => {
@@ -261,7 +338,7 @@ function toggleMenu() {
     const footer = document.querySelector('.footer');
     const dropdown = document.querySelector('.mobile-dropdown');
     // Toggle the mobile menu
-    if (window.innerWidth <= 768) {
+    if (window.innerWidth <= 827) {
         navbar.style.display = 'none';
         mobileMenu.style.display = 'flex';
         document.body.style.overflow = 'auto';
@@ -285,19 +362,39 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleMenu();
     document.getElementById('currentYear').innerText = new Date().getFullYear();
     updateTotalPrice();
-
+    let isMessageDisplayed = false;
     // Add event listener to the checkout button
     document.querySelector('.checkout-btn').addEventListener('click', function() {
         // Redirect to the /checkout endpoint
         let totalPrice = parseFloat(document.getElementById('total-price').innerText.replace('$', ''));
-        if (totalPrice === 0) {
-            alert('Your cart is empty');
+        if (totalPrice === 0 && !isMessageDisplayed) {
+            // Instead of an alert, display a message above checkout-btn class saying Add Items To Cart to Checkout in the checkout-container class div only once if the button is clicked
+            const checkoutContainer = document.querySelector('.checkout-container');
+            const checkoutBtn = document.querySelector('.checkout-btn');
+            const checkoutMessage = document.createElement('p');
+            checkoutMessage.innerText = 'Add Items to Checkout';
+            checkoutMessage.classList.add('empty-cart-message');
+            checkoutContainer.insertBefore(checkoutMessage, checkoutBtn);
+
+            isMessageDisplayed = true; // Set the flag to true after displaying the message
+
             return;
+        } else if (totalPrice === 0 && isMessageDisplayed) {
+            return; // Don't do anything if the message is already displayed
         } else {
             window.location.href = '/checkout';
         }
     });
-
+    // Add event listener to the image click event
+    const cartImage = document.querySelector('.cart-image');
+    cartImage.addEventListener('click', function() {
+        const checkoutContainer = document.querySelector('.checkout-container');
+        const checkoutMessage = document.querySelector('.empty-cart-message');
+        if (checkoutMessage) {
+            checkoutContainer.removeChild(checkoutMessage);
+            isMessageDisplayed = false; // Reset the flag when the message is removed
+        }
+    });
 });
 // Toggle the menu on window resize
 window.addEventListener('resize', toggleMenu);

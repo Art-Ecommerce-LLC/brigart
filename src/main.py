@@ -9,12 +9,17 @@ from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 import json
 from urllib.parse import unquote
 import urllib3
 import ssl
+import re
+from smartystreets_python_sdk import SharedCredentials, StaticCredentials, exceptions, ClientBuilder
+from smartystreets_python_sdk.us_street import Lookup as StreetLookup
+from smartystreets_python_sdk.us_street.match_type import MatchType
+
 
 urllib3.disable_warnings()
 
@@ -125,6 +130,11 @@ middleware_string = env_dict["middleware_string"]
 openapi_url = env_dict["openapi_url"]
 scene = env_dict["scene"]
 
+
+#smarty keys
+smarty_auth_id = env_dict["smarty_auth_id"]
+smarty_auth_token = env_dict["smarty_auth_token"]
+
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
 
@@ -171,6 +181,36 @@ class UrlQuantity(BaseModel):
     url: str
     quantity: str
     title2 : str
+
+
+class OrderInfo(BaseModel):
+    email: EmailStr = Field(...)
+    phone: str = Field(..., min_length=10, max_length=15)
+    cardName: str = Field(...)
+    cardNumber: str = Field(..., min_length=15, max_length=16)
+    expiryDate: str = Field(..., pattern=r'^\d{2}/\d{2}$')
+    cvv: str = Field(..., min_length=3, max_length=4)
+    fullname: str = Field(...)
+    address1: str = Field(...)
+    address2: str = Field(...)
+    city: str = Field(...)
+    state: str = Field(...)
+    zip: str = Field(..., min_length=5, max_length=10) # Adjust min and max length as needed
+
+def validate_inputs(order_info: OrderInfo):
+    errors = {}
+    
+    # Validate email
+    if not re.match(r"[^@]+@[^@]+\.[^@]+", order_info.email):
+        errors['email'] = 'Invalid email format'
+
+    # Validate phone number
+    if not re.match(r'^\+?\d+$', order_info.phone):
+        errors['phone'] = 'Invalid phone number format'
+
+    # Other validations...
+
+    return errors
 
 
 @app.middleware(http)
@@ -265,11 +305,10 @@ async def shop_art_url(request: Request, url_quant: UrlQuantity):
         img_url = url_quant.url
         quantity = url_quant.quantity
         title = url_quant.title2
-        
+
         img_quantity_list = request.session.get("img_quantity_list")
 
-        
-
+    
         quant_img_dict = {
             "img_url": img_url,
             "quantity": quantity,
@@ -293,6 +332,7 @@ async def shop_art_url(request: Request, url_quant: UrlQuantity):
                     }
                     request.session["img_quantity_list"].remove(each_item)
                     request.session["img_quantity_list"].append(temp_quant_dict)
+                    print(img_quantity_list)
                     break
             else:
                 request.session["img_quantity_list"].append(quant_img_dict)
@@ -353,7 +393,7 @@ async def shop_art(request: Request):
     )
 
 @app.get("/shop_art_menu", response_class=HTMLResponse)
-async def shop(request: Request):
+async def shop_art_menu(request: Request):
 
     imgs, titles = get_nocodb_img_data()
     icons = get_nocodb_icon_data()
@@ -376,7 +416,7 @@ async def shop(request: Request):
                                       context = context)
 
 @app.get("/giclee_prints", response_class=HTMLResponse)
-async def shop(request: Request):
+async def shop_giclee_prints(request: Request):
 
 
     icons = get_nocodb_icon_data()
@@ -397,6 +437,7 @@ async def shop(request: Request):
                                       name = "gicle_prints.html",
                                       context = context)
 
+            
 @app.post("/increase_quantity")
 async def increase_quantity(request: Request, url:Url):
 
@@ -415,14 +456,20 @@ async def increase_quantity(request: Request, url:Url):
         
 
         # Parse over img_quantity_list and increase the quantity of the item
-
+        
         for each_url in img_quantity_list:
             if each_url["img_url"] == img_url:
                 each_url["quantity"] = str(int(each_url["quantity"]) + 1)
-                break
-    
+                request.session["img_quantity_list"] = img_quantity_list
+                total_quantity = sum(int(item["quantity"]) for item in img_quantity_list)
+                print(request.session["img_quantity_list"])
+                return JSONResponse({"quantity": total_quantity})
+        
+        
+        
     else:
         raise(HTTPException(status_code=400, detail="Invalid URL in Increase Quantity Request"))
+
 
 @app.post("/decrease_quantity")
 async def decrease_quantity(request: Request, url: Url):
@@ -479,12 +526,17 @@ async def get_cart_quantity(request: Request):
 
     if img_quantity_list is None:
         return JSONResponse({"quantity": 0})
-    
-    total_quantity = sum(int(item['quantity']) for item in img_quantity_list)
+    else:
+        total_quantity = sum(int(item['quantity']) for item in img_quantity_list)
+        
     return JSONResponse({"quantity": total_quantity})
 
+
 @app.get("/checkout", response_class=HTMLResponse)
-async def shop(request: Request):
+async def shop_checkout(request: Request):
+
+    refresh_shop_cart(request)
+
 
     icons = get_nocodb_icon_data()
 
@@ -496,14 +548,40 @@ async def shop(request: Request):
     brig_logo_url = nocodb_path + icons[2]
 
     img_quant_list = request.session.get("img_quantity_list")
+
+    img_data_list = []
+
+    if img_quant_list is None or []:
+        img_quant_list = []
+        for item in img_quant_list:
+            img_dict = {}
+            decoded_url = unquote(item['img_url'])
+            img_title = item['title'] 
+            img_dict["img_url"] = decoded_url
+            img_dict["img_title"] = img_title
+            img_dict["quantity"] = item['quantity']
+            img_dict["price"] = 225 * int(item['quantity'])
+            img_data_list.append(img_dict)
+    else:
+        for item in img_quant_list:
+            img_dict = {}
+            decoded_url = unquote(item['img_url']) 
+            img_title = item['title'] 
+            img_dict["img_url"] = decoded_url
+            img_dict["img_title"] = img_title
+            img_dict["quantity"] = item['quantity']
+            img_dict["price"] = 225 * int(item['quantity'])
+            img_data_list.append(img_dict)
+
     total_quantity = sum(int(item['quantity']) for item in img_quant_list)
     total_price = 225 * total_quantity
-
     context = {
         "shopping_cart_url": shopping_cart_url,
         "hamburger_menu_url": hamburger_menu_url, 
         "brig_logo_url": brig_logo_url,
         "total_price": total_price,
+        "items": img_quant_list,
+        "img_data_list": img_data_list,
         }
 
     return templates.TemplateResponse(request = request,
@@ -513,53 +591,97 @@ async def shop(request: Request):
 # @app.post("/sign_up")
 # async def sign_up(request: Request):
 
+
 @app.post("/subscribe")
 async def subscribe(request: Request):
 
-    refresh_shop_cart(request)
-
     json_body = await request.json()
 
+
+
     print(json_body)
+    
+def validate_address(
+    full_name : str,
+    street: str,
+    street2: str,
+    city: str,
+    state: str,
+    zipcode: str,
+    candidates: int,
+):
+    # for server-to-server requests, use this code:
+    auth_id = smarty_auth_id
+    auth_token = smarty_auth_token
+    
+    credentials = StaticCredentials(auth_id, auth_token)
 
 
+    client = ClientBuilder(credentials).with_licenses(["us-core-cloud"]).build_us_street_api_client()
 
-@app.post("/process_payment")
-async def process_checkout(request: Request):
+
+    lookup = StreetLookup()
+    lookup.addressee = full_name
+    lookup.street = street
+    # lookup.street2 = "closet under the stairs"
+    # lookup.secondary = "APT 2"
+    # lookup.urbanization = ""  # Only applies to Puerto Rico addresses
+    lookup.city = city
+    lookup.state = state
+    lookup.zipcode = zipcode
+    lookup.candidates = 3
+    lookup.match = MatchType.INVALID  # "invalid" is the most permissive match,
+                                      # this will always return at least one result even if the address is invalid.
+                                      # Refer to the documentation for additional Match Strategy options.
 
     try:
-        # Placeholder for your processing logic
-        # For demonstration, let's assume the payment is processed successfully
-        # You can replace this with your actual payment processing logic
+        client.send_lookup(lookup)
+    except exceptions.SmartyException as err:
+        print(err)
+        return
 
-        json_body = await request.json()
+    result = lookup.result
 
-        # Check if payment processing was successful (you can add your own conditions here)
-        if payment_processed_successfully(json_body):
-            # Turn cookies list into empty list
-            request.session["img_quantity_list"] = []
-            return {"payment_processed": True, "message": "Payment processed successfully."}
-        else:
-            # If payment processing failed
-            raise HTTPException(status_code=400, detail="Payment processing failed.")
-    except Exception as e:
-        # Handle any exceptions that may occur during payment processing
-        print(f"Error processing payment: {e}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+    if not result:
+        print("No candidates. This means the address is not valid.")
+        return
 
-def payment_processed_successfully(payment_data):
-    # Simulate payment processing success based on some conditions
-    # Here you can define your own conditions to determine if the payment was successful
-    # For demonstration, let's assume payment is successful if card_number is even
-    # card_number = payment_data.get("card_number", "")
-    # if card_number.isdigit() and int(card_number) % 2 == 0:
-    #     return True
-    # else:
-    #     return False
-    print(payment_data)
-    return True
+    print("Show Address")
+    for c, candidate in enumerate(lookup.result):
+        print(f"Candidate {c} is:")
+        print(candidate.delivery_line_1)
+        print(candidate.last_line)
+        print()
+@app.post("/process_payment")
+async def process_checkout(request: Request, order_info: OrderInfo):
+    # Validate inputs
+    validation_errors = validate_inputs(order_info)
+    print(order_info)
+
+    validate_address(
+        full_name = order_info.fullname,
+        street = order_info.address1,
+        street2 = order_info.address2,
+        city = order_info.city,
+        state = order_info.state,
+        zipcode = order_info.zip,
+        candidates = 3
+    )
+
+    if validation_errors:
+        return {"error": validation_errors}
+
+    # If all inputs are valid, process the payment
+    # If the payment is successful, send an email to the user
+
+    return {"message": "Payment processed successfully"}
+
+    # Validate all inputs
 
 
+
+
+    
 # Development Server
 # Run the app
 if __name__ == "__main__" and scene == "dev":

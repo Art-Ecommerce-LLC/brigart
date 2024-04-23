@@ -7,7 +7,7 @@
     <title>Art Showcase</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles_checkout.css') }}">
     <script src="{{ url_for('static', path='/toggle_menu_checkout.js') }}"></script>
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
 </head>
 <body>
 <div class="header">
@@ -37,21 +37,72 @@
     </div>
 </div>
 <div class="content">
-    <div class="checkout">
-        <h1>Checkout</h1>
-        <label for="card_name">Cardholder's Name:</label><br>
-        <input type="text" id="card_name" name="card_name"><br>
-        <label for="card_number">Card Number:</label><br>
-        <input type="text" id="card_number" name="card_number"><br>
-        <label for="expiry_date">Expiry Date:</label><br>
-        <input type="text" id="expiry_date" name="expiry_date"><br>
-        <label for="cvv">CVV:</label><br>
-        <input type="text" id="cvv" name="cvv"><br><br>
-        <button onclick="handlePurchase()" class="purchase-btn">Purchase</button>
-        <p>Total: ${{ total_price }}</p>
+    <div class="left-section">
+        <div class="email-enter">
+            <h1>Contact Info</h1>
+            <label for="email">Email:</label><br>
+            <input type="email" id="email" name="email" placeholder="Enter Email"><br>
+            <label for="phone">Phone Number:</label><br>
+            <input type="text" id="phone" name="phone" placeholder="Enter Phone Number"><br>
+        </div>
+        <div class="payment-info">
+            <h1>Payment Information</h1>
+            <label for="card-name">Card Name:</label><br>
+            <input type="text" id="card-name" name="card-name" placeholder="Enter Card Name"><br>
+            <label for="card-number">Card Number:</label><br>
+            <input type="text" id="card-number" name="card-number" placeholder="Enter Card Number"><br>
+            <label for="expiry">Expiration Date:</label><br>
+            <input type="text" id="expiry" name="expiry" placeholder="MM/YY"><br>
+            <label for="cvv">CVV:</label><br>
+            <input type="text" id="cvv" name="cvv" placeholder="CVV"><br>
+        </div>
+        <div class="billing-address">
+            <h1>Billing Address</h1>
+            <label for="fullname">Full Name:</label><br>
+            <input type="text" id="fullname" name="fullname" placeholder="Enter Full Name"><br>
+            <label for="address">Street Address:</label><br>
+            <input type="text" id="address1" name="address" placeholder="Enter Street Address 1"><br>
+            <label for="address">Street Address 2:</label><br>
+            <input type="text" id="address2" name="address" placeholder="Enter Street Address 2"><br>
+            <label for="city">City:</label><br>
+            <input type="text" id="city" name="city" placeholder="Enter City"><br>
+            <label for="state">State:</label><br>
+            <input type="text" id="state" name="state" placeholder="Enter State"><br>
+            <label for="zip">ZIP Code:</label><br>
+            <input type="text" id="zip" name="zip" placeholder="Enter ZIP Code"><br>
+        </div>
+        <button class="continue-btn" onclick="handlePurchase(this)">Complete Purchase</button>
+    </div>
+    
+    <div class="right-section">
+        <h1>Order Summary</h1>
+        <div class="shop-more"></div>
+        {% for img_data in img_data_list %}
+         <div class="info_container">
+            <div class="image_container">
+                <img src="{{ img_data.img_url }}" alt="Product Image">
+            </div>
+            <div class="title_container">
+                <p>{{ img_data.img_title }}</p>
+            </div>
+            <div class="quantity-container">
+                <div class = "quantity-controls">
+                    <button class="decrease-quantity" onclick="decreaseQuantity(this)">-</button>
+                    <input id= "price-quantity" class = "quantity-input" font-size = "16px" value = "{{ img_data.quantity }}" disabled="disabled">
+                    <button class="increase-quantity" onclick="increaseQuantity(this)">+</button>
+                </div>
+                <p class="price" id="price-text">${{ img_data.price }}</p>
+                <div class="price-remove-container">
+                    <button class="remove-item" onclick="removeItem(this)">X</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        <div class = "checkout-container">
+            <p class="total">Total: $<span id="total-price">{{ total_price }}.00</span></p>
+        </div>
     </div>
 </div>
-
 <footer class="footer">
     <div class="container">
         <p>UIcons by <a href="https://www.flaticon.com/uicons">Flaticon</a></p>

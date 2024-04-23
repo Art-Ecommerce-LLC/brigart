@@ -101,7 +101,14 @@ a:visited {
 .image_container {
     display: flex;
 }
-
+.image_container img {
+    width: auto;
+    max-width: 600px;
+    min-width: 270px;
+    height: auto;
+    margin-left: 40px;
+    margin-right: 40px;
+}
 .info_container {
     display: flex;
     flex-direction: column;
@@ -111,32 +118,25 @@ a:visited {
     display: flex;
     margin-bottom: 20px;
 }
-
 .title_container h2 {
     font-size: 50px;
     margin: 0;
     text-align: left;
 }
-
 .info_container p {
-    font-size: 20px;
+    font-size: 17px;
     text-align: left;
-
 }
+.info_container p:last-child {
+    text-align: center;
+}
+
 
 .info_container h3 {
     font-size: 40px;
     font-weight: none;
 }
 
-.image_container img {
-    width: auto;
-    max-width: 600px;
-    min-width: 270px;
-    height: auto;
-    margin-left: 40px;
-    margin-right: 40px;
-}
 .quantity-box {
     display: flex;
     align-items: center;
@@ -161,7 +161,7 @@ a:visited {
 .button-container {
     display: flex;
     justify-content: center;
-    margin-top: 20px; /* Adjust margin as needed */
+    margin-top: 5px;
 }
 
 .add-to-cart-btn,
@@ -290,7 +290,7 @@ a:visited {
 }
 
 .error-msg {
-    margin-top: 0px; /* Adjust the margin as needed */
+    margin: 0px; /* Adjust the margin as needed */
     color: black; /* Color of the error message */
     font-size: 14px; /* Font size of the error message */
 }
@@ -304,7 +304,7 @@ a:visited {
     margin: auto;
 }
 /* Media Queries */
-@media (max-width: 811px) {
+@media (max-width: 827px) {
     .mobile-menu {
         display:flex;
         align-items: center;

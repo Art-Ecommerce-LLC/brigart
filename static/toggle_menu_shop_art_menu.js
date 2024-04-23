@@ -141,7 +141,7 @@ function toggleMenu() {
     const footer = document.querySelector('.footer');
     const dropdown = document.querySelector('.mobile-dropdown');
     // Toggle the mobile menu
-    if (window.innerWidth <= 768) {
+    if (window.innerWidth <= 827) {
         navbar.style.display = 'none';
         mobileMenu.style.display = 'flex';
         document.body.style.overflow = 'auto';

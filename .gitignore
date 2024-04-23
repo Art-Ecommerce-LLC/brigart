@@ -25,3 +25,7 @@ kubeconfig.txt
 
 
 run_script.sh
+
+deployment/*
+
+src/address_validation.py
