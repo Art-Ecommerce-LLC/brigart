@@ -1,4 +1,34 @@
+function getActiveCookies() {
+    // Get the cookies from the python backend /get_cookies endpoint and then update the cart quantity, price, total price whenver the page loads or a button is clicked
+    fetch('/get_cookies')
+        .then(response => response.json())
+        .then(data => {
+            // Update the cart quantity, price, total price
+            // the cookies likes like ajson return JSONResponse({"cookies": img_quantity_list}) where img_quant_list is a list of dictionaries with the image url and quantity and title
+            let totalPrice = 0;
+            let totalQuantity = 0;
+            data.cookies.forEach(cookie => {
+                let quantity = cookie.quantity;
+                let price = quantity * 225;
+                totalPrice += price;
+                totalQuantity += quantity;
+            });
+            document.getElementById('cartQuantity').innerText = parseInt(totalQuantity, 10); // Parse as integer directly
+            document.getElementById('mobileCartQuantity').innerText = parseInt(totalQuantity, 10); // Parse as integer directly
+            document.getElementById('total-price').innerText = totalPrice.toFixed(2);
+            // the input quantity as well must be in sync wit hte rest
+            document.querySelectorAll('.quantity-input').forEach(quantityElement => {
+                let currentQuantity = parseInt(quantityElement.value, 10);
+                let quantityPrice = quantityElement.parentElement.parentElement.querySelector('.price');
+                quantityPrice.innerText = '$' + currentQuantity * 225;
+            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
 
+        });
+
+}
 function getCartQuantity() {
     return fetch('/get_cart_quantity') // Assuming this endpoint returns the total quantity
         .then(response => {
@@ -25,7 +55,7 @@ function updateCartQuantity() {
             }
         })
         .catch(error => {
-            console.error('Error updating cart quantity:', error);
+            console.error('Error:', error);
         });
 }
 //Create a second toggle for the mobile menu to be a dropdown menu when hamburger icon is clicked
@@ -44,22 +74,26 @@ function handlePurchase(button) {
     const state = document.getElementById("state").value;
     const zip = document.getElementById("zip").value;
 
+    // Now you have all the form data stored in variables
+    // You can use this data to process the purchase, send it to the server, etc.
+    // For example, you can make a fetch request to a backend endpoint to process the payment
+
     const formData = {
-        email: email,
-        phone: phone,
-        cardName: cardName,
-        cardNumber: cardNumber,
-        expiryDate: expiryDate,
-        cvv: cvv,
-        fullname: fullname,
-        address1: address1,
-        address2: address2,
-        city: city,
-        state: state,
-        zip: zip,
+        email : email,
+        phone : phone,
+        cardName : cardName,
+        cardNumber : cardNumber,
+        expiryDate : expiryDate,
+        cvv : cvv,
+        fullname : fullname,
+        address1 : address1,
+        address2 : address2,
+        city : city,
+        state : state,
+        zip : zip,
     };
 
-    // Make a fetch request to send the form data to the backend for payment processing
+    // Make a fetch request to send the form data to the backend
     fetch('/process_payment', {
         method: 'POST',
         headers: {
@@ -76,10 +110,9 @@ function handlePurchase(button) {
     .then(data => {
         // Handle the response data
         console.log(data);
-        // Update cart quantity after successful payment
-        updateCartQuantity();
         // Redirect to a success page, display a success message, etc.
         window.location.href = '/';
+
     })
     .catch(error => {
         console.error('Error processing payment:', error);
@@ -126,10 +159,13 @@ function displayTotalQuantityError(message) {
 function increaseQuantity(button) {
     getCartQuantity().then(cartQuantity => {
         console.log(cartQuantity);
+        removeErrorMessage();
         let quantityElement = button.parentElement.querySelector('.quantity-input');
         let quantityPrice = button.parentElement.parentElement.parentElement.querySelector('.price');
         
         let currentQuantity = parseInt(quantityElement.value);
+
+
 
         if (cartQuantity  >= 1000) {
             // Display a message above the total price
@@ -167,22 +203,28 @@ function increaseQuantity(button) {
 
         fetch('/increase_quantity', requestOptions)
             .then(response => {
+
                 if (!response.ok) {
-                    throw new Error('Failed to increase quantity');
+                    return;
+                } else {
+                    // updateTotalPrice();
+                    // updateCartQuantity();
+                    getActiveCookies();
                 }
-                return response.json(); // Parse the JSON response
-            })
-            .then(data => {
-                // Update cart quantity after successful response
-                updateCartQuantity();
-                updateTotalPrice();
             })
             .catch(error => {
                 console.error('Error:', error);
             });
-    });
+        });
 }
-
+function removeMaxQuantityErrorMessage() {
+    // Check if there is an existing error message element for maximum quantity
+    const errorMessage = document.querySelector('.error-message');
+    if (errorMessage) {
+        // Remove the error message
+        errorMessage.remove();
+    }
+}
 function decreaseQuantity(button) {
     let quantityElement = button.parentElement.querySelector('.quantity-input');
     let quantityPrice = button.parentElement.parentElement.querySelector('.price');
@@ -204,33 +246,27 @@ function decreaseQuantity(button) {
         };
 
         fetch('/decrease_quantity', requestOptions)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to decrease quantity');
-                }
-                return response.json(); // Parse the JSON response
-            })
-            .then(data => {
-                // Update cart quantity after successful response
-                updateCartQuantity();
-                updateTotalPrice();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
+        .then(response => {
+            if (!response.ok) {
+                console.error('Failed to decrease quantity');
+            }
+            else {
+                // updateTotalPrice();
+                // updateCartQuantity();
+                getActiveCookies();
+                // Remove the error message if it exists
+                removeMaxQuantityErrorMessage(); // Remove the error message here
+            }
+            
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
     
     } else {
         removeItem(button);
         // Remove the error message when quantity reaches 0
         removeMaxQuantityErrorMessage(); // Remove the error message here as well
-    }
-}
-function removeMaxQuantityErrorMessage() {
-    // Check if there is an existing error message element for maximum quantity
-    const errorMessage = document.querySelector('.error-message');
-    if (errorMessage) {
-        // Remove the error message
-        errorMessage.remove();
     }
 }
 

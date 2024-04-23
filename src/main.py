@@ -530,6 +530,11 @@ async def get_cart_quantity(request: Request):
         
     return JSONResponse({"quantity": total_quantity})
 
+@app.get("/get_cookies")
+async def get_cookies(request: Request):
+    
+    img_quantity_list = request.session.get("img_quantity_list")
+    return JSONResponse({"cookies": img_quantity_list})
 
 @app.get("/checkout", response_class=HTMLResponse)
 async def shop_checkout(request: Request):
