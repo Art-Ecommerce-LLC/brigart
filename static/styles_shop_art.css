@@ -1,4 +1,27 @@
 /* General Styles */
+.loading-bar {
+    width: 100%;
+    height: 10px;
+    background-color: #f2f2f2;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.loading-bar-progress {
+    height: 100%;
+    background-color: #349ef5;
+    animation: progress 2s linear infinite;
+}
+
+@keyframes progress {
+    0% {
+        width: 0;
+    }
+    100% {
+        width: 100%;
+    }
+}
+
 html, body {
     margin: 0;
     padding: 0;

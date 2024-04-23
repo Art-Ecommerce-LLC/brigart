@@ -97,17 +97,29 @@ function isValidEmail(email) {
     return emailRegex.test(email);
 }
 
-function updateCartQuantity() {
+async function updateCartQuantity(lockPage = false) {
+    if (lockPage) {
+        // Lock the user from clicking anything
+        document.body.style.pointerEvents = 'none';
+
+        // Dim the entire page
+        const overlay = document.createElement('div');
+        overlay.classList.add('overlay');
+        document.body.appendChild(overlay);
+
+        // Display the loading bar
+        const loadingBar = document.createElement('div');
+        loadingBar.classList.add('loading-bar');
+        document.body.appendChild(loadingBar);
+    }
+
     fetch('/get_cart_quantity') // Assuming you have an endpoint to get cart quantity
         .then(response => response.json())
         .then(data => {
             if (data.quantity !== 0) {
-                
                 document.getElementById('cartQuantity').innerText = data.quantity;
                 document.getElementById('mobileCartQuantity').innerText = data.quantity;
-
-            }
-            else {
+            } else {
                 document.getElementById('cartQuantity').innerText = '';
                 document.getElementById('mobileCartQuantity').innerText = '';
                 // Add a button right below h1 with id more shopp that leads to /shop_art_menu 
@@ -119,13 +131,23 @@ function updateCartQuantity() {
                 moreShop.classList.add('more-shop-styles');
                 // put inside the shop-more div
                 document.querySelector('.shop-more').appendChild(moreShop);
-                    
             }
         })
         .catch(error => {
             console.error('Error:', error);
+        })
+        .finally(() => {
+            if (lockPage) {
+                // Unlock the page after the cart quantity is updated
+                document.body.style.pointerEvents = 'auto';
+
+                // Remove the overlay and loading bar
+                const overlay = document.querySelector('.overlay');
+                const loadingBar = document.querySelector('.loading-bar');
+                if (overlay) overlay.remove();
+                if (loadingBar) loadingBar.remove();
+            }
         });
-    
 }
 
 function updateTotalPrice() {
@@ -224,7 +246,7 @@ function increaseQuantity(button) {
                     return;
                 } else {
                     updateTotalPrice();
-                    updateCartQuantity();
+                    updateCartQuantity(true);
                 }
             })
             .catch(error => {
@@ -260,7 +282,7 @@ function decreaseQuantity(button) {
             }
             else {
                 updateTotalPrice();
-                updateCartQuantity();
+                updateCartQuantity(true);
                 // Remove the error message if it exists
                 removeMaxQuantityErrorMessage(); // Remove the error message here
             }
@@ -302,7 +324,7 @@ function removeItem(button) {
         }
         else {
             updateTotalPrice();
-            updateCartQuantity();
+            updateCartQuantity(true);
 
             // Remove the error message if it exists
             removeMaxQuantityErrorMessage(); // Remove the error message here

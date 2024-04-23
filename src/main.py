@@ -517,7 +517,7 @@ async def delete_item(request: Request, url: Url):
         raise(HTTPException(status_code=400, detail="Invalid URL in Delete Item Request"))
 
 @app.get("/get_cart_quantity")
-def get_cart_quantity(request: Request):
+async def get_cart_quantity(request: Request):
 
 
 
@@ -530,11 +530,6 @@ def get_cart_quantity(request: Request):
         
     return JSONResponse({"quantity": total_quantity})
 
-@app.get("/get_cookies")
-async def get_cookies(request: Request):
-    
-    img_quantity_list = request.session.get("img_quantity_list")
-    return JSONResponse({"cookies": img_quantity_list})
 
 @app.get("/checkout", response_class=HTMLResponse)
 async def shop_checkout(request: Request):
