@@ -172,8 +172,6 @@ function increaseQuantity(button) {
         
         let currentQuantity = parseInt(quantityElement.value);
 
-
-
         if (cartQuantity  >= 1000) {
             // Display a message above the total price
             displayTotalQuantityError('The maximum quantity allowed is 1000.');
@@ -190,11 +188,7 @@ function increaseQuantity(button) {
             return; // Exit the function early to prevent further execution
         }
 
-        // Update the UI with the new quantity
-        quantityElement.value = newQuantity;// Update the cart quantity
-        // update the value of the input field instead of inner text
-        
-        quantityPrice.innerText = '$' + newQuantity * 225;
+
 
         // Make the API call only if the new quantity is within the limit
         let img_url = button.parentElement.parentElement.parentElement.querySelector('img').src;
@@ -214,6 +208,11 @@ function increaseQuantity(button) {
                 if (!response.ok) {
                     return;
                 } else {
+                            // Update the UI with the new quantity
+                    quantityElement.value = newQuantity;// Update the cart quantity
+                    // update the value of the input field instead of inner text
+                    
+                    quantityPrice.innerText = '$' + newQuantity * 225;
                     updateTotalPrice();
                     updateCartQuantity(cartQuantity + 1);
                 }

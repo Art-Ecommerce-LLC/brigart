@@ -519,8 +519,6 @@ async def delete_item(request: Request, url: Url):
 @app.get("/get_cart_quantity")
 async def get_cart_quantity(request: Request):
 
-
-
     img_quantity_list = request.session.get("img_quantity_list")
 
     if img_quantity_list is None:
