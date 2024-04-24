@@ -97,37 +97,9 @@ function isValidEmail(email) {
     return emailRegex.test(email);
 }
 
-function updateCartQuantity(cart_quantity, button) {
-
-
+function updateCartQuantity(cart_quantity) {
     if (cart_quantity !== 0) {
-        let quantityElement = button.parentElement.querySelector('.quantity-input');
-        let quantityPrice = button.parentElement.parentElement.parentElement.querySelector('.price');
         
-        let currentQuantity = parseInt(quantityElement.value);
-
-        if (cartQuantity  >= 1000) {
-            // Display a message above the total price
-            displayTotalQuantityError('The maximum quantity allowed is 1000.');
-            return; // Exit the function early to prevent further execution
-        }
-
-        // Calculate the new quantity
-        let newQuantity = currentQuantity + 1;
-
-        // Check if increasing the quantity will exceed 1000
-        if (newQuantity > 1000) {
-            // Display a message above the total price
-            displayTotalQuantityError('The maximum quantity allowed is 1000.');
-            return; // Exit the function early to prevent further execution
-        }
-
-        // Update the UI with the new quantity
-        quantityElement.value = newQuantity;// Update the cart quantity
-        // update the value of the input field instead of inner text
-        
-        quantityPrice.innerText = '$' + newQuantity * 225;
-
         document.getElementById('cartQuantity').innerText = cart_quantity;
         document.getElementById('mobileCartQuantity').innerText = cart_quantity;
 
@@ -195,6 +167,35 @@ function displayTotalQuantityError(message) {
 }
 function increaseQuantity(button) {
     getCartQuantity().then(cartQuantity => {
+        let quantityElement = button.parentElement.querySelector('.quantity-input');
+        let quantityPrice = button.parentElement.parentElement.parentElement.querySelector('.price');
+        
+        let currentQuantity = parseInt(quantityElement.value);
+
+
+
+        if (cartQuantity  >= 1000) {
+            // Display a message above the total price
+            displayTotalQuantityError('The maximum quantity allowed is 1000.');
+            return; // Exit the function early to prevent further execution
+        }
+
+        // Calculate the new quantity
+        let newQuantity = currentQuantity + 1;
+
+        // Check if increasing the quantity will exceed 1000
+        if (newQuantity > 1000) {
+            // Display a message above the total price
+            displayTotalQuantityError('The maximum quantity allowed is 1000.');
+            return; // Exit the function early to prevent further execution
+        }
+
+        // Update the UI with the new quantity
+        quantityElement.value = newQuantity;// Update the cart quantity
+        // update the value of the input field instead of inner text
+        
+        quantityPrice.innerText = '$' + newQuantity * 225;
+
         // Make the API call only if the new quantity is within the limit
         let img_url = button.parentElement.parentElement.parentElement.querySelector('img').src;
         let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
@@ -213,8 +214,10 @@ function increaseQuantity(button) {
                 if (!response.ok) {
                     return;
                 } else {
-                    updateTotalPrice();
-                    updateCartQuantity(cartQuantity + 1, button);
+                    updateCartQuantity(cartQuantity + 1).then(() => {
+                        // Update the total price after increasing the quantity
+                        updateTotalPrice();
+                    });;
                 }
             })
             .catch(error => {
