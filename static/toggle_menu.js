@@ -198,7 +198,12 @@ function loadImagesInView() {
             if (imgSrc && !artwork.classList.contains('loaded')) {
                 artwork.onload = function() {
                     artwork.classList.add('loaded');
-                    artwork.classList.add('fade-in'); // Add fade-in class after the image is loaded
+                    const delay = leftDistance * 0.6; // Adjust the multiplier for the desired delay
+
+                    // Add a timeout to apply the fade-in class with delay
+                    setTimeout(() => {
+                        artwork.classList.add('fade-in');
+                    }, delay); // Add fade-in class after the image is loaded
                 };
                 artwork.setAttribute('src', imgSrc);
                 artwork.removeAttribute('data-src');
@@ -217,7 +222,7 @@ function checkFade() {
 
         if (rect.top < windowHeight && rect.bottom >= 0) {
             // Calculate delay based on the distance from the left edge
-            const delay = leftDistance * 0.4; // Adjust the multiplier for the desired delay
+            const delay = leftDistance * 0.6; // Adjust the multiplier for the desired delay
 
             // Add a timeout to apply the fade-in class with delay
             setTimeout(() => {
@@ -235,6 +240,6 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('resize', toggleMenu);
     window.addEventListener('scroll', function() {
         loadImagesInView();
+        checkFade();
     });
-    window.addEventListener('load', checkFade);
 });
