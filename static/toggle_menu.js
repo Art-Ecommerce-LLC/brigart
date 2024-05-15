@@ -195,7 +195,11 @@ function loadImagesInView() {
 
         if (rect.top < windowHeight && rect.bottom >= 0) {
             const imgSrc = artwork.getAttribute('data-src');
-            if (imgSrc) {
+            if (imgSrc && !artwork.classList.contains('loaded')) {
+                artwork.onload = function() {
+                    artwork.classList.add('loaded');
+                    artwork.classList.add('fade-in'); // Add fade-in class after the image is loaded
+                };
                 artwork.setAttribute('src', imgSrc);
                 artwork.removeAttribute('data-src');
             }
@@ -227,11 +231,10 @@ document.addEventListener('DOMContentLoaded', function() {
     updateCartQuantity();
     toggleMenu();
     loadImagesInView(); // Load images when the page is loaded
-    checkFade(); // Apply fade-in animation
 
     window.addEventListener('resize', toggleMenu);
     window.addEventListener('scroll', function() {
         loadImagesInView();
-        checkFade();
     });
+    window.addEventListener('load', checkFade);
 });
