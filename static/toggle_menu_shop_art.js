@@ -300,14 +300,32 @@ async function removeItem(button) {
         const response = await fetch('/delete_item', requestOptions);
 
         if (response.ok) {
-            await updateCartQuantity(0); // Await updateCartQuantity
+            await updateCartQuantity(cartQuantity - 1); // Update cart quantity after removing the item
             updateTotalPrice(); // Update total price after updating cart quantity
             removeMaxQuantityErrorMessage(); // Remove the error message here
+
+            // Check if the cart quantity is 0 and the "Continue Shopping" button doesn't already exist
+            const moreShopButton = document.querySelector('.more-shop-styles');
+            if (cartQuantity - 1 === 0 && !moreShopButton) {
+                // Create and append the "Continue Shopping" button only if it doesn't exist
+                const moreShopButton = document.createElement('button');
+                moreShopButton.innerText = 'Continue Shopping';
+                moreShopButton.addEventListener('click', () => {
+                    window.location.href = '/shop_art_menu';
+                });
+                moreShopButton.classList.add('more-shop-styles');
+                // put inside the shop-more div
+                document.querySelector('.shop-more').appendChild(moreShopButton);
+            } else if (cartQuantity - 1 > 0 && moreShopButton) {
+                // If cart quantity is greater than 0 and the button exists, remove it
+                moreShopButton.remove();
+            }
         }
     } catch (error) {
         console.error('Error:', error);
     }
 }
+
 
 
 //Create a second toggle for the mobile menu to be a dropdown menu when hamburger icon is clicked

@@ -226,13 +226,14 @@ function checkFade() {
 
 // Load images when the page is loaded
 document.addEventListener('DOMContentLoaded', function() {
+
     loadImagesInView();
+    window.addEventListener('load', function() {
+        checkFade();
+    });
+
 });
 
-document.addEventListener('load', function() {
-    loadImagesInView();
-    checkFade();
-});
 
 // Load images when scrolling
 window.addEventListener('scroll', function() {
