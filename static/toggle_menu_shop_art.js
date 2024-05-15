@@ -222,8 +222,9 @@ async function increaseQuantity(button) {
     }
 }
 function updatePageValues(newQuantity) {
-    updateTotalPrice();
+    
     updateCartQuantity(newQuantity);
+    updateTotalPrice();
     // Remove the error message if it exists
     removeMaxQuantityErrorMessage();
 }
