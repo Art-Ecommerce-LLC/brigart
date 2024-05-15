@@ -1,3 +1,4 @@
+// Returns cart quantity from python backend which takes the cookies and returns the total quantity
 function getCartQuantity() {
     return fetch('/get_cart_quantity') // Assuming this endpoint returns the total quantity
         .then(response => {
@@ -97,6 +98,7 @@ function isValidEmail(email) {
     return emailRegex.test(email);
 }
 
+// Updates the UI on the page to reflect the cart quantity
 function updateCartQuantity(cart_quantity) {
     if (cart_quantity !== 0) {
         
@@ -214,10 +216,7 @@ function increaseQuantity(button) {
                 if (!response.ok) {
                     return;
                 } else {
-                    updateCartQuantity(cartQuantity + 1).then(() => {
-                        // Update the total price after increasing the quantity
-                        updateTotalPrice();
-                    });;
+                    updatePageValues(cartQuantity + 1);
                 }
             })
             .catch(error => {
@@ -225,6 +224,13 @@ function increaseQuantity(button) {
             });
         });
 }
+function updatePageValues(newQuantity) {
+    updateTotalPrice();
+    updateCartQuantity(newQuantity);
+    // Remove the error message if it exists
+    removeMaxQuantityErrorMessage();
+}
+
 function decreaseQuantity(button) {
     getCartQuantity().then(cartQuantity => { // Fetch the cart quantity
         let quantityElement = button.parentElement.querySelector('.quantity-input');
@@ -252,10 +258,7 @@ function decreaseQuantity(button) {
                     console.error('Failed to decrease quantity');
                 }
                 else {
-                    updateTotalPrice();
-                    updateCartQuantity(cartQuantity - 1); // Update cart quantity after decrease
-                    // Remove the error message if it exists
-                    removeMaxQuantityErrorMessage(); // Remove the error message here
+                    updatePageValues(cartQuantity - 1);
                 }
                 
             })
