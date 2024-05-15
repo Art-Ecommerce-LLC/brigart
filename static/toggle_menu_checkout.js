@@ -126,40 +126,39 @@ function displayTotalQuantityError(message) {
     totalElement.parentNode.insertBefore(errorMessageElement, totalElement);
 
 }
-function increaseQuantity(button) {
-    getCartQuantity().then(cartQuantity => {
-        console.log(cartQuantity);
-        removeErrorMessage();
+async function increaseQuantity(button) {
+    try {
+        // Disable the button to prevent rapid clicks
+        button.disabled = true;
+
+        // Wait for the cart quantity to be fetched
+        const cartQuantity = await getCartQuantity();
+
+        // Get the necessary DOM elements
         let quantityElement = button.parentElement.querySelector('.quantity-input');
         let quantityPrice = button.parentElement.parentElement.parentElement.querySelector('.price');
-        
+
+        // Parse the current quantity
         let currentQuantity = parseInt(quantityElement.value);
 
-
-
-        if (cartQuantity  >= 1000) {
-            // Display a message above the total price
+        // Check if the current cart quantity is at or exceeds the maximum limit
+        if (cartQuantity >= 1000) {
             displayTotalQuantityError('The maximum quantity allowed is 1000.');
-            return; // Exit the function early to prevent further execution
+            button.disabled = false; // Re-enable the button
+            return;
         }
 
         // Calculate the new quantity
         let newQuantity = currentQuantity + 1;
 
-        // Check if increasing the quantity will exceed 1000
+        // Check if increasing the quantity will exceed the maximum limit
         if (newQuantity > 1000) {
-            // Display a message above the total price
             displayTotalQuantityError('The maximum quantity allowed is 1000.');
-            return; // Exit the function early to prevent further execution
+            button.disabled = false; // Re-enable the button
+            return;
         }
 
-        // Update the UI with the new quantity
-        quantityElement.value = newQuantity;// Update the cart quantity
-        // update the value of the input field instead of inner text
-        
-        quantityPrice.innerText = '$' + newQuantity * 225;
-
-        // Make the API call only if the new quantity is within the limit
+        // Prepare the data for the API call
         let img_url = button.parentElement.parentElement.parentElement.querySelector('img').src;
         let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
 
@@ -171,21 +170,107 @@ function increaseQuantity(button) {
             body: JSON.stringify({ url: img_url, title1: img_title })
         };
 
-        fetch('/increase_quantity', requestOptions)
-            .then(response => {
+        const response = await fetch('/increase_quantity', requestOptions);
 
-                if (!response.ok) {
-                    return;
-                } else {
-                    updateTotalPrice();
-                    updateCartQuantity();
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        });
+        if (response.ok) {
+            // Update the UI with the new quantity only after the API call succeeds
+            quantityElement.value = newQuantity;
+            quantityPrice.innerText = '$' + newQuantity * 225;
+            await updateCartQuantity(cartQuantity + 1);
+            updateTotalPrice();
+            removeMaxQuantityErrorMessage();
+        }
+
+        // Re-enable the button
+        button.disabled = false;
+    } catch (error) {
+        console.error('Error:', error);
+        // Re-enable the button in case of error
+        button.disabled = false;
+    }
 }
+
+async function decreaseQuantity(button) {
+    try {
+        // Disable the button to prevent rapid clicks
+        button.disabled = true;
+
+        const cartQuantity = await getCartQuantity(); // Fetch the cart quantity
+        let quantityElement = button.parentElement.querySelector('.quantity-input');
+        let quantityPrice = button.parentElement.parentElement.querySelector('.price');
+
+        let currentQuantity = parseInt(quantityElement.value);
+
+        if (currentQuantity > 1) {
+            let newQuantity = currentQuantity - 1;
+
+            // Prepare the data for the API call
+            let img_url = button.parentElement.parentElement.parentElement.querySelector('img').src;
+            let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
+
+            let requestOptions = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ url: img_url, title1: img_title })
+            };
+
+            const response = await fetch('/decrease_quantity', requestOptions);
+
+            if (response.ok) {
+                // Update the UI with the new quantity only after the API call succeeds
+                quantityElement.value = newQuantity;
+                quantityPrice.innerText = '$' + newQuantity * 225;
+                await updateCartQuantity(cartQuantity - 1);
+                updateTotalPrice();
+                removeMaxQuantityErrorMessage();
+            }
+        } else {
+            await removeItem(button);
+        }
+
+        // Re-enable the button
+        button.disabled = false;
+    } catch (error) {
+        console.error('Error:', error);
+        // Re-enable the button in case of error
+        button.disabled = false;
+    }
+}
+
+
+async function removeItem(button) {
+    try {
+        const cartQuantity = await getCartQuantity(); // Fetch the cart quantity
+
+        // Remove the item from the UI
+        button.parentElement.parentElement.parentElement.remove();
+
+        // Make the API call to delete the item
+        let img_url = button.parentElement.parentElement.parentElement.querySelector('img').src;
+        let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
+        
+        let requestOptions = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ url: img_url, title1: img_title })
+        };
+
+        const response = await fetch('/delete_item', requestOptions);
+
+        if (response.ok) {
+            await updateCartQuantity(0); // Await updateCartQuantity
+            updateTotalPrice(); // Update total price after updating cart quantity
+            removeMaxQuantityErrorMessage(); // Remove the error message here
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
 function removeMaxQuantityErrorMessage() {
     // Check if there is an existing error message element for maximum quantity
     const errorMessage = document.querySelector('.error-message');
@@ -194,104 +279,25 @@ function removeMaxQuantityErrorMessage() {
         errorMessage.remove();
     }
 }
-function decreaseQuantity(button) {
-    let quantityElement = button.parentElement.querySelector('.quantity-input');
-    let quantityPrice = button.parentElement.parentElement.querySelector('.price');
 
-    let currentQuantity = parseInt(quantityElement.value);
-
-    if (currentQuantity > 1) {
-        quantityElement.value = currentQuantity - 1;
-        quantityPrice.innerText = '$' + (currentQuantity - 1) * 225;
-        let img_url = button.parentElement.parentElement.parentElement.querySelector('img').src;
-        let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
-
-        let requestOptions = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ url: img_url, title1: img_title})
-        };
-
-        fetch('/decrease_quantity', requestOptions)
-        .then(response => {
-            if (!response.ok) {
-                console.error('Failed to decrease quantity');
-            }
-            else {
-                updateTotalPrice();
-                updateCartQuantity();
-                // Remove the error message if it exists
-                removeMaxQuantityErrorMessage(); // Remove the error message here
-            }
-            
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
-    
+async function updateCartQuantity(cart_quantity) {
+    if (cart_quantity !== 0) {
+        document.getElementById('cartQuantity').innerText = cart_quantity;
+        document.getElementById('mobileCartQuantity').innerText = cart_quantity;
     } else {
-        removeItem(button);
-        // Remove the error message when quantity reaches 0
-        removeMaxQuantityErrorMessage(); // Remove the error message here as well
-    }
-}
-
-function removeItem(button) {
-    // Remove the line element
-
-    // Remove the item from the UI
-    button.parentElement.parentElement.parentElement.remove();
-
-    // Make the API call to delete the item
-    let img_url = button.parentElement.parentElement.parentElement.querySelector('img').src;
-    let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
-    
-    let requestOptions = {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ url: img_url, title1 : img_title})
-    };
-
-    fetch('/delete_item', requestOptions)
-    .then(response => {
-        if (!response.ok) {
-            console.error('Failed to delete item');
-        }
-        else {
-            updateTotalPrice();
-            updateCartQuantity();
-
-            // Remove the error message if it exists
-            removeMaxQuantityErrorMessage(); // Remove the error message here
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
-}
-
-function updateCartQuantity() {
-    fetch('/get_cart_quantity') // Assuming you have an endpoint to get cart quantity
-        .then(response => response.json())
-        .then(data => {
-            if (data.quantity !== 0 ) {
-                
-                document.getElementById('cartQuantity').innerText = data.quantity;
-                document.getElementById('mobileCartQuantity').innerText = data.quantity;
-
-            }
-            else {
-                window.location.href = '/shop_art_menu';
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
+        document.getElementById('cartQuantity').innerText = '';
+        document.getElementById('mobileCartQuantity').innerText = '';
+        // Add a button right below h1 with id moreShop that leads to /shop_art_menu 
+        const moreShop = document.createElement('button');
+        moreShop.innerText = 'Continue Shopping';
+        moreShop.addEventListener('click', () => {
+            window.location.href = '/shop_art_menu';
         });
-    
+        moreShop.classList.add('more-shop-styles');
+        // put inside the shop-more div
+        document.querySelector('.shop-more').appendChild(moreShop);
+    }
+    return Promise.resolve(); // Ensure it returns a promise
 }
 function toggleDropdown() {
     const dropdown = document.querySelector('.mobile-dropdown');

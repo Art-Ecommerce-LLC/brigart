@@ -300,7 +300,7 @@ async function removeItem(button) {
         const response = await fetch('/delete_item', requestOptions);
 
         if (response.ok) {
-            await updateCartQuantity(cartQuantity - 1); // Await updateCartQuantity
+            await updateCartQuantity(0); // Await updateCartQuantity
             updateTotalPrice(); // Update total price after updating cart quantity
             removeMaxQuantityErrorMessage(); // Remove the error message here
         }
