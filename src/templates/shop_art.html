@@ -51,7 +51,7 @@
             <div class="quantity-container">
                 <div class = "quantity-controls">
                     <button class="decrease-quantity" onclick="decreaseQuantity(this)">-</button>
-                    <input id= "price-quantity" class = "quantity-input" font-size = "16px" value = "{{ img_data.quantity }}" disabled="disabled">
+                    <input id= "price-quantity" class = "quantity-input" font-size = "16px" value = "{{ img_data.quantity }}" type="text" disabled="disabled">
                     <button class="increase-quantity" onclick="increaseQuantity(this)">+</button>
                 </div>
                 <p class="price" id="price-text">${{ img_data.price }}</p>

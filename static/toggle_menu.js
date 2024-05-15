@@ -194,11 +194,10 @@ function loadImagesInView() {
         const windowHeight = window.innerHeight;
 
         if (rect.top < windowHeight && rect.bottom >= 0) {
-            // Load the image source if it's within the viewport
             const imgSrc = artwork.getAttribute('data-src');
             if (imgSrc) {
                 artwork.setAttribute('src', imgSrc);
-                artwork.removeAttribute('data-src'); // Remove data-src attribute after loading
+                artwork.removeAttribute('data-src');
             }
         }
     });
@@ -224,21 +223,15 @@ function checkFade() {
     });
 }
 
-// Load images when the page is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    loadImagesInView();
-    checkFade();
-});
+    updateCartQuantity();
+    toggleMenu();
+    loadImagesInView(); // Load images when the page is loaded
+    checkFade(); // Apply fade-in animation
 
-// Load images when scrolling
-window.addEventListener('scroll', function() {
-    loadImagesInView();
-    checkFade();
+    window.addEventListener('resize', toggleMenu);
+    window.addEventListener('scroll', function() {
+        loadImagesInView();
+        checkFade();
+    });
 });
-
-// Load images when resizing the window
-window.addEventListener('resize', function() {
-    loadImagesInView();
-    checkFade();
-});
-// Initial check on page load
