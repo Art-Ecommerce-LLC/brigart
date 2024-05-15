@@ -221,7 +221,12 @@ a:visited {
     margin: 0px;
 }
 #price-quantity.quantity-input[type="text"][disabled] {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
     color:white !important;
+    -webkit-text-fill-color: currentColor;
 }
 .quantity-container button:hover {
     background-color: #0056b3;
