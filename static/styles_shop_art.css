@@ -220,7 +220,7 @@ a:visited {
     min-width: 65px;
     margin: 0px;
 }
-.quantity-input:disabled{
+.quantity-input[type="text"][disabled] {
     color:white;
 }
 .quantity-container button:hover {

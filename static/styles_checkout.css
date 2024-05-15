@@ -289,11 +289,15 @@ a:visited {
     width:1%;
     margin: 0px;
 }
+.quantity-input[type="text"][disabled] {
+    color:white;
+}
 .price-remove-container {
     display: flex;
     flex-direction: row; /* Keep the price and remove button in a row */
     margin-right:0; /* Add margin between quantity controls and price/remove */
 }
+
 .quantity-container button {
     padding: 2px 7px;
     background-color: #349ef5;
