@@ -220,13 +220,8 @@ a:visited {
     min-width: 65px;
     margin: 0px;
 }
-input[type="text"][disabled] {
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    color:white !important;
-    -webkit-text-fill-color: currentColor;
+input[readonly]:focus {
+    outline: none;
 }
 .quantity-container button:hover {
     background-color: #0056b3;
