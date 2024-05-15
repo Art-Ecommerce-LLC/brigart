@@ -204,6 +204,8 @@ a:visited {
     color: inherit;
     font-size: 16px;
     text-align: center;
+    text-decoration: solid;
+    text-decoration-color: white;
     background-color: transparent;
     flex: 1 1 0%;
     font-family: inherit;

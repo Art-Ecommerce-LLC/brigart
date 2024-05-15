@@ -175,6 +175,11 @@ a:visited {
     position: relative;
     z-index: 2; /* Increase z-index */
     box-shadow: none; /* Remove box-shadow */
+    /* Add vendor prefixes for mobile webkit browsers */
+    -webkit-appearance: none; /* Remove default styles in iOS Safari */
+    -moz-appearance: none;    /* Remove default styles in Firefox */
+    appearance: none;         /* Remove default styles in modern browsers */
+
 }
 .email-enter,
 .payment-info,
@@ -233,6 +238,9 @@ a:visited {
     display: flex;
     margin-bottom: 20px;
     width: 200px;
+}
+.title_container p {
+    margin-left:3px;
 }
 
 .content_cart{

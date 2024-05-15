@@ -280,25 +280,32 @@ function removeMaxQuantityErrorMessage() {
     }
 }
 
-async function updateCartQuantity(cart_quantity) {
-    if (cart_quantity !== 0) {
-        document.getElementById('cartQuantity').innerText = cart_quantity;
-        document.getElementById('mobileCartQuantity').innerText = cart_quantity;
-    } else {
-        document.getElementById('cartQuantity').innerText = '';
-        document.getElementById('mobileCartQuantity').innerText = '';
-        // Add a button right below h1 with id moreShop that leads to /shop_art_menu 
-        const moreShop = document.createElement('button');
-        moreShop.innerText = 'Continue Shopping';
-        moreShop.addEventListener('click', () => {
-            window.location.href = '/shop_art_menu';
-        });
-        moreShop.classList.add('more-shop-styles');
-        // put inside the shop-more div
-        document.querySelector('.shop-more').appendChild(moreShop);
+async function updateCartQuantity() {
+    try {
+        const response = await fetch('/get_cart_quantity');
+        const data = await response.json();
+        if (data.quantity !== 0) {
+            document.getElementById('cartQuantity').innerText = data.quantity;
+            document.getElementById('mobileCartQuantity').innerText = data.quantity;
+        } else {
+            document.getElementById('cartQuantity').innerText = '';
+            document.getElementById('mobileCartQuantity').innerText = '';
+            // Only create and add the "Continue Shopping" button once
+            if (!document.querySelector('.shop-more button')) {
+                const moreShop = document.createElement('button');
+                moreShop.innerText = 'Continue Shopping';
+                moreShop.addEventListener('click', () => {
+                    window.location.href = '/shop_art_menu';
+                });
+                moreShop.classList.add('more-shop-styles');
+                document.querySelector('.shop-more').appendChild(moreShop);
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
     }
-    return Promise.resolve(); // Ensure it returns a promise
 }
+
 function toggleDropdown() {
     const dropdown = document.querySelector('.mobile-dropdown');
     const content = document.querySelector('.content');
@@ -343,9 +350,12 @@ function toggleMenu() {
 
 // Initial toggle when the page loads
 document.addEventListener('DOMContentLoaded', function() {
-    updateCartQuantity();
-    toggleMenu();
-    document.getElementById('currentYear').innerText = new Date().getFullYear();
+    getCartQuantity().then(cartQuantity => {
+        updateCartQuantity(cartQuantity);
+        toggleMenu();
+        document.getElementById('currentYear').innerText = new Date().getFullYear();
+        updateTotalPrice();
+});
 });
 // Toggle the menu on window resize
 window.addEventListener('resize', toggleMenu);
