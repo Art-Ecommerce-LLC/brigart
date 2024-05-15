@@ -167,16 +167,20 @@ function displayTotalQuantityError(message) {
     // Scroll to the new message element
     errorMessageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
-function increaseQuantity(button) {
-    getCartQuantity().then(cartQuantity => {
+async function increaseQuantity(button) {
+    try {
+        // Wait for the cart quantity to be fetched
+        const cartQuantity = await getCartQuantity();
+
+        // Get the necessary DOM elements
         let quantityElement = button.parentElement.querySelector('.quantity-input');
         let quantityPrice = button.parentElement.parentElement.parentElement.querySelector('.price');
-        
+
+        // Parse the current quantity
         let currentQuantity = parseInt(quantityElement.value);
 
-
-
-        if (cartQuantity  >= 1000) {
+        // Check if the current cart quantity is at or exceeds the maximum limit
+        if (cartQuantity >= 1000) {
             // Display a message above the total price
             displayTotalQuantityError('The maximum quantity allowed is 1000.');
             return; // Exit the function early to prevent further execution
@@ -185,7 +189,7 @@ function increaseQuantity(button) {
         // Calculate the new quantity
         let newQuantity = currentQuantity + 1;
 
-        // Check if increasing the quantity will exceed 1000
+        // Check if increasing the quantity will exceed the maximum limit
         if (newQuantity > 1000) {
             // Display a message above the total price
             displayTotalQuantityError('The maximum quantity allowed is 1000.');
@@ -193,9 +197,7 @@ function increaseQuantity(button) {
         }
 
         // Update the UI with the new quantity
-        quantityElement.value = newQuantity;// Update the cart quantity
-        // update the value of the input field instead of inner text
-        
+        quantityElement.value = newQuantity;
         quantityPrice.innerText = '$' + newQuantity * 225;
 
         // Make the API call only if the new quantity is within the limit
@@ -210,19 +212,14 @@ function increaseQuantity(button) {
             body: JSON.stringify({ url: img_url, title1: img_title })
         };
 
-        fetch('/increase_quantity', requestOptions)
-            .then(response => {
+        const response = await fetch('/increase_quantity', requestOptions);
 
-                if (!response.ok) {
-                    return;
-                } else {
-                    updatePageValues(cartQuantity + 1);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        });
+        if (response.ok) {
+            updatePageValues(cartQuantity + 1);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
 }
 function updatePageValues(newQuantity) {
     updateTotalPrice();
