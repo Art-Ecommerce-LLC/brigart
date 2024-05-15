@@ -166,6 +166,9 @@ function displayTotalQuantityError(message) {
 }
 async function increaseQuantity(button) {
     try {
+        // Disable the button to prevent rapid clicks
+        button.disabled = true;
+
         // Wait for the cart quantity to be fetched
         const cartQuantity = await getCartQuantity();
 
@@ -178,9 +181,9 @@ async function increaseQuantity(button) {
 
         // Check if the current cart quantity is at or exceeds the maximum limit
         if (cartQuantity >= 1000) {
-            // Display a message above the total price
             displayTotalQuantityError('The maximum quantity allowed is 1000.');
-            return; // Exit the function early to prevent further execution
+            button.disabled = false; // Re-enable the button
+            return;
         }
 
         // Calculate the new quantity
@@ -188,16 +191,12 @@ async function increaseQuantity(button) {
 
         // Check if increasing the quantity will exceed the maximum limit
         if (newQuantity > 1000) {
-            // Display a message above the total price
             displayTotalQuantityError('The maximum quantity allowed is 1000.');
-            return; // Exit the function early to prevent further execution
+            button.disabled = false; // Re-enable the button
+            return;
         }
 
-        // Update the UI with the new quantity
-        quantityElement.value = newQuantity;
-        quantityPrice.innerText = '$' + newQuantity * 225;
-
-        // Make the API call only if the new quantity is within the limit
+        // Prepare the data for the API call
         let img_url = button.parentElement.parentElement.parentElement.querySelector('img').src;
         let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
 
@@ -212,25 +211,28 @@ async function increaseQuantity(button) {
         const response = await fetch('/increase_quantity', requestOptions);
 
         if (response.ok) {
-            await updateCartQuantity(cartQuantity + 1); // Await updateCartQuantity
-            updateTotalPrice(); // Update total price after updating cart quantity
-            // Remove the error message if it exists
+            // Update the UI with the new quantity only after the API call succeeds
+            quantityElement.value = newQuantity;
+            quantityPrice.innerText = '$' + newQuantity * 225;
+            await updateCartQuantity(cartQuantity + 1);
+            updateTotalPrice();
             removeMaxQuantityErrorMessage();
         }
+
+        // Re-enable the button
+        button.disabled = false;
     } catch (error) {
         console.error('Error:', error);
+        // Re-enable the button in case of error
+        button.disabled = false;
     }
-}
-function updatePageValues(newQuantity) {
-    
-    updateCartQuantity(newQuantity);
-    updateTotalPrice();
-    // Remove the error message if it exists
-    removeMaxQuantityErrorMessage();
 }
 
 async function decreaseQuantity(button) {
     try {
+        // Disable the button to prevent rapid clicks
+        button.disabled = true;
+
         const cartQuantity = await getCartQuantity(); // Fetch the cart quantity
         let quantityElement = button.parentElement.querySelector('.quantity-input');
         let quantityPrice = button.parentElement.parentElement.querySelector('.price');
@@ -238,8 +240,9 @@ async function decreaseQuantity(button) {
         let currentQuantity = parseInt(quantityElement.value);
 
         if (currentQuantity > 1) {
-            quantityElement.value = currentQuantity - 1;
-            quantityPrice.innerText = '$' + (currentQuantity - 1) * 225;
+            let newQuantity = currentQuantity - 1;
+
+            // Prepare the data for the API call
             let img_url = button.parentElement.parentElement.parentElement.querySelector('img').src;
             let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
 
@@ -248,23 +251,32 @@ async function decreaseQuantity(button) {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ url: img_url, title1: img_title})
+                body: JSON.stringify({ url: img_url, title1: img_title })
             };
 
             const response = await fetch('/decrease_quantity', requestOptions);
 
             if (response.ok) {
-                await updateCartQuantity(cartQuantity - 1); // Await updateCartQuantity
-                updateTotalPrice(); // Update total price after updating cart quantity
-                removeMaxQuantityErrorMessage(); // Remove the error message here
+                // Update the UI with the new quantity only after the API call succeeds
+                quantityElement.value = newQuantity;
+                quantityPrice.innerText = '$' + newQuantity * 225;
+                await updateCartQuantity(cartQuantity - 1);
+                updateTotalPrice();
+                removeMaxQuantityErrorMessage();
             }
         } else {
-            await removeItem(button); // Await removeItem
+            await removeItem(button);
         }
+
+        // Re-enable the button
+        button.disabled = false;
     } catch (error) {
         console.error('Error:', error);
+        // Re-enable the button in case of error
+        button.disabled = false;
     }
 }
+
 
 async function removeItem(button) {
     try {
