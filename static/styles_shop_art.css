@@ -220,8 +220,8 @@ a:visited {
     min-width: 65px;
     margin: 0px;
 }
-.quantity-input[type="text"][disabled] {
-    color:white;
+#price-quantity.quantity-input[type="text"][disabled] {
+    color:white !important;
 }
 .quantity-container button:hover {
     background-color: #0056b3;
