@@ -99,17 +99,14 @@ function isValidEmail(email) {
 }
 
 // Updates the UI on the page to reflect the cart quantity
-function updateCartQuantity(cart_quantity) {
+async function updateCartQuantity(cart_quantity) {
     if (cart_quantity !== 0) {
-        
         document.getElementById('cartQuantity').innerText = cart_quantity;
         document.getElementById('mobileCartQuantity').innerText = cart_quantity;
-
-    }
-    else {
+    } else {
         document.getElementById('cartQuantity').innerText = '';
         document.getElementById('mobileCartQuantity').innerText = '';
-        // Add a button right below h1 with id more shopp that leads to /shop_art_menu 
+        // Add a button right below h1 with id moreShop that leads to /shop_art_menu 
         const moreShop = document.createElement('button');
         moreShop.innerText = 'Continue Shopping';
         moreShop.addEventListener('click', () => {
@@ -118,8 +115,8 @@ function updateCartQuantity(cart_quantity) {
         moreShop.classList.add('more-shop-styles');
         // put inside the shop-more div
         document.querySelector('.shop-more').appendChild(moreShop);
-            
     }
+    return Promise.resolve(); // Ensure it returns a promise
 }
 
 function updateTotalPrice() {
@@ -215,7 +212,10 @@ async function increaseQuantity(button) {
         const response = await fetch('/increase_quantity', requestOptions);
 
         if (response.ok) {
-            updatePageValues(cartQuantity + 1);
+            await updateCartQuantity(cartQuantity + 1); // Await updateCartQuantity
+            updateTotalPrice(); // Update total price after updating cart quantity
+            // Remove the error message if it exists
+            removeMaxQuantityErrorMessage();
         }
     } catch (error) {
         console.error('Error:', error);
@@ -229,8 +229,9 @@ function updatePageValues(newQuantity) {
     removeMaxQuantityErrorMessage();
 }
 
-function decreaseQuantity(button) {
-    getCartQuantity().then(cartQuantity => { // Fetch the cart quantity
+async function decreaseQuantity(button) {
+    try {
+        const cartQuantity = await getCartQuantity(); // Fetch the cart quantity
         let quantityElement = button.parentElement.querySelector('.quantity-input');
         let quantityPrice = button.parentElement.parentElement.querySelector('.price');
 
@@ -250,31 +251,24 @@ function decreaseQuantity(button) {
                 body: JSON.stringify({ url: img_url, title1: img_title})
             };
 
-            fetch('/decrease_quantity', requestOptions)
-            .then(response => {
-                if (!response.ok) {
-                    console.error('Failed to decrease quantity');
-                }
-                else {
-                    updatePageValues(cartQuantity - 1);
-                }
-                
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        
+            const response = await fetch('/decrease_quantity', requestOptions);
+
+            if (response.ok) {
+                await updateCartQuantity(cartQuantity - 1); // Await updateCartQuantity
+                updateTotalPrice(); // Update total price after updating cart quantity
+                removeMaxQuantityErrorMessage(); // Remove the error message here
+            }
         } else {
-            removeItem(button);
-            // Remove the error message when quantity reaches 0
-            removeMaxQuantityErrorMessage(); // Remove the error message here as well
+            await removeItem(button); // Await removeItem
         }
-    });
+    } catch (error) {
+        console.error('Error:', error);
+    }
 }
 
-function removeItem(button) {
-    getCartQuantity().then(cartQuantity => {
-        // Remove the line element
+async function removeItem(button) {
+    try {
+        const cartQuantity = await getCartQuantity(); // Fetch the cart quantity
 
         // Remove the item from the UI
         button.parentElement.parentElement.parentElement.remove();
@@ -288,27 +282,21 @@ function removeItem(button) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ url: img_url, title1 : img_title})
+            body: JSON.stringify({ url: img_url, title1: img_title })
         };
 
-        fetch('/delete_item', requestOptions)
-        .then(response => {
-            if (!response.ok) {
-                console.error('Failed to delete item');
-            }
-            else {
-                updateTotalPrice();
-                updateCartQuantity(cartQuantity);
+        const response = await fetch('/delete_item', requestOptions);
 
-                // Remove the error message if it exists
-                removeMaxQuantityErrorMessage(); // Remove the error message here
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
-    });
+        if (response.ok) {
+            await updateCartQuantity(cartQuantity - 1); // Await updateCartQuantity
+            updateTotalPrice(); // Update total price after updating cart quantity
+            removeMaxQuantityErrorMessage(); // Remove the error message here
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
 }
+
 
 //Create a second toggle for the mobile menu to be a dropdown menu when hamburger icon is clicked
 function toggleDropdown() {
