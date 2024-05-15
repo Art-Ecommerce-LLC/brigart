@@ -194,19 +194,11 @@ function loadImagesInView() {
         const windowHeight = window.innerHeight;
 
         if (rect.top < windowHeight && rect.bottom >= 0) {
+            // Load the image source if it's within the viewport
             const imgSrc = artwork.getAttribute('data-src');
-            if (imgSrc && !artwork.classList.contains('loaded')) {
-                artwork.onload = function() {
-                    artwork.classList.add('loaded');
-                    const delay = leftDistance * 0.6; // Adjust the multiplier for the desired delay
-
-                    // Add a timeout to apply the fade-in class with delay
-                    setTimeout(() => {
-                        artwork.classList.add('fade-in');
-                    }, delay); // Add fade-in class after the image is loaded
-                };
+            if (imgSrc) {
                 artwork.setAttribute('src', imgSrc);
-                artwork.removeAttribute('data-src');
+                artwork.removeAttribute('data-src'); // Remove data-src attribute after loading
             }
         }
     });
@@ -222,7 +214,7 @@ function checkFade() {
 
         if (rect.top < windowHeight && rect.bottom >= 0) {
             // Calculate delay based on the distance from the left edge
-            const delay = leftDistance * 0.6; // Adjust the multiplier for the desired delay
+            const delay = leftDistance * 0.4; // Adjust the multiplier for the desired delay
 
             // Add a timeout to apply the fade-in class with delay
             setTimeout(() => {
@@ -232,14 +224,25 @@ function checkFade() {
     });
 }
 
+// Load images when the page is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    updateCartQuantity();
-    toggleMenu();
-    loadImagesInView(); // Load images when the page is loaded
-
-    window.addEventListener('resize', toggleMenu);
-    window.addEventListener('scroll', function() {
-        loadImagesInView();
-        checkFade();
-    });
+    loadImagesInView();
 });
+
+document.addEventListener('load', function() {
+    loadImagesInView();
+    checkFade();
+});
+
+// Load images when scrolling
+window.addEventListener('scroll', function() {
+    loadImagesInView();
+    checkFade();
+});
+
+// Load images when resizing the window
+window.addEventListener('resize', function() {
+    loadImagesInView();
+    checkFade();
+});
+// Initial check on page load
