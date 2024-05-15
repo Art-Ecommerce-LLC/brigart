@@ -220,7 +220,7 @@ a:visited {
     min-width: 65px;
     margin: 0px;
 }
-#price-quantity.quantity-input[type="text"][disabled] {
+input[type="text"][disabled] {
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
