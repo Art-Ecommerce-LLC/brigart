@@ -29,6 +29,9 @@
     margin-bottom: 20px;
 }
 
+input[readonly]:focus {
+    outline: none;
+}
 
 
 .email-enter input[type="email"]:focus,
