@@ -170,6 +170,7 @@ a:visited {
     color: white;
     flex-wrap: wrap;
     margin-top:5px;
+    margin-bottom:5px;
     max-height:40px;
     margin-left:auto;
 
@@ -177,8 +178,8 @@ a:visited {
 .quantity-controls {
     display: flex;
     flex-direction: row;
-    font-size: 20px;
-    margin-right: 50px;
+    font-size: 15px;
+    margin-right: 0px;
     margin-bottom:150px;
     margin-left:auto;
 }
@@ -190,7 +191,6 @@ a:visited {
 .quantity-container button {
     background: transparent;
     border: medium;
-    padding: 0px;
     color: inherit;
     position: relative;
     cursor: pointer;
@@ -199,6 +199,7 @@ a:visited {
     border-radius: 5px;
     padding: 10px 20px;
     background-color: #349ef5;
+    font-size: 15px;
 }
 .quantity-input {
     color: inherit;
@@ -492,6 +493,6 @@ a:visited {
     .price{
         margin-left:auto;
         width: auto;
-        margin-right:3px;
+        margin-right:5px;
     }
 }
