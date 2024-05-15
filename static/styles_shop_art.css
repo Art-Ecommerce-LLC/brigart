@@ -219,6 +219,9 @@ a:visited {
     min-width: 65px;
     margin: 0px;
 }
+.quantity-input:disabled{
+    color:white;
+}
 .quantity-container button:hover {
     background-color: #0056b3;
 }
