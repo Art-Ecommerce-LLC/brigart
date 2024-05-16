@@ -119,6 +119,7 @@ function updateCartQuantity() {
 //Create a second toggle for the mobile menu to be a dropdown menu when hamburger icon is clicked
 function toggleDropdown() {
     const dropdown = document.querySelector('.mobile-dropdown');
+    const glance_h1 = document.querySelector('.glance_inner h1');
     const content = document.querySelector('.content');
     const footer = document.querySelector('.footer');
     const header = document.querySelector('.header');
@@ -129,12 +130,16 @@ function toggleDropdown() {
     if (dropdown.classList.contains('show')) {
         document.body.style.overflow = 'hidden';
         header.style.overflowY = 'hidden';
+        glance_h1.style.display = 'none';
         content.classList.add('hide');
+        footer.classList.add('hide');
 
     } else {
         header.style.overflowY = 'auto';
         document.body.style.overflow = 'auto';
+        glance_h1.style.display = 'block';
         content.classList.remove('hide');
+        footer.classList.remove('hide');
     }
 }
 
@@ -144,17 +149,20 @@ function toggleMenu() {
     const content = document.querySelector('.content');
     const footer = document.querySelector('.footer');
     const dropdown = document.querySelector('.mobile-dropdown');
+    const glance_h1 = document.querySelector('.glance_inner h1');
     // Toggle the mobile menu
     if (window.innerWidth <= 827) {
         navbar.style.display = 'none';
         mobileMenu.style.display = 'flex';
         if (dropdown.classList.contains('show')) {
             document.body.style.overflow = 'hidden';
+            glance_h1.style.display = 'none';
             content.classList.add('hide');
             footer.classList.add('hide');
         }
         else {
             document.body.style.overflow = 'auto';
+            glance_h1.style.display = 'block';
             content.classList.remove('hide');
             footer.classList.remove('hide');
         }
@@ -163,6 +171,7 @@ function toggleMenu() {
         navbar.style.display = 'flex';
         mobileMenu.style.display = 'none';
         document.body.style.overflow = 'auto';
+        glance_h1.style.display = 'block';
         content.classList.remove('hide');
         footer.classList.remove('hide');
     }
