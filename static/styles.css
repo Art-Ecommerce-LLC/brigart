@@ -101,7 +101,6 @@ body {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s, opacity 0.5s; /* Add transition for opacity */
     opacity: 0; /* Set initial opacity to 0 */
-    position: relative;
     top: 50px;
     overflow-x: hidden; /* Prevent horizontal scrolling */
     object-fit: fill;
