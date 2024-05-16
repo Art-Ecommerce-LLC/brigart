@@ -123,18 +123,18 @@ function toggleDropdown() {
     const footer = document.querySelector('.footer');
     const header = document.querySelector('.header');
     // Toggle the 'show' class to control visibility
-    dropdown.classList.toggle('show');
-    content.classList.toggle('hide')
-    content.classList.toggle('hide') // Add or remove 'hide' class to hide or show the content
+    dropdown.classList.toggle('show')
 
     // Lock the page from scrolling when the dropdown is open
     if (dropdown.classList.contains('show')) {
         document.body.style.overflow = 'hidden';
         header.style.overflowY = 'hidden';
+        content.classList.add('hide');
 
     } else {
         header.style.overflowY = 'auto';
         document.body.style.overflow = 'auto';
+        content.classList.remove('hide');
     }
 }
 
@@ -148,11 +148,15 @@ function toggleMenu() {
     if (window.innerWidth <= 827) {
         navbar.style.display = 'none';
         mobileMenu.style.display = 'flex';
-        document.body.style.overflow = 'auto';
         if (dropdown.classList.contains('show')) {
             document.body.style.overflow = 'hidden';
             content.classList.add('hide');
             footer.classList.add('hide');
+        }
+        else {
+            document.body.style.overflow = 'auto';
+            content.classList.remove('hide');
+            footer.classList.remove('hide');
         }
         
     } else {
