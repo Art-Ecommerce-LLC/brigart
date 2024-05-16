@@ -6,7 +6,7 @@ import dotenv
 import os
 import requests
 from fastapi.staticfiles import StaticFiles
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, File, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, EmailStr, Field
@@ -18,7 +18,9 @@ import re
 from smartystreets_python_sdk import SharedCredentials, StaticCredentials, exceptions, ClientBuilder
 from smartystreets_python_sdk.us_street import Lookup as StreetLookup
 from smartystreets_python_sdk.us_street.match_type import MatchType
-
+from typing import Annotated, List
+import tempfile
+import shutil
 
 urllib3.disable_warnings()
 
@@ -29,11 +31,12 @@ api_key_header = APIKeyHeader(name = 'X-API_KEY')
 
 # Load NocDB env variables from .env file
 dotenv.load_dotenv()
-nocodb_key_url = str(os.getenv("key_url"))
-nocodb_img_url = str(os.getenv("img_url"))
-nocodb_icon_url = str(os.getenv("icon_url"))
-xc_auth = str(os.getenv("xc_auth"))
-nocodb_path = str(os.getenv("nocodb_path"))
+nocodb_key_url = os.getenv("key_url")
+nocodb_img_url = os.getenv("img_url")
+nocodb_icon_url = os.getenv("icon_url")
+xc_auth = os.getenv("xc_auth")
+nocodb_path = os.getenv("nocodb_path")
+nocodb_img_update_url = os.getenv("nocodb_img_update_url")
 
 # Define Security Scheme
 def get_api_key(api_key_header: str = Security(api_key_header)) -> str:
@@ -42,7 +45,16 @@ def get_api_key(api_key_header: str = Security(api_key_header)) -> str:
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid or missing API Key",
+
+        
     )
+def get_nocodb_data():
+    headers = {
+        'xc-token': xc_auth
+    }
+    response = requests.get(nocodb_img_url, headers=headers)
+    return response.text
+
 # Get nocodb data from their REST API
 def get_nocodb_key_data():
     headers = {
@@ -168,13 +180,9 @@ def refresh_shop_cart(request: Request):
                 each_url["img_url"] = host_string
                 request.session["img_quantity_list"] = img_quant_list
 
-
-
 class Url(BaseModel):
     url: str
     title1: str
-
-    
 
 class UrlQuantity(BaseModel):
     url: str
@@ -674,7 +682,98 @@ async def process_checkout(request: Request, order_info: OrderInfo):
 
     # Validate all inputs
 
+# Take in an image and apply the watermark, swap that image with the image intended for swap
+@app.post("/swap_image")
+async def swap_image(title: str, new_title: str, file: UploadFile):
+    # Get the record ID by matching the title
+    nocodb_upload_url = f"{nocodb_path}api/v2/storage/upload"
+    response_object = json.loads(get_nocodb_data())  # Assume this function gets the data correctly
+    print(title)
 
+    id = None
+    for item in response_object['list']:
+        if item['img'] and len(item['img']) > 0:
+            title_check = item["img_label"].replace("+", " ").lower()
+            if title.lower() in title_check:
+                id = item["Id"]
+                break
+
+    if not id:
+        return {"message": "Image not found"}
+
+    # Upload new image
+    temp_file_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".PNG", delete=False) as temp_file:
+            temp_file_path = temp_file.name
+            temp_file.write(await file.read())
+            temp_file.flush()
+
+        with open(temp_file_path, "rb") as temp_file:
+            files_to_upload = {
+                "file": temp_file
+            }
+            headers = {
+                'xc-token': xc_auth
+            }
+            path = os.path.basename(temp_file.name)
+            print(path)
+            upload_response = requests.post(nocodb_upload_url, headers=headers, files=files_to_upload, params={"path": path})
+            print(upload_response)
+            if upload_response.status_code == 200:
+                data = upload_response.json()
+                # Assume data is a list of dictionaries
+                new_file_info = data[0]  # Access the first item in the list
+                new_file_path = new_file_info.get('path')
+                new_signed_path = new_file_info.get('signedPath')
+                print(new_file_info)
+            else:
+                return {"message": f"Failed to upload file: {upload_response.status_code} - {upload_response.text}"}
+
+            # Update record with new image path
+            
+            new_title = new_title.replace(" ", "+")
+            title = "watermarked_" + new_title + ".PNG" + ".png"
+            update_data = {
+                "Id": id,
+                "img_label": new_title,
+                "img": [
+                    {
+                        "title": title,
+                        "mimetype": file.content_type,
+                        "path": new_file_path,
+                        "signedPath": new_signed_path
+                    }
+                ]
+            }
+            print(json.dumps(update_data, indent=4))
+            update_headers = {
+                'accept': 'application/json',
+                'xc-token': xc_auth,
+                'Content-Type': 'application/json'
+            }
+            data = json.dumps(update_data)
+            update_response = requests.patch(nocodb_img_update_url, headers=update_headers, data=data)
+
+            if update_response.status_code == 200:
+                return {"message": "Image swapped successfully"}
+            else:
+                return {"message": f"Failed to update record: {update_response.status_code} - {update_response.text}"}
+    except Exception as e:
+        print(e)
+        return {"message": "Image not swapped successfully"}
+    finally:
+        if temp_file_path and os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+
+# @app.get("/portal")
+# async def portal(request: Request):
+#     return {"message": "Welcome to the portal"}
+# # Take in an image and apply the watermark, then add to the img database
+# @app.post("/add_image")
+# async def add_image(request: Request, title, files: Annotated[list[bytes], File(description="Multiple files as bytes")]):
+#     # Put the image in the database
+#     return {"message": "Image added successfully"}
 
 
     
