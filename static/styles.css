@@ -92,7 +92,7 @@ body {
     transform: translateX(0); 
 }
 .content.hide {
-    opacity: 0;
+    display: none;
 }
 
 .artwork {
@@ -172,6 +172,10 @@ body {
     color: white;
     text-align: center;
     z-index: 999;
+}
+.footer.hide{
+    display:none;
+
 }
 .contact_form {
     align-items: flex-start;
@@ -325,7 +329,7 @@ body {
     }
     
     .mobile-dropdown a:hover {
-        color: #f9a825;
+        color: #349ef5;
         text-decoration: underline;
     }
     
