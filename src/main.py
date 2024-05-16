@@ -6,7 +6,7 @@ import dotenv
 import os
 import requests
 from fastapi.staticfiles import StaticFiles
-from fastapi import FastAPI, Request, File, UploadFile
+from fastapi import FastAPI, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, EmailStr, Field
