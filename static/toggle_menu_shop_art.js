@@ -333,7 +333,6 @@ function toggleDropdown() {
     const dropdown = document.querySelector('.mobile-dropdown');
     const content = document.querySelector('.content');
     const footer = document.querySelector('.footer');
-    const body = document.querySelector('body');
     // Toggle the 'show' class to control visibility
     dropdown.classList.toggle('show');
     content.classList.toggle('hide');
@@ -342,10 +341,8 @@ function toggleDropdown() {
     // Lock the page from scrolling when the dropdown is open
     if (dropdown.classList.contains('show')) {
         document.body.style.overflow = 'hidden';
-        body.style.overflowY = 'hidden';
     } else {
         document.body.style.overflow = 'auto';
-        body.style.overflowY = 'auto';
     }
 }
 

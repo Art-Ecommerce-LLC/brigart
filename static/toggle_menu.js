@@ -120,25 +120,16 @@ function toggleDropdown() {
     const dropdown = document.querySelector('.mobile-dropdown');
     const glance_h1 = document.querySelector('.glance_inner h1');
     const content = document.querySelector('.content');
-    const header = document.querySelector('.header');
-    const body = document.querySelector('body');
-    const footer = document.querySelector('.footer');
-    // If it contains show add an overflow-y hidden to the body
+
     // Toggle the 'show' class to control visibility
     dropdown.classList.toggle('show');
-    content.classList.toggle('hide');
-    footer.classList.toggle('hide'); // Add or remove 'hide' class to hide or show the content
     // Lock the page from scrolling when the dropdown is open
     if (dropdown.classList.contains('show')) {
-        header.style.overflow = 'hidden';
         document.body.style.overflow = 'hidden';
-        body.style.overflowY = 'hidden';
         glance_h1.style.display = 'none'
         content.classList.add('hide');
     } else {
-        header.style.overflow = 'auto';
         document.body.style.overflow = 'auto';
-        body.style.overflowY = 'auto';
         glance_h1.style.display = 'block'
         content.classList.remove('hide');
     }
@@ -150,7 +141,6 @@ function toggleMenu() {
     const dropdown = document.querySelector('.mobile-dropdown')
     const glance_h1 = document.querySelector('.glance_inner h1');
     const content = document.querySelector('.content');
-    const header = document.querySelector('.header');
 
     // Toggle the 'show' class to control visibility
 
@@ -158,21 +148,24 @@ function toggleMenu() {
     if (window.innerWidth <= 827) {
         navbar.style.display = 'none';
         mobileMenu.style.display = 'flex';
-        document.body.style.overflow = 'auto';
         if (dropdown.classList.contains('show')) {
+            document.body.style.overflow = 'hidden';
             glance_h1.style.display = 'none';
             content.classList.add('hide');
             
+        }
+        else {
+            document.body.style.overflow = 'auto';
+            glance_h1.style.display = 'block';
+            content.classList.remove('hide');
         }
 
     } else {
         navbar.style.display = 'flex';
         mobileMenu.style.display = 'none';
         document.body.style.overflow = 'auto';
-        header.style.overflow = 'auto';
         glance_h1.style.display = 'block'
         content.classList.remove('hide');
-        footer.classList.remove('hide');
     }
 
 
