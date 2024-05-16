@@ -129,11 +129,11 @@ function toggleDropdown() {
     if (dropdown.classList.contains('show')) {
         document.body.style.overflow = 'hidden';
         glance_h1.style.display = 'none'
-        content.classList.add('hide');
     } else {
         document.body.style.overflow = 'auto';
         glance_h1.style.display = 'block'
         content.classList.remove('hide');
+        footer.classList.remove('hide');
     }
 
 }

@@ -131,6 +131,8 @@ function toggleDropdown() {
         document.body.style.overflow = 'hidden';
     } else {
         document.body.style.overflow = 'auto';
+        content.classList.remove('hide');
+        footer.classList.remove('hide');
     }
 }
 
