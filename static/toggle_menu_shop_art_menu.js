@@ -123,9 +123,7 @@ function toggleDropdown() {
     const footer = document.querySelector('.footer');
     const header = document.querySelector('.header');
     // Toggle the 'show' class to control visibility
-    dropdown.classList.toggle('show');
-    content.classList.toggle('hide');
-    footer.classList.toggle('hide'); // Add or remove 'hide' class to hide or show the content
+    dropdown.classList.toggle('show'); // Add or remove 'hide' class to hide or show the content
 
     // Lock the page from scrolling when the dropdown is open
     if (dropdown.classList.contains('show')) {
@@ -153,6 +151,7 @@ function toggleMenu() {
         mobileMenu.style.display = 'flex';
         document.body.style.overflow = 'auto';
         if (dropdown.classList.contains('show')) {
+            document.body.style.overflow = 'hidden';
             content.classList.add('hide');
             footer.classList.add('hide');
         }
