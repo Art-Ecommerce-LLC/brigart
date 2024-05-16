@@ -123,19 +123,18 @@ function toggleDropdown() {
     const footer = document.querySelector('.footer');
     const header = document.querySelector('.header');
     // Toggle the 'show' class to control visibility
-    dropdown.classList.toggle('show'); // Add or remove 'hide' class to hide or show the content
+    dropdown.classList.toggle('show');
+    content.classList.toggle('hide')
+    content.classList.toggle('hide') // Add or remove 'hide' class to hide or show the content
 
     // Lock the page from scrolling when the dropdown is open
     if (dropdown.classList.contains('show')) {
         document.body.style.overflow = 'hidden';
         header.style.overflowY = 'hidden';
-        content.classList.add('hide');
-        footer.classList.add('hide');
+
     } else {
         header.style.overflowY = 'auto';
         document.body.style.overflow = 'auto';
-        footer.classList.remove('hide');
-        content.classList.remove('hide');
     }
 }
 
