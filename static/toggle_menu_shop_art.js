@@ -1,6 +1,11 @@
 // Returns cart quantity from python backend which takes the cookies and returns the total quantity
-function getCartQuantity() {
-    return fetch('/get_cart_quantity') // Assuming this endpoint returns the total quantity
+function setButtonsState(disabled) {
+    const buttons = document.querySelectorAll('.increase-quantity, .decrease-quantity, .remove-item'); // Adjust the selector to match your button classes
+    buttons.forEach(button => button.disabled = disabled);
+}
+
+async function getCartQuantity() {
+    return fetch('/get_cart_quantity')
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -8,11 +13,11 @@ function getCartQuantity() {
             return response.json();
         })
         .then(data => {
-            return data.quantity; // Assuming the response has a 'quantity' property
+            return data.quantity;
         })
         .catch(error => {
             console.error('Error fetching cart quantity:', error);
-            return 0; // Default to 0 in case of error
+            return 0;
         });
 }
 
@@ -167,7 +172,7 @@ function displayTotalQuantityError(message) {
 async function increaseQuantity(button) {
     try {
         // Disable the button to prevent rapid clicks
-        button.disabled = true;
+        setButtonsState(true);
 
         // Wait for the cart quantity to be fetched
         const cartQuantity = await getCartQuantity();
@@ -182,7 +187,7 @@ async function increaseQuantity(button) {
         // Check if the current cart quantity is at or exceeds the maximum limit
         if (cartQuantity >= 1000) {
             displayTotalQuantityError('The maximum quantity allowed is 1000.');
-            button.disabled = false; // Re-enable the button
+            setButtonsState(false); // Re-enable the button
             return;
         }
 
@@ -192,7 +197,7 @@ async function increaseQuantity(button) {
         // Check if increasing the quantity will exceed the maximum limit
         if (newQuantity > 1000) {
             displayTotalQuantityError('The maximum quantity allowed is 1000.');
-            button.disabled = false; // Re-enable the button
+            setButtonsState(false); // Re-enable the button
             return;
         }
 
@@ -220,18 +225,18 @@ async function increaseQuantity(button) {
         }
 
         // Re-enable the button
-        button.disabled = false;
+        setButtonsState(false);
     } catch (error) {
         console.error('Error:', error);
         // Re-enable the button in case of error
-        button.disabled = false;
+        setButtonsState(false);
     }
 }
 
 async function decreaseQuantity(button) {
     try {
         // Disable the button to prevent rapid clicks
-        button.disabled = true;
+        setButtonsState(true);
 
         const cartQuantity = await getCartQuantity(); // Fetch the cart quantity
         let quantityElement = button.parentElement.querySelector('.quantity-input');
@@ -269,17 +274,19 @@ async function decreaseQuantity(button) {
         }
 
         // Re-enable the button
-        button.disabled = false;
+        setButtonsState(false);
     } catch (error) {
         console.error('Error:', error);
         // Re-enable the button in case of error
-        button.disabled = false;
+        setButtonsState(false);
     }
 }
 
 
 async function removeItem(button) {
     try {
+        setButtonsState(true); // Disable the buttons to prevent rapid clicks
+
         const cartQuantity = await getCartQuantity(); // Fetch the cart quantity
 
         // Remove the item from the UI
@@ -321,8 +328,10 @@ async function removeItem(button) {
                 moreShopButton.remove();
             }
         }
+        setButtonsState(false); // Re-enable the buttons
     } catch (error) {
         console.error('Error:', error);
+        setButtonsState(false); // Re-enable the buttons in case of error
     }
 }
 

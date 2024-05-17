@@ -171,6 +171,7 @@ function toggleMenu() {
         document.body.style.overflow = 'auto';
         glance_h1.style.display = 'block'
         content.classList.remove('hide');
+        footer.classList.remove('hide');
     }
 
 
