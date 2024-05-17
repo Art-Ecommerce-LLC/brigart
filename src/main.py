@@ -274,18 +274,28 @@ async def shop_img_url(request: Request, url: Url):
     else:
         raise(HTTPException(status_code=400, detail="Invalid URL in Shop Request"))
 
-@app.get("/shop", response_class=HTMLResponse)
-async def shop(request: Request):
+@app.get("/shop/{title}", response_class=HTMLResponse)
+async def shop(request: Request, title):
  
-    img_url = request.session.get("img_url")
-    img_title = request.session.get("title")
+    
     icons = get_nocodb_icon_data()
     # Refresh the shopping cart because IMG URls change
-
+    print(title)
+    # Find the img url associate with the title and store both in the session
+    nocodb_data = get_nocodb_data()
+    loaded_nocodb_data = json.loads(nocodb_data)
+    for item in loaded_nocodb_data['list']:
+        if item['img_label'] == title:
+            db_path = item['img'][0]['signedPath']
+            url_path = f"{http}://" + f"{site_host}/" + db_path
+            request.session["img_url"] = url_path
+            request.session["title"] = title.replace("+", " ")
 
     shopping_cart_url = nocodb_path + icons[0]
     hamburger_menu_url = nocodb_path + icons[1]
     brig_logo_url = nocodb_path + icons[2]
+    img_url = request.session.get("img_url")
+    img_title = request.session.get("title")
 
     context = {
         "img_url": img_url, 
@@ -322,8 +332,6 @@ async def shop_art_url(request: Request, url_quant: UrlQuantity):
             "title": title
         }
 
-        
-        
         if img_quantity_list is None or []:
             img_quantity_list = []
             img_quantity_list.append(quant_img_dict)

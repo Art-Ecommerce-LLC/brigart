@@ -182,7 +182,7 @@ a:visited {
     -webkit-appearance: none; /* Remove default styles in iOS Safari */
     -moz-appearance: none;    /* Remove default styles in Firefox */
     appearance: none;         /* Remove default styles in modern browsers */
-
+    border-radius: 5px;
 }
 .email-enter,
 .payment-info,
@@ -345,7 +345,7 @@ a:visited {
     font-size: 27px;
     padding: 0 1px;
 }
-.remove-item {
+.remove-item, .increase-quantity, .decrease-quantity{
     padding: 5px 6px;
     background-color: #349ef5; /* Example color for remove button */
     color: white;

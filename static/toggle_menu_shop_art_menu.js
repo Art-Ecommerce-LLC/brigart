@@ -80,28 +80,11 @@ function isValidEmail(email) {
     return emailRegex.test(email);
 }
 
-function submitForm(img_url, title,  method) {
-    let requestOptions = {
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    };
-    
-    if (method === 'POST') {
-        requestOptions.method = 'POST';
-        requestOptions.body = JSON.stringify({ url: img_url, title1 : title });
-    }
-
-    fetch('/shop', requestOptions)
-    .then(response => response.json())
-    .then(data => {
-        console.log(data);
-        // Once the POST request is successful, you can redirect to the GET endpoint
-        window.location.href = '/shop';
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
+function submitForm(title) {
+    // Redirect to the GET endpoint with the title as a path parameter
+    // replace the spaces with pluses
+    title = title.replace(/ /g, '+');
+    window.location.href = '/shop/' + title;
 }
 function updateCartQuantity() {
     fetch('/get_cart_quantity') // Assuming you have an endpoint to get cart quantity

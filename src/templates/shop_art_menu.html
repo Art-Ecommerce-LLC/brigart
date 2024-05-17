@@ -43,7 +43,7 @@
 <form method="post" id="myForm">
     <div class="content">
         {% for title, temp_var in artwork_data %}
-        <a class = "underline fade-in-link" href="#" onclick="submitForm('{{ temp_var }}','{{ title }}','POST'); return false;">
+        <a class = "underline fade-in-link" href="#" onclick="submitForm('{{ title }}','GET'); return false;">
             <img src="{{ temp_var }}" class="artwork" alt="Artwork">
             <span class="artwork-name" >{{ title }}</span>
             <span class="artwork-price" >$225.00</span>
