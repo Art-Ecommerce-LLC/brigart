@@ -33,7 +33,20 @@ input[readonly]:focus {
     outline: none;
 }
 
-
+.more-shop-styles {
+    background-color: #349ef5;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    padding: 30px 40px 30px 40px;
+    font-size: 20px;
+    transition: background-color 0.3s;
+    text-decoration: none; /* Remove underline from anchor tag */
+}
+.more-shop-styles:hover {
+    background-color: #0056b3;
+}
 .email-enter input[type="email"]:focus,
 .payment-info input[type="text"]:focus,
 .billing-address input[type="text"]:focus {
