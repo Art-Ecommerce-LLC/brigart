@@ -1,6 +1,10 @@
 
-function getCartQuantity() {
-    return fetch('/get_cart_quantity') // Assuming this endpoint returns the total quantity
+function setButtonsState(disabled) {
+    const buttons = document.querySelectorAll('.increase-quantity, .decrease-quantity, .remove-item'); // Adjust the selector to match your button classes
+    buttons.forEach(button => button.disabled = disabled);
+}
+async function getCartQuantity() {
+    return fetch('/get_cart_quantity')
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -8,25 +12,31 @@ function getCartQuantity() {
             return response.json();
         })
         .then(data => {
-            return data.quantity; // Assuming the response has a 'quantity' property
+            return data.quantity;
         })
         .catch(error => {
             console.error('Error fetching cart quantity:', error);
-            return 0; // Default to 0 in case of error
+            return 0;
         });
 }
-function updateCartQuantity() {
-    fetch('/get_cart_quantity') // Assuming you have an endpoint to get cart quantity
-        .then(response => response.json())
-        .then(data => {
-            if (data.quantity !== 0) {
-                document.getElementById('cartQuantity').innerText = data.quantity;
-                document.getElementById('mobileCartQuantity').innerText = data.quantity;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
+async function updateCartQuantity(cart_quantity) {
+    if (cart_quantity !== 0) {
+        document.getElementById('cartQuantity').innerText = cart_quantity;
+        document.getElementById('mobileCartQuantity').innerText = cart_quantity;
+    } else {
+        document.getElementById('cartQuantity').innerText = '';
+        document.getElementById('mobileCartQuantity').innerText = '';
+        // Add a button right below h1 with id moreShop that leads to /shop_art_menu 
+        const moreShop = document.createElement('button');
+        moreShop.innerText = 'Continue Shopping';
+        moreShop.addEventListener('click', () => {
+            window.location.href = '/shop_art_menu';
         });
+        moreShop.classList.add('more-shop-styles');
+        // put inside the shop-more div
+        document.querySelector('.shop-more').appendChild(moreShop);
+    }
+    return Promise.resolve(); // Ensure it returns a promise
 }
 //Create a second toggle for the mobile menu to be a dropdown menu when hamburger icon is clicked
 function handlePurchase(button) {
@@ -129,7 +139,7 @@ function displayTotalQuantityError(message) {
 async function increaseQuantity(button) {
     try {
         // Disable the button to prevent rapid clicks
-        button.disabled = true;
+        setButtonsState(true);
 
         // Wait for the cart quantity to be fetched
         const cartQuantity = await getCartQuantity();
@@ -144,7 +154,7 @@ async function increaseQuantity(button) {
         // Check if the current cart quantity is at or exceeds the maximum limit
         if (cartQuantity >= 1000) {
             displayTotalQuantityError('The maximum quantity allowed is 1000.');
-            button.disabled = false; // Re-enable the button
+            setButtonsState(false) // Re-enable the button
             return;
         }
 
@@ -154,7 +164,7 @@ async function increaseQuantity(button) {
         // Check if increasing the quantity will exceed the maximum limit
         if (newQuantity > 1000) {
             displayTotalQuantityError('The maximum quantity allowed is 1000.');
-            button.disabled = false; // Re-enable the button
+            setButtonsState(false); // Re-enable the button
             return;
         }
 
@@ -182,18 +192,18 @@ async function increaseQuantity(button) {
         }
 
         // Re-enable the button
-        button.disabled = false;
+        setButtonsState(false);
     } catch (error) {
         console.error('Error:', error);
         // Re-enable the button in case of error
-        button.disabled = false;
+        setButtonsState(false);
     }
 }
 
 async function decreaseQuantity(button) {
     try {
         // Disable the button to prevent rapid clicks
-        button.disabled = true;
+        setButtonsState(true);
 
         const cartQuantity = await getCartQuantity(); // Fetch the cart quantity
         let quantityElement = button.parentElement.querySelector('.quantity-input');
@@ -231,17 +241,18 @@ async function decreaseQuantity(button) {
         }
 
         // Re-enable the button
-        button.disabled = false;
+        setButtonsState(false);
     } catch (error) {
         console.error('Error:', error);
         // Re-enable the button in case of error
-        button.disabled = false;
+        setButtonsState(false);
     }
 }
 
 
 async function removeItem(button) {
     try {
+        setButtonsState(true); // Disable the buttons to prevent rapid clicks
         const cartQuantity = await getCartQuantity(); // Fetch the cart quantity
 
         // Remove the item from the UI
@@ -266,8 +277,10 @@ async function removeItem(button) {
             updateTotalPrice(); // Update total price after updating cart quantity
             removeMaxQuantityErrorMessage(); // Remove the error message here
         }
+        setButtonsState(false); // Re-enable the buttons
     } catch (error) {
         console.error('Error:', error);
+        setButtonsState(false); // Re-enable the buttons in case of error
     }
 }
 
