@@ -263,7 +263,7 @@ html, body {
         text-overflow: ellipsis;
     }
     .mobile-dropdown a:hover {
-        color: #1d5685;
+        color: #349ef5;
         text-decoration: underline;
     }
     .mobile-dropdown.show {
