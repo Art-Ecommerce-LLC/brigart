@@ -355,7 +355,7 @@ a:visited {
         text-overflow: ellipsis;
     }
     .mobile-dropdown a:hover {
-        color: #f9a825;
+        color: #1d5685;
         text-decoration: underline;
     }
     .mobile-dropdown.show {
