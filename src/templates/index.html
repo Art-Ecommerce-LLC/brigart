@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name = "viewport" content = "width = device-width, initial-scale = 1.0">
-    <meta charset = "UTF-8">
+    <meta name = "viewport" content = "width = device-width, initial-scale = 1.0" />
+    <meta charset = "UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <title>Art Showcase</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles.css') }}">
-    <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
-
-
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles.css') }}" />
+    <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon" />
 </head>
 <body>
 <div class="header">
@@ -24,7 +23,9 @@
         <span id="cartQuantity" class="cart-quantity"></span>
     </div>
     <div class="mobile-menu">
-        <img src="{{ hamburger_menu_url}}" id = "hamburgerMenu" class = "hamburger-menu" onclick="toggleMenu(), toggleDropdown()">
+        <label class="hamburger-menu">
+            <input type="checkbox" onclick = "toggleMenu(); toggleDropdown();">
+        </label>
             <a href="/shop_art">
                 <img src="{{ shopping_cart_url}}" id = "shoppingCart" class = "cart-mobile">
             </a>

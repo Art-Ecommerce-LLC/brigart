@@ -24,7 +24,9 @@
         <span id="cartQuantity" class="cart-quantity"></span>
     </div>
     <div class="mobile-menu">
-        <img src="{{ hamburger_menu_url}}" id = "hamburgerMenu" class = "hamburger-menu" onclick="toggleMenu(); toggleDropdown(); toggleScrolllock()">
+        <label class="hamburger-menu">
+            <input type="checkbox" onclick = "toggleMenu(); toggleDropdown();">
+        </label>
         <a href="/shop_art">
             <img src="{{ shopping_cart_url}}" id = "shoppingCart" class = cart>
         </a>

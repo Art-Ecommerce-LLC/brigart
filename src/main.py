@@ -942,7 +942,6 @@ async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = Fi
 # Development Server
 # Run the app
 if __name__ == "__main__" and scene == "dev":
-    get_watermark("static/A+Gent.PNG", "test")
     uvicorn.run(app = "main:app",
                 host = host, 
                 port = int(port),
