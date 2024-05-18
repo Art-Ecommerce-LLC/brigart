@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Security, HTTPException, status, Request
+from fastapi import FastAPI, Security, HTTPException, status, Request, Form
 from fastapi.security import APIKeyHeader
 import uvicorn
 import json
@@ -6,8 +6,8 @@ import dotenv
 import os
 import requests
 from fastapi.staticfiles import StaticFiles
-from fastapi import FastAPI, Request, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, Request, UploadFile, File
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
@@ -140,6 +140,8 @@ http = env_dict["http"]
 middleware_string = env_dict["middleware_string"]
 openapi_url = env_dict["openapi_url"]
 scene = env_dict["scene"]
+brig_username = env_dict["brig_username"]
+brig_password = env_dict["brig_password"]
 
 
 #smarty keys
@@ -203,6 +205,10 @@ class OrderInfo(BaseModel):
     city: str = Field(...)
     state: str = Field(...)
     zip: str = Field(..., min_length=5, max_length=10) # Adjust min and max length as needed
+
+class Credentials(BaseModel):
+    username : str
+    password : str
 
 def validate_inputs(order_info: OrderInfo):
     errors = {}
@@ -275,12 +281,11 @@ async def shop_img_url(request: Request, url: Url):
         raise(HTTPException(status_code=400, detail="Invalid URL in Shop Request"))
 
 @app.get("/shop/{title}", response_class=HTMLResponse)
-async def shop(request: Request, title):
+async def shop(request: Request, title : str):
  
     
     icons = get_nocodb_icon_data()
     # Refresh the shopping cart because IMG URls change
-    print(title)
     # Find the img url associate with the title and store both in the session
     nocodb_data = get_nocodb_data()
     loaded_nocodb_data = json.loads(nocodb_data)
@@ -692,11 +697,10 @@ async def process_checkout(request: Request, order_info: OrderInfo):
 
 # Take in an image and apply the watermark, swap that image with the image intended for swap
 @app.post("/swap_image")
-async def swap_image(title: str, new_title: str, file: UploadFile):
+async def swap_image(title: str = Form(...), new_title: str = Form(...), file: UploadFile = File(...)):
     # Get the record ID by matching the title
     nocodb_upload_url = f"{nocodb_path}api/v2/storage/upload"
     response_object = json.loads(get_nocodb_data())  # Assume this function gets the data correctly
-    print(title)
 
     id = None
     for item in response_object['list']:
@@ -725,18 +729,16 @@ async def swap_image(title: str, new_title: str, file: UploadFile):
                 'xc-token': xc_auth
             }
             path = os.path.basename(temp_file.name)
-            print(path)
             upload_response = requests.post(nocodb_upload_url, headers=headers, files=files_to_upload, params={"path": path})
-            print(upload_response)
+
             if upload_response.status_code == 200:
                 data = upload_response.json()
                 # Assume data is a list of dictionaries
                 new_file_info = data[0]  # Access the first item in the list
                 new_file_path = new_file_info.get('path')
                 new_signed_path = new_file_info.get('signedPath')
-                print(new_file_info)
             else:
-                return {"message": f"Failed to upload file: {upload_response.status_code} - {upload_response.text}"}
+                return {"message": "Failed to upload file"}
 
             # Update record with new image path
             
@@ -754,7 +756,6 @@ async def swap_image(title: str, new_title: str, file: UploadFile):
                     }
                 ]
             }
-            print(json.dumps(update_data, indent=4))
             update_headers = {
                 'accept': 'application/json',
                 'xc-token': xc_auth,
@@ -766,22 +767,126 @@ async def swap_image(title: str, new_title: str, file: UploadFile):
             if update_response.status_code == 200:
                 return {"message": "Image swapped successfully"}
             else:
-                return {"message": f"Failed to update record: {update_response.status_code} - {update_response.text}"}
-    except Exception as e:
-        print(e)
+                return {"message": f"Failed to update record"}
+    except:
         return {"message": "Image not swapped successfully"}
     finally:
         if temp_file_path and os.path.exists(temp_file_path):
             os.remove(temp_file_path)
 
-# @app.get("/portal")
-# async def portal(request: Request):
-#     return {"message": "Welcome to the portal"}
-# # Take in an image and apply the watermark, then add to the img database
-# @app.post("/add_image")
-# async def add_image(request: Request, title, files: Annotated[list[bytes], File(description="Multiple files as bytes")]):
-#     # Put the image in the database
-#     return {"message": "Image added successfully"}
+@app.get("/portal", response_class=HTMLResponse)
+async def portal(request: Request):
+
+    icons = get_nocodb_icon_data()
+
+    brig_logo_url = nocodb_path + icons[2]
+
+    context = {
+        "brig_logo_url": brig_logo_url,
+    }
+    return templates.TemplateResponse(request=request,
+                                      name="login.html",
+                                      context=context)
+
+@app.post("/credentials_check")
+async def credentials_check(request: Request, credentials: Credentials):
+    if credentials.username == brig_username and credentials.password == brig_password:
+        request.session['logged_in'] = True
+        return RedirectResponse(url='/brig_portal', status_code=303)
+    else:
+        raise HTTPException(status_code=401, detail="Invalid Credentials")
+
+@app.get("/brig_portal", response_class=HTMLResponse)
+async def brig_portal(request: Request):
+    if not request.session.get('logged_in'):
+        return RedirectResponse(url='/portal')
+    
+    icons = get_nocodb_icon_data()
+    brig_logo_url = nocodb_path + icons[2]
+    context = {"brig_logo_url": brig_logo_url}
+    return templates.TemplateResponse(request=request,
+                                      name="brig_portal.html",
+                                      context=context)
+
+# Take in an image and apply the watermark, then add to the img database
+@app.post("/add_images")
+async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = File(...)):
+    if len(titles) != len(files):
+        return {"message": "Number of titles doesn't match number of files"}
+
+    return_list = []
+    temp_file_paths = []
+
+    try:
+        for title, file in zip(titles, files):
+            # Get the record ID by matching the title
+            nocodb_upload_url = f"{nocodb_path}api/v2/storage/upload"
+            response_object = json.loads(get_nocodb_data())  # Assume this function gets the data correctly
+
+            # Get the last ID in the list and increment by 1
+            id = response_object['list'][-1]['Id'] + 1
+            with tempfile.NamedTemporaryFile(suffix=".PNG", delete=False) as temp_file:
+                temp_file_path = temp_file.name
+                temp_file_paths.append(temp_file_path)
+                temp_file.write(await file.read())
+                temp_file.flush()
+
+            with open(temp_file_path, "rb") as temp_file:
+                files_to_upload = {
+                    "file": temp_file
+                }
+                headers = {
+                    'xc-token': xc_auth
+                }
+                path = os.path.basename(temp_file.name)
+                upload_response = requests.post(nocodb_upload_url, headers=headers, files=files_to_upload, params={"path": path})
+
+                if upload_response.status_code == 200:
+                    data = upload_response.json()
+                    # Assume data is a list of dictionaries
+                    new_file_info = data[0]  # Access the first item in the list
+                    new_file_path = new_file_info.get('path')
+                    new_signed_path = new_file_info.get('signedPath')
+                else:
+                    return {"message": "Failed to upload file"}
+
+            # Update record with new image path
+            
+                new_title = title.replace(" ", "+")
+                title = "watermarked_" + new_title + ".PNG" + ".png"
+                update_data = {
+                    "Id": id,
+                    "img_label": new_title,
+                    "img": [
+                        {
+                            "title": title,
+                            "mimetype": file.content_type,
+                            "path": new_file_path,
+                            "signedPath": new_signed_path
+                        }
+                    ]
+                }
+                update_headers = {
+                    'accept': 'application/json',
+                    'xc-token': xc_auth,
+                    'Content-Type': 'application/json'
+                }
+                data = json.dumps(update_data)
+                print(data, update_headers, nocodb_img_update_url)
+                update_response = requests.post(nocodb_img_update_url, headers=update_headers, data=data)
+
+                if update_response.status_code == 200:
+                    return_message = {"message": "Image(s) added successfully"}
+                    return_list.append(return_message)
+                else:
+                    return {"message": "Failed to update record"}
+    except:
+        return {"message": "Image not swapped successfully"}
+    finally:
+        for each in temp_file_paths:
+            if each and os.path.exists(each):
+                os.remove(each)
+        return return_list[0]
 
 
     
