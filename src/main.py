@@ -21,6 +21,8 @@ from smartystreets_python_sdk.us_street.match_type import MatchType
 from typing import Annotated, List
 import tempfile
 import shutil
+import PIL
+from PIL import Image, ImageDraw, ImageFont
 
 urllib3.disable_warnings()
 
@@ -39,6 +41,47 @@ nocodb_path = os.getenv("nocodb_path")
 nocodb_img_update_url = os.getenv("nocodb_img_update_url")
 
 # Define Security Scheme
+def get_watermark(img_path, title) -> tuple[Image.Image, str]:
+    with Image.open(img_path) as img:
+        # Add watermark
+        watermark_text = "BRIGLIGHT"
+        
+        # Increase the font size and choose a bold font
+        watermark_font = ImageFont.truetype("arialbd.ttf", 407)
+        
+        draw = ImageDraw.Draw(img)
+
+        # Calculate text size using textbbox
+        text_bbox = draw.textbbox((0, 0), watermark_text, font=watermark_font)
+        text_width = text_bbox[2] - text_bbox[0]
+        text_height = text_bbox[3] - text_bbox[1]
+
+        img_width, img_height = img.size
+
+        # Calculate position for the watermark text (top-down from top)
+        watermark_x = (img_height - text_width) // 2  # Adjusted to center vertically
+        watermark_y = 0  # Start from the top of the image
+
+        # Rotate and add the watermark text at the calculated position
+        rotated_text = Image.new('RGBA', (text_width, img_height), (255, 255, 255, 0))
+        text_draw = ImageDraw.Draw(rotated_text)
+
+        # Use a bold gray color for the watermark text
+        lighter_gray_color = (220, 220, 220, 50)
+
+        text_draw.text((0, 0), watermark_text, fill=lighter_gray_color, font=watermark_font)
+        rotated_text = rotated_text.rotate(65, expand=True)
+
+        img.paste(rotated_text, (watermark_x, watermark_y), rotated_text)
+        base_path = os.path.dirname(img_path)
+        
+        # Save the watermarked image
+        watermark_filename = f"watermarked_{title}.PNG.png"
+        watermark_path = os.path.join(base_path, watermark_filename)
+        img.save(watermark_path)
+
+        return img, watermark_path
+
 def get_api_key(api_key_header: str = Security(api_key_header)) -> str:
     if api_key_header in api_keys:
         return api_key_header
@@ -75,11 +118,8 @@ def get_nocodb_img_data():
         if item['img'] and len(item['img']) > 0:
             image_url = item['img'][0]['signedPath']
             images.append(image_url)
-            title = item["img"][0]["title"]
-            title_strip = title.split(".")[-3]
-            title_replace = title_strip.split("_")[-1]
-            title_replace = title_replace.replace("+", " ")
-
+            title = item["img_label"]
+            title_replace = title.replace("+", " ")
             titles.append(title_replace)
     return images,titles
 
@@ -721,14 +761,19 @@ async def swap_image(title: str = Form(...), new_title: str = Form(...), file: U
             temp_file.write(await file.read())
             temp_file.flush()
 
-        with open(temp_file_path, "rb") as temp_file:
+        watermarked_img, watermarked_path = get_watermark(temp_file_path, title)
+        # get_watermark(temp_file_path, title)
+
+        with open(watermarked_path, "rb") as f:
+
             files_to_upload = {
-                "file": temp_file
+                "file": f
             }
             headers = {
                 'xc-token': xc_auth
             }
-            path = os.path.basename(temp_file.name)
+            path = os.path.basename(watermarked_path)
+            
             upload_response = requests.post(nocodb_upload_url, headers=headers, files=files_to_upload, params={"path": path})
 
             if upload_response.status_code == 200:
@@ -737,6 +782,7 @@ async def swap_image(title: str = Form(...), new_title: str = Form(...), file: U
                 new_file_info = data[0]  # Access the first item in the list
                 new_file_path = new_file_info.get('path')
                 new_signed_path = new_file_info.get('signedPath')
+                print(upload_response.json())
             else:
                 return {"message": "Failed to upload file"}
 
@@ -773,6 +819,8 @@ async def swap_image(title: str = Form(...), new_title: str = Form(...), file: U
     finally:
         if temp_file_path and os.path.exists(temp_file_path):
             os.remove(temp_file_path)
+
+        
 
 @app.get("/portal", response_class=HTMLResponse)
 async def portal(request: Request):
@@ -831,14 +879,16 @@ async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = Fi
                 temp_file.write(await file.read())
                 temp_file.flush()
 
-            with open(temp_file_path, "rb") as temp_file:
+            watermarked_img, watermarked_path = get_watermark(temp_file_path, title)
+            with open(watermarked_path, "rb") as f:
+            # get_watermark(temp_file_path, title)
                 files_to_upload = {
-                    "file": temp_file
+                    "file": f
                 }
                 headers = {
                     'xc-token': xc_auth
                 }
-                path = os.path.basename(temp_file.name)
+                path = os.path.basename(watermarked_path)
                 upload_response = requests.post(nocodb_upload_url, headers=headers, files=files_to_upload, params={"path": path})
 
                 if upload_response.status_code == 200:
@@ -872,7 +922,6 @@ async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = Fi
                     'Content-Type': 'application/json'
                 }
                 data = json.dumps(update_data)
-                print(data, update_headers, nocodb_img_update_url)
                 update_response = requests.post(nocodb_img_update_url, headers=update_headers, data=data)
 
                 if update_response.status_code == 200:
@@ -893,7 +942,9 @@ async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = Fi
 # Development Server
 # Run the app
 if __name__ == "__main__" and scene == "dev":
+    get_watermark("static/A+Gent.PNG", "test")
     uvicorn.run(app = "main:app",
                 host = host, 
                 port = int(port),
                 reload= True)
+    
