@@ -44,6 +44,7 @@ body {
     width: max-content;
     z-index: 2;
     cursor: pointer;
+    align-items: right;
 }
 
 .hamburger-menu::before,

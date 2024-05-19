@@ -285,6 +285,8 @@ async function decreaseQuantity(button) {
 
 async function removeItem(button) {
     try {
+        const quantityElement = button.parentElement.querySelector('.quantity-input');
+
         setButtonsState(true); // Disable the buttons to prevent rapid clicks
 
         const cartQuantity = await getCartQuantity(); // Fetch the cart quantity
@@ -307,7 +309,9 @@ async function removeItem(button) {
         const response = await fetch('/delete_item', requestOptions);
 
         if (response.ok) {
-            await updateCartQuantity(0); // Update cart quantity after removing the item
+            const input_quantity = parseInt(quantityElement.value);
+            const updated_cart_quantity = cartQuantity - input_quantity;
+            await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item
             updateTotalPrice(); // Update total price after updating cart quantity
             removeMaxQuantityErrorMessage(); // Remove the error message here
 

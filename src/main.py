@@ -573,6 +573,7 @@ async def delete_item(request: Request, url: Url):
         for item in img_quantity_list:
             if item["img_url"] == img_url:
                 img_quantity_list.remove(item)
+            
                 break
     else:
         raise(HTTPException(status_code=400, detail="Invalid URL in Delete Item Request"))
