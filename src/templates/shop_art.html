@@ -19,7 +19,7 @@
         <a class= "giclee" href="/giclee_prints">GICLÉE PRINTS</a>
         <a class= "shop" href="/shop_art_menu">SHOP ART</a>
         <a class= "cart_a" href="/shop_art">
-            <img src="{{ shopping_cart_url }}" id="shoppingCart" class="cart" oncontextmenu="return false;">
+            <img src="{{ shopping_cart_url }}" id="shoppingCart" class="cart" oncontextmenu="return false;" draggable="false">
         </a>
         <span id="cartQuantity" class="cart-quantity"></span>
     </div>
@@ -28,7 +28,7 @@
             <input type="checkbox" onclick = "toggleMenu(); toggleDropdown();">
         </label>
         <a href="/shop_art">
-            <img src="{{ shopping_cart_url }}" id="shoppingCart" class="cart" oncontextmenu="return false;">
+            <img src="{{ shopping_cart_url }}" id="shoppingCart" class="cart" oncontextmenu="return false;" draggable="false">
         </a>
         <span id="mobileCartQuantity" class="cart-quantity-mobile"></span>
         <div class="mobile-dropdown">
@@ -45,7 +45,7 @@
         {% for img_data in img_data_list %}
         <div class="info_container">
             <div class="image_container">
-                <img src="{{ img_data.img_url }}" alt="Product Image" oncontextmenu="return false;">
+                <img src="{{ img_data.img_url }}" alt="Product Image" oncontextmenu="return false;" draggable="false">
             </div>
             <div class="title_container">
                 <p>{{ img_data.img_title }}</p>

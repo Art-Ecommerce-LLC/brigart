@@ -1,6 +1,12 @@
 /* General Styles */
 
-
+img {
+    -webkit-user-drag: none;
+    -moz-user-drag: none;
+    -ms-user-drag: none;
+    -o-user-drag: none;
+    user-drag:none;
+  }
 html {
     height: 100%;
 }
