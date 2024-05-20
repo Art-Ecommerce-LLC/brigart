@@ -254,6 +254,9 @@ a:visited {
 .mobile-menu a{
     text-decoration: none;
 }
+.mobile-menu {
+    display: none;
+}
 .cart-quantity {
     color: black;
     text-align: center;

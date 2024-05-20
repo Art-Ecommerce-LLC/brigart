@@ -165,7 +165,9 @@ a:visited {
     background-color: white;
     padding: 20px 40px;
 }
-
+.mobile-menu {
+    display: none;
+}
 .navbar,
 .mobile-menu {
     display: flex;

@@ -107,7 +107,9 @@ html, body {
     color: #349ef5;
     text-decoration: underline;
 }
-
+.mobile-menu {
+    display: none;
+}
 .navbar img, .mobile-menu img {
     width: 40px;
     height: auto;

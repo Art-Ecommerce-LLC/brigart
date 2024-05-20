@@ -351,15 +351,15 @@ async def homepage(request: Request):
     # temp_vars = [nocodb_path + each for each in imgs]
     # each tempvar will now be the path to the image
     temp_vars = [f"{http}://" + f"{site}/hostedimage/" + title.replace(" ", "+") for title in titles]
-    data_uris = []
-    for url in temp_vars:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                image_data = await response.read()
-                base64_data = base64.b64encode(image_data).decode('utf-8')
-                data_uri = f"data:image/jpeg;base64,{base64_data}"
-                data_uris.append(data_uri)
-    zipped_imgs_titles = zip(data_uris, titles)
+    # data_uris = []
+    # for url in temp_vars:
+    #     async with aiohttp.ClientSession() as session:
+    #         async with session.get(url) as response:
+    #             image_data = await response.read()
+    #             base64_data = base64.b64encode(image_data).decode('utf-8')
+    #             data_uri = f"data:image/jpeg;base64,{base64_data}"
+    #             data_uris.append(data_uri)
+    zipped_imgs_titles = zip(temp_vars, titles)
 
 
     context = {

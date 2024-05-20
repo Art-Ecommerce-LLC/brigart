@@ -238,6 +238,9 @@ body {
 .mobile-menu a{
     text-decoration: none;
 }
+.mobile-menu {
+    display: none;
+}
 .cart-quantity {
     color: white;
     text-align: center;
