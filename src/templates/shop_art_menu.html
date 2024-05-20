@@ -11,14 +11,14 @@
 <body>
 <div class="header">
     <div class="brigLogo">
-        <img src="{{ brig_logo_url }}">
+        <img src="{{ brig_logo_url }}" oncontextmenu="return false;">
     </div>
     <div class="navbar">
         <a class= "home" href="/">HOME</a>
         <a class= "giclee" href="/giclee_prints">GICLÉE PRINTS</a>
         <a class= "shop" href="/shop_art_menu">SHOP ART</a>
         <a class= "cart_a" href="/shop_art">
-            <img src="{{ shopping_cart_url}}" id = "shoppingCart" class = "cart">
+            <img src="{{ shopping_cart_url}}" id = "shoppingCart" class = "cart" oncontextmenu="return false;">
         </a>
         <span id="cartQuantity" class="cart-quantity"></span>
     </div>
@@ -27,7 +27,7 @@
             <input type="checkbox" onclick = "toggleMenu(); toggleDropdown();">
         </label>
         <a href="/shop_art">
-            <img src="{{ shopping_cart_url}}" id = "shoppingCart" class = "cart-mobile">
+            <img src="{{ shopping_cart_url}}" id = "shoppingCart" class = "cart-mobile" oncontextmenu="return false;">
         </a>
         <span id="mobileCartQuantity" class="cart-quantity-mobile"></span>
         <div class="mobile-dropdown">
@@ -46,7 +46,7 @@
     <div class="content">
         {% for title, temp_var in artwork_data %}
         <a class = "underline fade-in-link" href="#" onclick="submitForm('{{ title }}','GET'); return false;">
-            <img src="{{ temp_var }}" class="artwork" alt="Artwork">
+            <img src="{{ temp_var }}" class="artwork" alt="Artwork" oncontextmenu="return false;">
             <span class="artwork-name" >{{ title }}</span>
             <span class="artwork-price" >$225.00</span>
         </a>

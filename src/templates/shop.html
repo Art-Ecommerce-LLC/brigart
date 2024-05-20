@@ -12,14 +12,14 @@
 <body>
 <div class="header">
     <div class="brigLogo">
-        <img src="{{ brig_logo_url }}">
+        <img src="{{ brig_logo_url }}" oncontextmenu="return false;">
     </div>
     <div class="navbar">
         <a class= "home" href="/">HOME</a>
         <a class= "giclee" href="/giclee_prints">GICLÉE PRINTS</a>
         <a class= "shop" href="/shop_art_menu">SHOP ART</a>
         <a class= "cart_a" href="/shop_art">
-            <img src="{{ shopping_cart_url}}" id = "shoppingCart" class = "cart_img">           
+            <img src="{{ shopping_cart_url}}" id = "shoppingCart" class = "cart_img" oncontextmenu="return false;">           
         </a>
         <span id="cartQuantity" class="cart-quantity"></span>
     </div>
@@ -29,7 +29,7 @@
             <input type="checkbox" onclick = "toggleMenu(); toggleDropdown();">
         </label>
         <a href="/shop_art">
-            <img src="{{ shopping_cart_url}}" id = "shoppingCart" class = cart>
+            <img src="{{ shopping_cart_url}}" id = "shoppingCart" class = "cart" oncontextmenu="return false;">
         </a>
         <span id="mobileCartQuantity" class="cart-quantity-mobile"></span>
         <div class="mobile-dropdown">
@@ -41,7 +41,7 @@
 </div>
 <div class="content">
         <div class="image_container">
-            <img src="{{ img_url }}" alt="Product Image">
+            <img src="{{ img_url }}" alt="Product Image" oncontextmenu="return false;">
         </div>
         <div class="info_container">
             <div class="title_container" id="title">
