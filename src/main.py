@@ -37,10 +37,20 @@ def load_nocodb_data():
     nocodb_data = get_nocodb_data()  # Your function to fetch data from NoCodeB
     return json.loads(nocodb_data)
 
+@lru_cache(maxsize=128)
+def load_nocodb_icon_data():
+    nocodb_data = get_nocodb_icons()
+    return json.loads(nocodb_data)
+    
+
 async def preload_images():
     loaded_nocodb_data = load_nocodb_data()
-    tasks = []
-
+    loaded_icon_data = load_nocodb_icon_data()
+    loaded_list = loaded_nocodb_data['list']
+    tasks= []
+    for each in loaded_icon_data['list']:
+        loaded_list.append(each)
+        
     async with aiohttp.ClientSession() as session:
         for item in loaded_nocodb_data['list']:
             for img_info in item['img']:
@@ -48,7 +58,6 @@ async def preload_images():
                 url_path = f"http://{site_host}/{db_path}"
                 img_label = item['img_label']
                 file_path = os.path.join(temp_dir.name, f"{img_label}.png")
-                
                 tasks.append(download_image(session, url_path, file_path))
 
         await asyncio.gather(*tasks)
@@ -135,6 +144,13 @@ def get_nocodb_data():
         'xc-token': xc_auth
     }
     response = requests.get(nocodb_img_url, headers=headers)
+    return response.text
+
+def get_nocodb_icons():
+    headers = {
+        'xc-token': xc_auth
+    }
+    response = requests.get(nocodb_icon_url, headers=headers)
     return response.text
 
 # Get nocodb data from their REST API
@@ -324,9 +340,9 @@ async def homepage(request: Request):
     # Refresh the shopping cart because IMG URls change
 
 
-    shopping_cart_url = nocodb_path + icons[0]
-    hamburger_menu_url = nocodb_path + icons[1]
-    brig_logo_url = nocodb_path + icons[2]
+    shopping_cart_url = f"{http}://" + f"{site}/hostedimage/shopping_cart" 
+    hamburger_menu_url = f"{http}://" + f"{site}/hostedimage/menu_burger" 
+    brig_logo_url = f"{http}://" + f"{site}/hostedimage/brigLogo" 
     # temp_vars = [nocodb_path + each for each in imgs]
     # each tempvar will now be the path to the image
     temp_vars = [f"{http}://" + f"{site}/hostedimage/" + title.replace(" ", "+") for title in titles]
@@ -379,9 +395,9 @@ async def shop(request: Request, title : str):
             request.session["img_url"] = url_path
             request.session["title"] = title.replace("+", " ")
 
-    shopping_cart_url = nocodb_path + icons[0]
-    hamburger_menu_url = nocodb_path + icons[1]
-    brig_logo_url = nocodb_path + icons[2]
+    shopping_cart_url = f"{http}://" + f"{site}/hostedimage/shopping_cart" 
+    hamburger_menu_url = f"{http}://" + f"{site}/hostedimage/menu_burger" 
+    brig_logo_url = f"{http}://" + f"{site}/hostedimage/brigLogo" 
     img_url = request.session.get("img_url")
     img_title = request.session.get("title")
 
@@ -459,9 +475,9 @@ async def shop_art(request: Request):
     # Refresh the shopping cart because IMG URls change
 
 
-    shopping_cart_url = nocodb_path + icons[0]
-    hamburger_menu_url = nocodb_path + icons[1]
-    brig_logo_url = nocodb_path + icons[2]
+    shopping_cart_url = f"{http}://" + f"{site}/hostedimage/shopping_cart" 
+    hamburger_menu_url = f"{http}://" + f"{site}/hostedimage/menu_burger" 
+    brig_logo_url = f"{http}://" + f"{site}/hostedimage/brigLogo" 
 
     img_data_list = []
 
@@ -505,9 +521,9 @@ async def shop_art_menu(request: Request):
     imgs, titles = get_nocodb_img_data()
     icons = get_nocodb_icon_data()
 
-    shopping_cart_url = nocodb_path + icons[0]
-    hamburger_menu_url = nocodb_path + icons[1]
-    brig_logo_url = nocodb_path + icons[2]
+    shopping_cart_url = f"{http}://" + f"{site}/hostedimage/shopping_cart" 
+    hamburger_menu_url = f"{http}://" + f"{site}/hostedimage/menu_burger" 
+    brig_logo_url = f"{http}://" + f"{site}/hostedimage/brigLogo" 
     temp_vars = [f"{http}://" + f"{site}/hostedimage/" + title.replace(" ", "+") for title in titles]
 
     artwork_data = zip(titles, temp_vars)
@@ -531,9 +547,9 @@ async def shop_giclee_prints(request: Request):
     # Refresh the shopping cart because IMG URls change
 
 
-    shopping_cart_url = nocodb_path + icons[0]
-    hamburger_menu_url = nocodb_path + icons[1]
-    brig_logo_url = nocodb_path + icons[2]
+    shopping_cart_url = f"{http}://" + f"{site}/hostedimage/shopping_cart" 
+    hamburger_menu_url = f"{http}://" + f"{site}/hostedimage/menu_burger" 
+    brig_logo_url = f"{http}://" + f"{site}/hostedimage/brigLogo" 
 
     context = {
         "shopping_cart_url": shopping_cart_url,
@@ -656,9 +672,9 @@ async def shop_checkout(request: Request):
     # Refresh the shopping cart because IMG URls change
 
 
-    shopping_cart_url = nocodb_path + icons[0]
-    hamburger_menu_url = nocodb_path + icons[1]
-    brig_logo_url = nocodb_path + icons[2]
+    shopping_cart_url = f"{http}://" + f"{site}/hostedimage/shopping_cart" 
+    hamburger_menu_url = f"{http}://" + f"{site}/hostedimage/menu_burger" 
+    brig_logo_url = f"{http}://" + f"{site}/hostedimage/brigLogo" 
 
     img_quant_list = request.session.get("img_quantity_list")
 
@@ -883,7 +899,7 @@ async def portal(request: Request):
 
     icons = get_nocodb_icon_data()
 
-    brig_logo_url = nocodb_path + icons[2]
+    brig_logo_url = f"{http}://" + f"{site}/hostedimage/brigLogo" 
 
     context = {
         "brig_logo_url": brig_logo_url,
