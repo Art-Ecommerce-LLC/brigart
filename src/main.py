@@ -28,6 +28,8 @@ from functools import lru_cache
 import aiohttp
 import asyncio
 from contextlib import asynccontextmanager
+import base64
+
 urllib3.disable_warnings()
 # Temporary directory to store images
 temp_dir = tempfile.TemporaryDirectory()
@@ -42,6 +44,9 @@ def load_nocodb_icon_data():
     nocodb_data = get_nocodb_icons()
     return json.loads(nocodb_data)
     
+def encode_image_to_base64(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
 
 async def preload_images():
     loaded_nocodb_data = load_nocodb_data()
@@ -346,8 +351,15 @@ async def homepage(request: Request):
     # temp_vars = [nocodb_path + each for each in imgs]
     # each tempvar will now be the path to the image
     temp_vars = [f"{http}://" + f"{site}/hostedimage/" + title.replace(" ", "+") for title in titles]
-
-    zipped_imgs_titles = zip(temp_vars, titles)
+    data_uris = []
+    for url in temp_vars:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                image_data = await response.read()
+                base64_data = base64.b64encode(image_data).decode('utf-8')
+                data_uri = f"data:image/jpeg;base64,{base64_data}"
+                data_uris.append(data_uri)
+    zipped_imgs_titles = zip(data_uris, titles)
 
 
     context = {

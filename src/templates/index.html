@@ -7,6 +7,7 @@
     <title>Art Showcase</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles.css') }}" />
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon" />
+
 </head>
 <body>
 <div class="header">
@@ -47,7 +48,7 @@
         {% for temp_var, title in temp_vars %}
             <a href="#" onclick="submitForm('{{ title }}', 'GET'); return false;">
                 <img src="{{ temp_var }}" class="artwork" alt="Artwork" data-src="{{ temp_var }}" oncontextmenu="return false;" draggable="false">
-            </a>
+            </a>         
         {% endfor %}
     </div>
 </form>

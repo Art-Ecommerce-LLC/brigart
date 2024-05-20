@@ -5,7 +5,6 @@ img {
     -moz-user-drag: none;
     -ms-user-drag: none;
     -o-user-drag: none;
-    user-drag:none;
   }
 html {
     height: 100%;
@@ -64,6 +63,7 @@ body {
     transform-origin:left center;
     transition: opacity var(--animation-timing), width var(--animation-timing), rotate var(--animation-timing), translate var(--animation-timing);
 }
+
 
 .hamburger-menu input {
     appearance: none;
@@ -178,6 +178,7 @@ body {
     top: 50px;
     overflow-x: hidden; /* Prevent horizontal scrolling */
     object-fit: fill;
+    
 }
 @keyframes fadeInUp {
     from {
@@ -229,6 +230,13 @@ body {
 }
 .mobile-menu a{
     text-decoration: none;
+}
+.mobile-menu {
+    display: none;
+}
+.art-wrapper{
+    height: 100%;
+    width:100%;
 }
 .cart-quantity {
     color: white;
