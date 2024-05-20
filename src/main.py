@@ -401,13 +401,19 @@ async def shop_art_url(request: Request, url_quant: UrlQuantity):
 
     imgs, titles  = get_nocodb_img_data()
     match = False
-    for item in imgs:
-        url_string = f"{http}://" + f"{site_host}/" + item
-        if url_string == url_quant.url:
+    nocodb_data = get_nocodb_data()
+    loaded_nocodb_data = json.loads(nocodb_data)
+    for item in loaded_nocodb_data['list']:
+        title = url_quant.title2.replace(" ", "+")
+        if item['img_label'] == title:
+            db_path = item['img'][0]['signedPath']
+            url_path = f"{http}://" + f"{site}/hostedimage/" + title.replace(" ", "+")
+            request.session["img_url"] = url_path
+            request.session["title"] = title.replace("+", " ")
             match = True
 
     if match == True:
-        img_url = url_quant.url
+        img_url = url_path
         quantity = url_quant.quantity
         title = url_quant.title2
 
@@ -446,8 +452,6 @@ async def shop_art_url(request: Request, url_quant: UrlQuantity):
 @app.get("/shop_art", response_class=HTMLResponse)
 async def shop_art(request: Request):
     
-    refresh_shop_cart(request)
-
     img_quant_list = request.session.get("img_quantity_list")
 
     icons = get_nocodb_icon_data()
@@ -544,18 +548,21 @@ async def shop_giclee_prints(request: Request):
 @app.post("/increase_quantity")
 async def increase_quantity(request: Request, url:Url):
 
-    imgs,titles = get_nocodb_img_data()
-
     match = False
-    for item in imgs:
-        url_string = f"{http}://" + f"{site_host}/" + item
-        if url.url == url_string:
+    nocodb_data = get_nocodb_data()
+    loaded_nocodb_data = json.loads(nocodb_data)
+    for item in loaded_nocodb_data['list']:
+        title = url.title1.replace(" ", "+")
+        if item['img_label'] == title:
+            db_path = item['img'][0]['signedPath']
+            url_path = f"{http}://" + f"{site}/hostedimage/" + title.replace(" ", "+")
+            request.session["img_url"] = url_path
+            request.session["title"] = title.replace("+", " ")
             match = True
-    
     if match == True:
 
         img_quantity_list = request.session.get("img_quantity_list")
-        img_url = url.url
+        img_url = url_path
         
 
         # Parse over img_quantity_list and increase the quantity of the item
@@ -577,17 +584,21 @@ async def increase_quantity(request: Request, url:Url):
 @app.post("/decrease_quantity")
 async def decrease_quantity(request: Request, url: Url):
 
-    imgs,titles = get_nocodb_img_data()
-
     match = False
-    for item in imgs:
-        url_string = f"{http}://" + f"{site_host}/" + item
-        if url.url == url_string:
+    nocodb_data = get_nocodb_data()
+    loaded_nocodb_data = json.loads(nocodb_data)
+    for item in loaded_nocodb_data['list']:
+        title = url.title1.replace(" ", "+")
+        if item['img_label'] == title:
+            db_path = item['img'][0]['signedPath']
+            url_path = f"{http}://" + f"{site}/hostedimage/" + title.replace(" ", "+")
+            request.session["img_url"] = url_path
+            request.session["title"] = title.replace("+", " ")
             match = True
-    
     if match == True:
+
         img_quantity_list = request.session.get("img_quantity_list")
-        img_url = url.url
+        img_url = url_path
         # Parse over img_quantity_list and increase the quantity of the item
 
         for each_url in img_quantity_list:
@@ -601,17 +612,21 @@ async def decrease_quantity(request: Request, url: Url):
 async def delete_item(request: Request, url: Url):
     # find the item attatched ot the url and delete the item
 
-    imgs, titles = get_nocodb_img_data()
-
-    match = False
-    for item in imgs:
-        url_string = f"{http}://" + f"{site_host}/" + item
-        if url.url == url_string:
+    imatch = False
+    nocodb_data = get_nocodb_data()
+    loaded_nocodb_data = json.loads(nocodb_data)
+    for item in loaded_nocodb_data['list']:
+        title = url.title1.replace(" ", "+")
+        if item['img_label'] == title:
+            db_path = item['img'][0]['signedPath']
+            url_path = f"{http}://" + f"{site}/hostedimage/" + title.replace(" ", "+")
+            request.session["img_url"] = url_path
+            request.session["title"] = title.replace("+", " ")
             match = True
-    
     if match == True:
+
         img_quantity_list = request.session.get("img_quantity_list")
-        img_url = url.url
+        img_url = url_path
 
         for item in img_quantity_list:
             if item["img_url"] == img_url:
@@ -635,9 +650,6 @@ async def get_cart_quantity(request: Request):
 
 @app.get("/checkout", response_class=HTMLResponse)
 async def shop_checkout(request: Request):
-
-    refresh_shop_cart(request)
-
 
     icons = get_nocodb_icon_data()
 
