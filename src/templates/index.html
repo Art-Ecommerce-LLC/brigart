@@ -47,7 +47,7 @@
     <div class="content">
         {% for temp_var, title in temp_vars %}
             <a href="#" onclick="submitForm('{{ title }}', 'GET'); return false;">
-                <img src="{{ temp_var }}" class="artwork" alt="Artwork" data-src="{{ temp_var }}" oncontextmenu="return false;" draggable="false">
+                <div class="artwork" style="background-image: url('{{ temp_var }}')" oncontextmenu="return false;" draggable="false"></div>
             </a>         
         {% endfor %}
     </div>
