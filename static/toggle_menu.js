@@ -244,6 +244,18 @@ document.addEventListener('DOMContentLoaded', function() {
         checkFade();
     });
 
+    const artworkImages = document.querySelectorAll('img.artwork[data-src]');
+
+    artworkImages.forEach(img => {
+        const tempVar = img.getAttribute('data-src');
+        const preloadedImg = new Image();
+        preloadedImg.src = tempVar;
+
+        preloadedImg.onload = function() {
+            img.src = preloadedImg.src;
+        };
+    });
+
 });
 
 

@@ -315,22 +315,6 @@ async function removeItem(button) {
             updateTotalPrice(); // Update total price after updating cart quantity
             removeMaxQuantityErrorMessage(); // Remove the error message here
 
-            // Check if the cart quantity is 0 and the "Continue Shopping" button doesn't already exist
-            // const moreShopButton = document.querySelector('.more-shop-styles');
-            // if (cartQuantity === 0 && !moreShopButton) {
-            //     // Create and append the "Continue Shopping" button only if it doesn't exist
-            //     const moreShopButton = document.createElement('button');
-            //     moreShopButton.innerText = 'Continue Shopping';
-            //     moreShopButton.addEventListener('click', () => {
-            //         window.location.href = '/shop_art_menu';
-            //     });
-            //     moreShopButton.classList.add('more-shop-styles');
-            //     // put inside the shop-more div
-            //     document.querySelector('.shop-more').appendChild(moreShopButton);
-            // } else if (cartQuantity  > 0 && moreShopButton) {
-            //     // If cart quantity is greater than 0 and the button exists, remove it
-            //     moreShopButton.remove();
-            // }
         }
         setButtonsState(false); // Re-enable the buttons
     } catch (error) {
@@ -338,7 +322,50 @@ async function removeItem(button) {
         setButtonsState(false); // Re-enable the buttons in case of error
     }
 }
+async function removeItemButton(button) {
+    try {
+        // Find the closest quantity-container from the button
+        const quantityContainer = button.closest('.quantity-container');
+        
+        // Select the quantity input and price text within this container
+        const quantityElement = quantityContainer.querySelector('.quantity-input');
+        const priceElement = quantityContainer.querySelector('.price');
 
+        setButtonsState(true); // Disable the buttons to prevent rapid clicks
+
+        const cartQuantity = await getCartQuantity(); // Fetch the cart quantity
+
+        // Remove the item from the UI
+        const infoContainer = button.closest('.info_container');
+        infoContainer.remove();
+
+        // Make the API call to delete the item
+        const img_url = infoContainer.querySelector('img').src;
+        const img_title = infoContainer.querySelector('.title_container p').innerText;
+        
+        let requestOptions = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ url: img_url, title1: img_title })
+        };
+
+        const response = await fetch('/delete_item', requestOptions);
+
+        if (response.ok) {
+            const input_quantity = parseInt(quantityElement.value);
+            const updated_cart_quantity = cartQuantity - input_quantity;
+            await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item
+            updateTotalPrice(); // Update total price after updating cart quantity
+            removeMaxQuantityErrorMessage(); // Remove the error message here
+        }
+        setButtonsState(false); // Re-enable the buttons
+    } catch (error) {
+        console.error('Error:', error);
+        setButtonsState(false); // Re-enable the buttons in case of error
+    }
+}
 
 
 //Create a second toggle for the mobile menu to be a dropdown menu when hamburger icon is clicked

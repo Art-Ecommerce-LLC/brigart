@@ -7,7 +7,7 @@ import os
 import requests
 from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, Request, UploadFile, File
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
@@ -22,9 +22,48 @@ from typing import Annotated, List
 import tempfile
 import shutil
 import PIL
+import io
 from PIL import Image, ImageDraw, ImageFont
-
+from functools import lru_cache
+import aiohttp
+import asyncio
+from contextlib import asynccontextmanager
 urllib3.disable_warnings()
+# Temporary directory to store images
+temp_dir = tempfile.TemporaryDirectory()
+
+@lru_cache(maxsize=128)
+def load_nocodb_data():
+    nocodb_data = get_nocodb_data()  # Your function to fetch data from NoCodeB
+    return json.loads(nocodb_data)
+
+async def preload_images():
+    loaded_nocodb_data = load_nocodb_data()
+    tasks = []
+
+    async with aiohttp.ClientSession() as session:
+        for item in loaded_nocodb_data['list']:
+            for img_info in item['img']:
+                db_path = img_info['signedPath']
+                url_path = f"http://{site_host}/{db_path}"
+                img_label = item['img_label']
+                file_path = os.path.join(temp_dir.name, f"{img_label}.png")
+                
+                tasks.append(download_image(session, url_path, file_path))
+
+        await asyncio.gather(*tasks)
+
+async def download_image(session, url, file_path):
+    async with session.get(url) as response:
+        if response.status == 200:
+            with open(file_path, 'wb') as f:
+                f.write(await response.read())
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await preload_images()
+    yield
+    temp_dir.cleanup()
 
 
 
@@ -182,6 +221,7 @@ openapi_url = env_dict["openapi_url"]
 scene = env_dict["scene"]
 brig_username = env_dict["brig_username"]
 brig_password = env_dict["brig_password"]
+site = env_dict["site"]
 
 
 #smarty keys
@@ -198,6 +238,7 @@ app = FastAPI(
     title = "Brig API",
     description= desc,
     openapi_url = openapi_url,
+    lifespan=lifespan
 )
 app.add_middleware(SessionMiddleware, secret_key=middleware_string)
 
@@ -286,7 +327,9 @@ async def homepage(request: Request):
     shopping_cart_url = nocodb_path + icons[0]
     hamburger_menu_url = nocodb_path + icons[1]
     brig_logo_url = nocodb_path + icons[2]
-    temp_vars = [nocodb_path + each for each in imgs]
+    # temp_vars = [nocodb_path + each for each in imgs]
+    # each tempvar will now be the path to the image
+    temp_vars = [f"{http}://" + f"{site}/hostedimage/" + title.replace(" ", "+") for title in titles]
 
     zipped_imgs_titles = zip(temp_vars, titles)
 
@@ -332,7 +375,7 @@ async def shop(request: Request, title : str):
     for item in loaded_nocodb_data['list']:
         if item['img_label'] == title:
             db_path = item['img'][0]['signedPath']
-            url_path = f"{http}://" + f"{site_host}/" + db_path
+            url_path = f"{http}://" + f"{site}/hostedimage/" + title.replace(" ", "+")
             request.session["img_url"] = url_path
             request.session["title"] = title.replace("+", " ")
 
@@ -461,7 +504,7 @@ async def shop_art_menu(request: Request):
     shopping_cart_url = nocodb_path + icons[0]
     hamburger_menu_url = nocodb_path + icons[1]
     brig_logo_url = nocodb_path + icons[2]
-    temp_vars = [nocodb_path + each for each in imgs]
+    temp_vars = [f"{http}://" + f"{site}/hostedimage/" + title.replace(" ", "+") for title in titles]
 
     artwork_data = zip(titles, temp_vars)
     context = {
@@ -937,8 +980,15 @@ async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = Fi
             if each and os.path.exists(each):
                 os.remove(each)
         return return_list[0]
-
-
+    
+@app.get("/hostedimage/{title}", response_class=HTMLResponse)
+async def hosted_image(request: Request, title: str):
+    file_path = os.path.join(temp_dir.name, f"{title}.png")
+    
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type="image/png")
+    else:
+        raise HTTPException(status_code=404, detail="Image not found")
     
 # Development Server
 # Run the app
