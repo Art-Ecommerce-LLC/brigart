@@ -1,7 +1,8 @@
 :root {
     --base-font-size: 25px; /* Set the base font size */
     --font-size-increase-factor: 0.01; /* Set the factor by which font size increases per pixel */
-    --base-margin-left: 25px; /* Set the base left margin */
+    --base-margin-left: 25px;
+    --base-margin-right: 25px; /* Set the base left margin */
     --margin-left-increase-factor: 0.1; /* Set the factor by which left margin increases per pixel */
     --bar-width: 45px;
     --bar-height: 8px;
@@ -143,6 +144,7 @@ html, body {
     flex-direction: column;
     background-color: #040404;
     margin-left:25px;
+    margin-right:25px;
 
 }
 
@@ -158,17 +160,19 @@ html, body {
 .content_cart{
     margin-top: 100px;
     margin-left:var(--base-margin-left);
+    margin-right:var(--base-margin-right);
     text-align:left;
     color:white;
     font-size:var(--base-font-size) + 14px;
 }
 
 .content_cart h1{
-    font-size: 38px;
+    font-size: 50px;
 }
 
 .content_cart h2{
     font-weight: 400;
+    font-size: 45px;
 }
 .content_cart p {
     font-size: 25px;

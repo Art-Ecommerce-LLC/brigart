@@ -217,6 +217,8 @@ a:visited {
 .info_container h3 {
     font-size: 40px;
     font-weight: none;
+    margin-top: 0px;
+    margin-bottom: 0px;
 }
 
 .quantity-box {
