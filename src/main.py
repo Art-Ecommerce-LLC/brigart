@@ -22,7 +22,7 @@ from typing import Annotated, List
 import tempfile
 import shutil
 import PIL
-import io
+from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 from functools import lru_cache
 import aiohttp
@@ -70,8 +70,17 @@ async def preload_images():
 async def download_image(session, url, file_path):
     async with session.get(url) as response:
         if response.status == 200:
-            with open(file_path, 'wb') as f:
-                f.write(await response.read())
+            # Read the image data
+            image_data = await response.read()
+            scale_factor = 0.4
+            # Open and resize the image by a factor
+            image = Image.open(BytesIO(image_data))
+            scaled_width = int(image.width * scale_factor)
+            scaled_height = int(image.height * scale_factor)
+            resized_image = image.resize((scaled_width, scaled_height))
+            
+            # Save the resized image
+            resized_image.save(file_path)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
