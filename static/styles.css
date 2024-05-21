@@ -42,7 +42,6 @@ body {
     box-sizing: border-box;
 }
 
-
 .hamburger-menu{
     --x-width: calc(var(--hamburger-height) * 1.41421356237);
 
@@ -204,7 +203,6 @@ body {
     object-fit: fill;
     transition-duration: 0.5s;
 }
-
 .artwork-wrapper:hover {
     transform: scale(1.05);
     transition: transform 0.3s ease;

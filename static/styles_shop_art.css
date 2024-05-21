@@ -193,7 +193,7 @@ a:visited {
     justify-content: flex-start;
     flex-wrap: wrap;
     min-height: 70px;
-    margin-top: 15px;
+    margin-top: 5px;
     width: inherit;
     border-bottom: 1px solid hsla(0,0%,39%,.8);
 }
