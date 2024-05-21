@@ -209,8 +209,7 @@ function loadImagesInView() {
             // Load the image source if it's within the viewport
             const imgSrc = artwork.getAttribute('style');
             if (imgSrc) {
-                artwork.setAttribute('src', imgSrc);
-                artwork.removeAttribute('data-src'); // Remove data-src attribute after loading
+                artwork.setAttribute('style', imgSrc);
             }
         }
     });
@@ -244,10 +243,10 @@ document.addEventListener('DOMContentLoaded', function() {
         checkFade();
     });
 
-    const artworkImages = document.querySelectorAll('img.artwork[data-src]');
+    const artworkImages = document.querySelectorAll('img.artwork[style]');
 
     artworkImages.forEach(img => {
-        const tempVar = img.getAttribute('data-src');
+        const tempVar = img.getAttribute('style');
         const preloadedImg = new Image();
         preloadedImg.src = tempVar;
 

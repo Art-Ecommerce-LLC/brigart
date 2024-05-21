@@ -6,7 +6,10 @@
     border-radius: 5px;
     overflow: hidden;
 }
-
+:root {
+    --image-width: 80px;
+    --image-height: 150px;
+}
 .loading-bar-progress {
     height: 100%;
     background-color: #349ef5;
@@ -167,6 +170,13 @@ a:visited {
     text-align:left;
     background-color: #040404;
 }
+.artwork {
+    height: var(--image-height);
+    width: var(--image-width);
+    background-size:contain;
+    background-position: center;
+    background-repeat:no-repeat;
+}
 
 .content.hide{
     display: none;
@@ -194,7 +204,10 @@ a:visited {
     position: relative;
     vertical-align: middle;
     margin-bottom: 5px;
+    object-fit: fill;
+    margin-right: 5px;
 }
+
 .img_wrapper {
     height: 0;
     padding-bottom: 100%;
@@ -216,11 +229,6 @@ a:visited {
     margin: 0 ;
 }
 
-.image_container img {
-    width: 100px;
-    height: auto;
-    margin-right: 20px; /* Add margin between the image and the title */
-}
 .content_cart h1{
     color:white;
 }

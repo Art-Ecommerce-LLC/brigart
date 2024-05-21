@@ -45,8 +45,10 @@
 <form method="post" id="myForm">
     <div class="content">
         {% for title, temp_var in artwork_data %}
-        <a class = "underline fade-in-link" href="#" onclick="submitForm('{{ title }}','GET'); return false;">
-            <img src="{{ temp_var }}" class="artwork" alt="Artwork" oncontextmenu="return false;" draggable="false">
+        <a class = "underline-link" href="#" onclick="submitForm('{{ title }}','GET'); return false;">
+            <div class = "artwork-wrapper">
+                <div style="background-image: url('{{ temp_var }}');" oncontextmenu="return false" draggable = "false" class="artwork"></div>
+            </div>
             <span class="artwork-name" >{{ title }}</span>
             <span class="artwork-price" >$225.00</span>
         </a>

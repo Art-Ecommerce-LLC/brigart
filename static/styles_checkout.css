@@ -311,6 +311,8 @@ a:visited {
     display: flex;
     width:40px;
     margin-left:0;
+    background-size: cover; /* Ensure the background image covers the container */
+    background-position: center;
 }
 .image_container img {
     height: auto;

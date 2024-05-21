@@ -82,8 +82,7 @@
         <div class="shop-more"></div>
         {% for img_data in img_data_list %}
          <div class="info_container">
-            <div class="image_container">
-                <img src="{{ img_data.img_url }}" alt="Product Image" oncontextmenu="return false;" draggable="false">
+            <div class="image_container" style="background-image: url('{{ img_data.img_url }}')">
             </div>
             <div class="title_container">
                 <p>{{ img_data.img_title }}</p>

@@ -201,8 +201,7 @@ async function increaseQuantity(button) {
             return;
         }
 
-        // Prepare the data for the API call
-        let img_url = button.parentElement.parentElement.parentElement.querySelector('img').src;
+
         let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
 
         let requestOptions = {
@@ -210,7 +209,7 @@ async function increaseQuantity(button) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ url: img_url, title1: img_title })
+            body: JSON.stringify({title: img_title })
         };
 
         const response = await fetch('/increase_quantity', requestOptions);
@@ -248,7 +247,6 @@ async function decreaseQuantity(button) {
             let newQuantity = currentQuantity - 1;
 
             // Prepare the data for the API call
-            let img_url = button.parentElement.parentElement.parentElement.querySelector('img').src;
             let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
 
             let requestOptions = {
@@ -256,7 +254,7 @@ async function decreaseQuantity(button) {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ url: img_url, title1: img_title })
+                body: JSON.stringify({ title: img_title})
             };
 
             const response = await fetch('/decrease_quantity', requestOptions);
@@ -295,7 +293,6 @@ async function removeItem(button) {
         button.parentElement.parentElement.parentElement.remove();
 
         // Make the API call to delete the item
-        let img_url = button.parentElement.parentElement.parentElement.querySelector('img').src;
         let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
         
         let requestOptions = {
@@ -303,7 +300,7 @@ async function removeItem(button) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ url: img_url, title1: img_title })
+            body: JSON.stringify({title: img_title})
         };
 
         const response = await fetch('/delete_item', requestOptions);
@@ -340,15 +337,14 @@ async function removeItemButton(button) {
         infoContainer.remove();
 
         // Make the API call to delete the item
-        const img_url = infoContainer.querySelector('img').src;
-        const img_title = infoContainer.querySelector('.title_container p').innerText;
+        let img_title = infoContainer.querySelector('.title_container p').innerText;
         
         let requestOptions = {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ url: img_url, title1: img_title })
+            body: JSON.stringify({ title: img_title })
         };
 
         const response = await fetch('/delete_item', requestOptions);

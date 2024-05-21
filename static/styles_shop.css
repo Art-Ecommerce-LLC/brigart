@@ -32,6 +32,8 @@ a:visited {
     --background: white;
     --animation-timing: 200ms ease-in-out;
     --hamburger-height: calc(var(--bar-height) * 3 + var(--hamburger-gap) * 2);
+    --image-width: 300px;
+    --image-height: 450px; 
 }
 
 *,
@@ -163,14 +165,31 @@ a:visited {
 
 .image_container {
     display: flex;
+    justify-content: center;
+    align-items: center;
 }
-.image_container img {
+/* .image_container img {
     width: auto;
     max-width: 600px;
     min-width: 270px;
     height: auto;
     margin-left: 40px;
     margin-right: 40px;
+} */
+.artwork_wrapper {
+    width: auto;
+    height: auto;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.5s ease-in-out;
+}
+.artwork {
+    width: var(--image-width);
+    height: var(--image-height);
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
 }
 .info_container {
     display: flex;
@@ -468,4 +487,10 @@ a:visited {
     
     
     
+}
+@media (min-width:950px) {
+    .artwork{
+        width: calc(var(--image-width) * 2);
+        height: calc(var(--image-height) * 2);
+    }
 }

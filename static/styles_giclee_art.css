@@ -281,7 +281,7 @@ html, body {
 }
 
 /* Media Queries */
-@media (max-width: 768px) {
+@media (max-width: 827px) {
     .cart-quantity-mobile {
         display:inline-block;
         color: white;

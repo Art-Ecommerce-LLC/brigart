@@ -47,7 +47,9 @@
     <div class="content">
         {% for temp_var, title in temp_vars %}
             <a href="#" onclick="submitForm('{{ title }}', 'GET'); return false;">
-                <div class="artwork" style="background-image: url('{{ temp_var }}')" oncontextmenu="return false;" draggable="false"></div>
+                <div class = "artwork-wrapper">
+                    <div class="artwork" style="background-image: url('{{ temp_var }}')" oncontextmenu="return false;" draggable="false"></div>
+                </div>
             </a>         
         {% endfor %}
     </div>

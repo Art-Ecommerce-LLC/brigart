@@ -134,6 +134,11 @@ function toggleMenu() {
             content.classList.add('hide');
             footer.classList.add('hide');
         }
+        else {
+            document.body.style.overflow = 'auto';
+            content.classList.remove('hide');
+            footer.classList.remove('hide');
+        }
         
     } else {
         navbar.style.display = 'flex';

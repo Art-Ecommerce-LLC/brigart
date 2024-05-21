@@ -395,11 +395,14 @@ async def shop_img_url(request: Request, url: Url):
 async def shop(request: Request, title : str):
  
     
-    icons = get_nocodb_icon_data()
+    # icons = get_nocodb_icon_data()
     # Refresh the shopping cart because IMG URls change
     # Find the img url associate with the title and store both in the session
     nocodb_data = get_nocodb_data()
     loaded_nocodb_data = json.loads(nocodb_data)
+
+
+
     for item in loaded_nocodb_data['list']:
         if item['img_label'] == title:
             db_path = item['img'][0]['signedPath']
@@ -412,7 +415,11 @@ async def shop(request: Request, title : str):
     brig_logo_url = f"{http}://" + f"{site}/hostedimage/brigLogo" 
     img_url = request.session.get("img_url")
     img_title = request.session.get("title")
-
+    async with aiohttp.ClientSession() as session:
+            async with session.get(img_url) as response:
+                image_data = await response.read()
+                base64_data = base64.b64encode(image_data).decode('utf-8')
+                img_url = f"data:image/jpeg;base64,{base64_data}"
     context = {
         "img_url": img_url, 
         "img_title": img_title, 
@@ -498,8 +505,15 @@ async def shop_art(request: Request):
         for item in img_quant_list:
             img_dict = {}
             decoded_url = unquote(item['img_url'])
+            async with aiohttp.ClientSession() as session:
+                async with session.get(decoded_url) as response:
+                    image_data = await response.read()
+                    base64_data = base64.b64encode(image_data).decode('utf-8')
+                    decoded_url = f"data:image/jpeg;base64,{base64_data}"
+
             img_title = item['title'] 
             img_dict["img_url"] = decoded_url
+
             img_dict["img_title"] = img_title
             img_dict["quantity"] = item['quantity']
             img_dict["price"] = 225 * int(item['quantity'])
@@ -508,6 +522,11 @@ async def shop_art(request: Request):
         for item in img_quant_list:
             img_dict = {}
             decoded_url = unquote(item['img_url']) 
+            async with aiohttp.ClientSession() as session:
+                async with session.get(decoded_url) as response:
+                    image_data = await response.read()
+                    base64_data = base64.b64encode(image_data).decode('utf-8')
+                    decoded_url = f"data:image/jpeg;base64,{base64_data}"
             img_title = item['title'] 
             img_dict["img_url"] = decoded_url
             img_dict["img_title"] = img_title
@@ -537,8 +556,16 @@ async def shop_art_menu(request: Request):
     hamburger_menu_url = f"{http}://" + f"{site}/hostedimage/menu_burger" 
     brig_logo_url = f"{http}://" + f"{site}/hostedimage/brigLogo" 
     temp_vars = [f"{http}://" + f"{site}/hostedimage/" + title.replace(" ", "+") for title in titles]
+    data_uris = []
+    for url in temp_vars:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                image_data = await response.read()
+                base64_data = base64.b64encode(image_data).decode('utf-8')
+                data_uri = f"data:image/jpeg;base64,{base64_data}"
+                data_uris.append(data_uri)
 
-    artwork_data = zip(titles, temp_vars)
+    artwork_data = zip(titles, data_uris)
     context = {
         "shopping_cart_url": shopping_cart_url,
         "hamburger_menu_url": hamburger_menu_url, 
@@ -572,15 +599,17 @@ async def shop_giclee_prints(request: Request):
                                       name = "gicle_prints.html",
                                       context = context)
 
+class Title(BaseModel):
+    title: str
             
 @app.post("/increase_quantity")
-async def increase_quantity(request: Request, url:Url):
-
+async def increase_quantity(request: Request, title: Title):
+    title = title.title
     match = False
     nocodb_data = get_nocodb_data()
     loaded_nocodb_data = json.loads(nocodb_data)
     for item in loaded_nocodb_data['list']:
-        title = url.title1.replace(" ", "+")
+        title = title.replace(" ", "+")
         if item['img_label'] == title:
             db_path = item['img'][0]['signedPath']
             url_path = f"{http}://" + f"{site}/hostedimage/" + title.replace(" ", "+")
@@ -610,13 +639,13 @@ async def increase_quantity(request: Request, url:Url):
 
 
 @app.post("/decrease_quantity")
-async def decrease_quantity(request: Request, url: Url):
-
+async def decrease_quantity(request: Request, title: Title):
+    title = title.title
     match = False
     nocodb_data = get_nocodb_data()
     loaded_nocodb_data = json.loads(nocodb_data)
     for item in loaded_nocodb_data['list']:
-        title = url.title1.replace(" ", "+")
+        title = title.replace(" ", "+")
         if item['img_label'] == title:
             db_path = item['img'][0]['signedPath']
             url_path = f"{http}://" + f"{site}/hostedimage/" + title.replace(" ", "+")
@@ -637,14 +666,14 @@ async def decrease_quantity(request: Request, url: Url):
         raise(HTTPException(status_code=400, detail="Invalid URL in Decrease Quantity Request"))
 
 @app.post("/delete_item")
-async def delete_item(request: Request, url: Url):
+async def delete_item(request: Request, title : Title):
     # find the item attatched ot the url and delete the item
-
-    imatch = False
+    title = title.title
+    match = False
     nocodb_data = get_nocodb_data()
     loaded_nocodb_data = json.loads(nocodb_data)
     for item in loaded_nocodb_data['list']:
-        title = url.title1.replace(" ", "+")
+        title = title.replace(" ", "+")
         if item['img_label'] == title:
             db_path = item['img'][0]['signedPath']
             url_path = f"{http}://" + f"{site}/hostedimage/" + title.replace(" ", "+")
@@ -697,6 +726,12 @@ async def shop_checkout(request: Request):
         for item in img_quant_list:
             img_dict = {}
             decoded_url = unquote(item['img_url'])
+            async with aiohttp.ClientSession() as session:
+                async with session.get(decoded_url) as response:
+                    image_data = await response.read()
+                    base64_data = base64.b64encode(image_data).decode('utf-8')
+                    decoded_url = f"data:image/jpeg;base64,{base64_data}"
+
             img_title = item['title'] 
             img_dict["img_url"] = decoded_url
             img_dict["img_title"] = img_title
@@ -707,6 +742,12 @@ async def shop_checkout(request: Request):
         for item in img_quant_list:
             img_dict = {}
             decoded_url = unquote(item['img_url']) 
+            async with aiohttp.ClientSession() as session:
+                async with session.get(decoded_url) as response:
+                    image_data = await response.read()
+                    base64_data = base64.b64encode(image_data).decode('utf-8')
+                    decoded_url = f"data:image/jpeg;base64,{base64_data}"
+
             img_title = item['title'] 
             img_dict["img_url"] = decoded_url
             img_dict["img_title"] = img_title

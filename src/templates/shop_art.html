@@ -45,7 +45,7 @@
         {% for img_data in img_data_list %}
         <div class="info_container">
             <div class="image_container">
-                <img src="{{ img_data.img_url }}" alt="Product Image" oncontextmenu="return false;" draggable="false">
+                <div style="background-image: url('{{ img_data.img_url }}');" oncontextmenu="return false;" draggable="false" class="artwork"></div>
             </div>
             <div class="title_container">
                 <p>{{ img_data.img_title }}</p>
