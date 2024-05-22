@@ -252,7 +252,7 @@ a:visited {
 .quantity-input {
     width: 100%;
     padding: 10px;
-    border: 1px solid black; /* Set the border directly to be 3px solid black */
+    border: 1px solid white; /* Set the border directly to be 3px solid black */
     transition: border-color 0.3s;
     outline: none; /* Remove outline on focus */
     position: relative;
@@ -299,7 +299,6 @@ a:visited {
     display: flex;
     flex-direction: row; 
     flex-wrap: wrap;
-    margin-top:10px;
     margin-bottom:10px;
 }
 .info_container p {
@@ -349,6 +348,8 @@ a:visited {
     width: 293px;
     text-align:right;
     position: relative;
+    padding-bottom: 6px;
+    border-bottom: 1px solid black;
     
 }
 .quantity-controls {
@@ -385,19 +386,21 @@ a:visited {
 
 .quantity-container button {
     padding: 2px 7px;
-    background-color: #349ef5;
+    background-color: white;
     color: black;
     border: none;
     cursor: pointer;
     font-size: 16px;
-    transition: background-color 0.3s;
+    transition: background-color 0.6s;
+    border-radius: 50%;    
 }
 .quantity-container button:first-child {
     padding-left:8px;
     padding-right:8px;
 }
 .quantity-container button:hover {
-    background-color: #0056b3;
+    background-color: black;
+    color: white;
 }
 
 .quantity-container p {

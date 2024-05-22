@@ -72,7 +72,7 @@ async def download_image(session, url, file_path):
         if response.status == 200:
             # Read the image data
             image_data = await response.read()
-            scale_factor = 0.4
+            scale_factor = 0.3
             # Open and resize the image by a factor
             image = Image.open(BytesIO(image_data))
             scaled_width = int(image.width * scale_factor)
@@ -895,10 +895,11 @@ async def swap_image(title: str = Form(...), new_title: str = Form(...), file: U
             temp_file.write(await file.read())
             temp_file.flush()
 
-        watermarked_img, watermarked_path = get_watermark(temp_file_path, title)
+        # For Watermarking Feature
+        # watermarked_img, watermarked_path = get_watermark(temp_file_path, title)
         # get_watermark(temp_file_path, title)
 
-        with open(watermarked_path, "rb") as f:
+        with open(temp_file_path, "rb") as f:
 
             files_to_upload = {
                 "file": f
@@ -906,7 +907,7 @@ async def swap_image(title: str = Form(...), new_title: str = Form(...), file: U
             headers = {
                 'xc-token': xc_auth
             }
-            path = os.path.basename(watermarked_path)
+            path = os.path.basename(temp_file_path)
             
             upload_response = requests.post(nocodb_upload_url, headers=headers, files=files_to_upload, params={"path": path})
 
@@ -923,7 +924,7 @@ async def swap_image(title: str = Form(...), new_title: str = Form(...), file: U
             # Update record with new image path
             
             new_title = new_title.replace(" ", "+")
-            title = "watermarked_" + new_title + ".PNG" + ".png"
+            title = new_title + ".png"
             update_data = {
                 "Id": id,
                 "img_label": new_title,
@@ -1006,15 +1007,20 @@ async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = Fi
             response_object = json.loads(get_nocodb_data())  # Assume this function gets the data correctly
 
             # Get the last ID in the list and increment by 1
-            id = response_object['list'][-1]['Id'] + 1
+            try:
+                id = response_object['list'][-1]['Id'] + 1
+            except IndexError:
+                id = 1
+
             with tempfile.NamedTemporaryFile(suffix=".PNG", delete=False) as temp_file:
                 temp_file_path = temp_file.name
                 temp_file_paths.append(temp_file_path)
                 temp_file.write(await file.read())
                 temp_file.flush()
 
-            watermarked_img, watermarked_path = get_watermark(temp_file_path, title)
-            with open(watermarked_path, "rb") as f:
+            # Watermarked feature
+            # watermarked_img, watermarked_path = get_watermark(temp_file_path, title)
+            with open(temp_file_path, "rb") as f:
             # get_watermark(temp_file_path, title)
                 files_to_upload = {
                     "file": f
@@ -1022,11 +1028,11 @@ async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = Fi
                 headers = {
                     'xc-token': xc_auth
                 }
-                path = os.path.basename(watermarked_path)
+                path = os.path.basename(temp_file_path)
                 upload_response = requests.post(nocodb_upload_url, headers=headers, files=files_to_upload, params={"path": path})
-
                 if upload_response.status_code == 200:
                     data = upload_response.json()
+                    print(data)
                     # Assume data is a list of dictionaries
                     new_file_info = data[0]  # Access the first item in the list
                     new_file_path = new_file_info.get('path')
@@ -1037,7 +1043,7 @@ async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = Fi
             # Update record with new image path
             
                 new_title = title.replace(" ", "+")
-                title = "watermarked_" + new_title + ".PNG" + ".png"
+                title = new_title + ".png"
                 update_data = {
                     "Id": id,
                     "img_label": new_title,

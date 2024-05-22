@@ -264,11 +264,11 @@ a:visited {
     color: inherit;
     position: relative;
     cursor: pointer;
-    color: black;
+    color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 99999px;
     padding: 10px 20px;
-    background-color: #349ef5;
+    background-color: 50%;
     font-size: 15px;
 }
 .quantity-input {
@@ -294,7 +294,9 @@ input[readonly]:focus {
     outline: none;
 }
 .quantity-container button:hover {
-    background-color: #0056b3;
+    background-color: white;
+    color: black;
+    transition : background-color 0.3s;
 }
 
 .quantity-container p {   
@@ -400,7 +402,7 @@ input[readonly]:focus {
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.6s;
 }
 .contact_form button[type="submit"]:hover {
     background-color: #0056b3; /* Change to desired hover color */
@@ -469,7 +471,6 @@ input[readonly]:focus {
     border-radius: 5px;
     cursor: pointer;
     font-size: 16px; /* Add margin between price and remove button */
-    transition: background-color 0.3s;
 }
 .remove-item:hover {
     background-color: #0056b3; /* Example color on hover for remove button */

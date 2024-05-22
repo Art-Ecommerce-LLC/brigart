@@ -196,6 +196,9 @@ body {
     overflow-x: hidden; 
     object-fit: fill; 
     /* transform: translateY(100%); */
+    -webkit-user-select:none;
+    -webkit-touch-callout:none;
+    user-select: none;
 }
 .artwork-wrapper {
     width:var(--image-width);
