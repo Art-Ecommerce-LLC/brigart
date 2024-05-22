@@ -176,6 +176,9 @@ a:visited {
     background-size:contain;
     background-position: center;
     background-repeat:no-repeat;
+    -webkit-user-select:none;
+    -webkit-touch-callout:none;
+    user-select: none;
 }
 
 .content.hide{

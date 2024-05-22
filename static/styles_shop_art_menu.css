@@ -182,6 +182,9 @@ body {
     transition: transform 0.5s ease, opacity 0.5s ease;
     overflow-x: hidden; 
     object-fit: fill; 
+    -webkit-user-select:none;
+    -webkit-touch-callout:none;
+    user-select: none;
     /* transform: translateY(100%); */
 }
 .artwork-name {

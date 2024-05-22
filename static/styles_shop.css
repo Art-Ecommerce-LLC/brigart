@@ -190,6 +190,9 @@ a:visited {
     background-position: center;
     background-repeat: no-repeat;
     transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+    -webkit-user-select:none;
+    -webkit-touch-callout:none;
+    user-select: none;
 }
 .info_container {
     display: flex;

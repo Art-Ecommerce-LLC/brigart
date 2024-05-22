@@ -312,6 +312,9 @@ a:visited {
     margin-left:0;
     background-size: cover; /* Ensure the background image covers the container */
     background-position: center;
+    -webkit-user-select:none;
+    -webkit-touch-callout:none;
+    user-select: none;
 }
 .image_container img {
     height: auto;
