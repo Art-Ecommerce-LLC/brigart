@@ -72,7 +72,7 @@ async def download_image(session, url, file_path):
         if response.status == 200:
             # Read the image data
             image_data = await response.read()
-            scale_factor = 0.3
+            scale_factor = 0.4
             # Open and resize the image by a factor
             image = Image.open(BytesIO(image_data))
             scaled_width = int(image.width * scale_factor)
