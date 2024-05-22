@@ -325,7 +325,7 @@ a:visited {
 .contact_form button[type="submit"] {
     padding: 10px;
     background-color: #349ef5;
-    color: #040404;
+    color: white;
     font-weight: bold;
     border: none;
     border-radius: 5px;
@@ -478,11 +478,12 @@ a:visited {
         flex-direction: row;
     }
     .image_container {
-        margin-right: 20px;
+        margin-right: 10px;
     }
     .info_container {
         margin-top: 0;
         margin-left: 20px;
+        margin-right: 20px;
     }
     .image_container img {
         width: 100%;
@@ -495,7 +496,7 @@ a:visited {
 }
 @media (min-width:950px) {
     .artwork{
-        width: calc(var(--image-width) * 2);
+        width: calc((var(--image-width) * 2) - 90px);
         height: calc(var(--image-height) * 2);
     }
 }

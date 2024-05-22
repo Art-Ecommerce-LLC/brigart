@@ -241,8 +241,7 @@ a:visited {
     width: 100%;
     font-size: 16px;
     white-space: nowrap;
-    margin-right:2px;
-    margin-bottom: 2px;;
+    margin-right: 2px;
 }
 .right-section {
     display: flex;

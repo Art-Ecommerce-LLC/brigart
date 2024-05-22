@@ -230,6 +230,7 @@ html, body {
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s;
+    color:black;
 }
 .contact_form button[type="submit"]:hover {
     background-color: #0056b3; /* Change to desired hover color */
