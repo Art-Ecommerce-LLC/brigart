@@ -15,9 +15,6 @@ import json
 from urllib.parse import unquote
 import urllib3
 import re
-from smartystreets_python_sdk import SharedCredentials, StaticCredentials, exceptions, ClientBuilder
-from smartystreets_python_sdk.us_street import Lookup as StreetLookup
-from smartystreets_python_sdk.us_street.match_type import MatchType
 from typing import Annotated, List
 import tempfile
 import shutil
@@ -67,6 +64,8 @@ async def preload_images():
 
         await asyncio.gather(*tasks)
 
+
+
 async def download_image(session, url, file_path):
     async with session.get(url) as response:
         if response.status == 200:
@@ -82,12 +81,22 @@ async def download_image(session, url, file_path):
             # Save the resized image
             resized_image.save(file_path)
 
+
+async def run_periodically(interval, coro, *args, **kwargs):
+    while True:
+        await coro(*args, **kwargs)
+        await asyncio.sleep(interval)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await preload_images()
-    yield
-    temp_dir.cleanup()
-
+    interval = 6 * 60 * 60  # 6 hours in seconds
+    preload_task = asyncio.create_task(run_periodically(interval, preload_images))
+    try:
+        await preload_images()  # Initial preload
+        yield
+    finally:
+        preload_task.cancel()
+        temp_dir.cleanup()
 
 
 # Define FastAPI App

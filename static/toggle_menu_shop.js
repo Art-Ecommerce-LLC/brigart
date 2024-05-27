@@ -1,3 +1,23 @@
+async function togglePageLock(img_url, title) {
+    // Change the opacity of the body to 0.5 before starting the addToCart function
+    document.body.style.opacity = '0.5';
+    
+    // Add a spinner to indicate loading
+    const spinner = document.createElement('div');
+    spinner.classList.add('spinner');
+    document.body.appendChild(spinner);
+
+    try {
+        // Await the addToCart function
+        await addToCart(img_url, title);
+    } finally {
+        // Change the opacity back to 1 once the addToCart function is done
+        document.body.style.opacity = '1';
+        // Remove the spinner once the addToCart function is done
+        spinner.remove();
+    }
+}
+
 function getCartQuantity() {
     return fetch('/get_cart_quantity') // Assuming this endpoint returns the total quantity
         .then(response => {
@@ -102,7 +122,6 @@ function updateCartQuantity() {
         .then(response => response.json())
         
         .then(data => {
-            console.log(data.quantity)
             if (data.quantity !== 0) {
                 document.getElementById('cartQuantity').innerText = data.quantity;
                 document.getElementById('mobileCartQuantity').innerText = data.quantity;
@@ -132,7 +151,7 @@ let messageAdded = false;
 // Flag to track if the message has been added
 
 
-function addToCart(img_url, title) {
+async function addToCart(img_url, title) {
 
     let quantityInputValue = document.getElementById('quantity-input').value;
 
@@ -279,7 +298,6 @@ function submitPostForm(img_url, quantityInputValue, title) {
         fetch('/shop_art', requestOptions)
             .then(response => response.json())
             .then(data => {
-                console.log(data);
                 resolve(data); // Resolve the promise with the response data
             })
             .catch(error => {
