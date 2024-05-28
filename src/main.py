@@ -81,23 +81,11 @@ async def download_image(session, url, file_path):
             # Save the resized image
             resized_image.save(file_path)
 
-
-async def run_periodically(interval, coro, *args, **kwargs):
-    while True:
-        await coro(*args, **kwargs)
-        await asyncio.sleep(interval)
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    interval = 6 * 60 * 60  # 6 hours in seconds
-    preload_task = asyncio.create_task(run_periodically(interval, preload_images))
-    try:
-        await preload_images()  # Initial preload
-        yield
-    finally:
-        preload_task.cancel()
-        temp_dir.cleanup()
-
+    await preload_images()
+    yield
+    temp_dir.cleanup()
 
 # Define FastAPI App
 api_key_header = APIKeyHeader(name = 'X-API_KEY')
