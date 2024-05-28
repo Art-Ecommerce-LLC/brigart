@@ -31,6 +31,10 @@ urllib3.disable_warnings()
 # Temporary directory to store images
 temp_dir = tempfile.TemporaryDirectory()
 
+def clear_caches():
+    load_nocodb_data.cache_clear()
+    load_nocodb_icon_data.cache_clear()
+
 @lru_cache(maxsize=128)
 def load_nocodb_data():
     nocodb_data = get_nocodb_data()  # Your function to fetch data from NoCodeB
@@ -347,6 +351,10 @@ async def some_middleware(request: Request, call_next):
 @app.get("/", response_class=HTMLResponse)
 async def homepage(request: Request):
 
+    clear_caches()  # Clear caches before fetching new data
+    await preload_images()
+
+
     imgs,titles = get_nocodb_img_data()
     icons = get_nocodb_icon_data()
     
@@ -384,6 +392,8 @@ async def homepage(request: Request):
 @app.post("/shop")
 async def shop_img_url(request: Request, url: Url):
 
+    clear_caches()  # Clear caches before fetching new data
+    await preload_images()
     imgs, titles = get_nocodb_img_data()
 
     # By default if the match string doesn't change to true the url is invalid
@@ -401,7 +411,8 @@ async def shop_img_url(request: Request, url: Url):
 
 @app.get("/shop/{title}", response_class=HTMLResponse)
 async def shop(request: Request, title : str):
- 
+    clear_caches()  # Clear caches before fetching new data
+    await preload_images()
     
     # icons = get_nocodb_icon_data()
     # Refresh the shopping cart because IMG URls change
@@ -445,6 +456,8 @@ async def shop(request: Request, title : str):
 
 @app.post("/shop_art")
 async def shop_art_url(request: Request, url_quant: UrlQuantity):
+    clear_caches()  # Clear caches before fetching new data
+    await preload_images()
 
     imgs, titles  = get_nocodb_img_data()
     match = False
@@ -524,7 +537,10 @@ def cleancart(request: Request):
 
 @app.get("/shop_art", response_class=HTMLResponse)
 async def shop_art(request: Request):
-    
+
+    clear_caches()  # Clear caches before fetching new data
+    await preload_images()
+
     cleancart(request)
 
     img_quant_list = request.session.get("img_quantity_list")
@@ -589,6 +605,9 @@ async def shop_art(request: Request):
 @app.get("/shop_art_menu", response_class=HTMLResponse)
 async def shop_art_menu(request: Request):
 
+    clear_caches()  # Clear caches before fetching new data
+    await preload_images()
+
     imgs, titles = get_nocodb_img_data()
     icons = get_nocodb_icon_data()
 
@@ -619,7 +638,8 @@ async def shop_art_menu(request: Request):
 
 @app.get("/giclee_prints", response_class=HTMLResponse)
 async def shop_giclee_prints(request: Request):
-
+    clear_caches()  # Clear caches before fetching new data
+    await preload_images()
 
     icons = get_nocodb_icon_data()
 
@@ -736,7 +756,7 @@ async def delete_item(request: Request, title : Title):
 
 @app.get("/get_cart_quantity")
 async def get_cart_quantity(request: Request):
-
+    
     img_quantity_list = request.session.get("img_quantity_list")
 
     if img_quantity_list is None:
@@ -1112,13 +1132,11 @@ async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = Fi
 @app.get("/hostedimage/{title}", response_class=HTMLResponse)
 async def hosted_image(request: Request, title: str):
     file_path = os.path.join(temp_dir.name, f"{title}.png")
-    try:
-        if os.path.exists(file_path):
-            return FileResponse(file_path, media_type="image/png")
-        else:
-            raise HTTPException(status_code=404, detail="Image not found")
-    except HTTPException:
-        return RedirectResponse(url="/")
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type="image/png")
+    else:
+        raise HTTPException(status_code=404, detail="Image not found")
+
 
 
     
