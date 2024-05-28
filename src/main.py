@@ -354,12 +354,14 @@ async def some_middleware(request: Request, call_next):
     return response
 
 
+# Write a refresh img function that will refresh the img urls in the shopping cart
+
 @app.get("/", response_class=HTMLResponse)
 async def homepage(request: Request):
 
     imgs,titles = get_nocodb_img_data()
     icons = get_nocodb_icon_data()
-
+    
     # Refresh the shopping cart because IMG URls change
 
 
@@ -1122,11 +1124,13 @@ async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = Fi
 @app.get("/hostedimage/{title}", response_class=HTMLResponse)
 async def hosted_image(request: Request, title: str):
     file_path = os.path.join(temp_dir.name, f"{title}.png")
-
-    if os.path.exists(file_path):
-        return FileResponse(file_path, media_type="image/png")
-    else:
-        raise HTTPException(status_code=404, detail="Image not found")
+    try:
+        if os.path.exists(file_path):
+            return FileResponse(file_path, media_type="image/png")
+        else:
+            raise HTTPException(status_code=404, detail="Image not found")
+    except HTTPException:
+        return RedirectResponse(url="/")
 
 
     
