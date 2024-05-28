@@ -510,13 +510,25 @@ def cleancart(request: Request):
 
     titles = [item['title'].lower() for item in img_quant_list]
     print(titles)
-    # Check if there are repeating titles in the listq
+    # Check if there are repeating titles in the list
     for title in titles:
         if titles.count(title) > 1:
             for item in img_quant_list:
                 if item['title'].lower() == title:
                     img_quant_list.remove(item)
                     break
+    # Check if the title exists in the nocodb database, if not remove it from the list
+    nocodb_data = get_nocodb_data()
+    loaded_nocodb_data = json.loads(nocodb_data)
+    for item in img_quant_list:
+        match = False
+        for each in loaded_nocodb_data['list']:
+            if each['img_label'] == item['title']:
+                match = True
+        if match == False:
+            img_quant_list.remove(item)
+            
+                    
 
     request.session["img_quantity_list"] = img_quant_list
 
