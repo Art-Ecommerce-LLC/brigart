@@ -449,6 +449,10 @@ async def shop(request: Request, title : str):
                                       name = "shop.html",
                                       context = context)
 
+
+
+
+
 @app.post("/shop_art")
 async def shop_art_url(request: Request, url_quant: UrlQuantity):
 
@@ -501,10 +505,26 @@ async def shop_art_url(request: Request, url_quant: UrlQuantity):
     else:
         raise(HTTPException(status_code=400, detail="Invalid URL in Shop_Art Request"))
 
+def cleancart(request: Request):
+    img_quant_list = request.session.get("img_quantity_list")
+
+    titles = [item['title'].lower() for item in img_quant_list]
+    print(titles)
+    # Check if there are repeating titles in the listq
+    for title in titles:
+        if titles.count(title) > 1:
+            for item in img_quant_list:
+                if item['title'].lower() == title:
+                    img_quant_list.remove(item)
+                    break
+
+    request.session["img_quantity_list"] = img_quant_list
 
 @app.get("/shop_art", response_class=HTMLResponse)
 async def shop_art(request: Request):
     
+    cleancart(request)
+
     img_quant_list = request.session.get("img_quantity_list")
 
     icons = get_nocodb_icon_data()
@@ -622,6 +642,7 @@ class Title(BaseModel):
             
 @app.post("/increase_quantity")
 async def increase_quantity(request: Request, title: Title):
+
     title = title.title
     match = False
     nocodb_data = get_nocodb_data()
@@ -801,80 +822,80 @@ async def subscribe(request: Request):
 
     print(json_body)
     
-def validate_address(
-    full_name : str,
-    street: str,
-    street2: str,
-    city: str,
-    state: str,
-    zipcode: str,
-    candidates: int,
-):
-    # for server-to-server requests, use this code:
-    auth_id = smarty_auth_id
-    auth_token = smarty_auth_token
+# def validate_address(
+#     full_name : str,
+#     street: str,
+#     street2: str,
+#     city: str,
+#     state: str,
+#     zipcode: str,
+#     candidates: int,
+# ):
+#     # for server-to-server requests, use this code:
+#     auth_id = smarty_auth_id
+#     auth_token = smarty_auth_token
     
-    credentials = StaticCredentials(auth_id, auth_token)
+#     credentials = StaticCredentials(auth_id, auth_token)
 
 
-    client = ClientBuilder(credentials).with_licenses(["us-core-cloud"]).build_us_street_api_client()
+#     client = ClientBuilder(credentials).with_licenses(["us-core-cloud"]).build_us_street_api_client()
 
 
-    lookup = StreetLookup()
-    lookup.addressee = full_name
-    lookup.street = street
-    # lookup.street2 = "closet under the stairs"
-    # lookup.secondary = "APT 2"
-    # lookup.urbanization = ""  # Only applies to Puerto Rico addresses
-    lookup.city = city
-    lookup.state = state
-    lookup.zipcode = zipcode
-    lookup.candidates = 3
-    lookup.match = MatchType.INVALID  # "invalid" is the most permissive match,
-                                      # this will always return at least one result even if the address is invalid.
-                                      # Refer to the documentation for additional Match Strategy options.
+#     lookup = StreetLookup()
+#     lookup.addressee = full_name
+#     lookup.street = street
+#     # lookup.street2 = "closet under the stairs"
+#     # lookup.secondary = "APT 2"
+#     # lookup.urbanization = ""  # Only applies to Puerto Rico addresses
+#     lookup.city = city
+#     lookup.state = state
+#     lookup.zipcode = zipcode
+#     lookup.candidates = 3
+#     lookup.match = MatchType.INVALID  # "invalid" is the most permissive match,
+#                                       # this will always return at least one result even if the address is invalid.
+#                                       # Refer to the documentation for additional Match Strategy options.
 
-    try:
-        client.send_lookup(lookup)
-    except exceptions.SmartyException as err:
-        print(err)
-        return
+#     try:
+#         client.send_lookup(lookup)
+#     except exceptions.SmartyException as err:
+#         print(err)
+#         return
 
-    result = lookup.result
+#     result = lookup.result
 
-    if not result:
-        print("No candidates. This means the address is not valid.")
-        return
+#     if not result:
+#         print("No candidates. This means the address is not valid.")
+#         return
 
-    print("Show Address")
-    for c, candidate in enumerate(lookup.result):
-        print(f"Candidate {c} is:")
-        print(candidate.delivery_line_1)
-        print(candidate.last_line)
-        print()
-@app.post("/process_payment")
-async def process_checkout(request: Request, order_info: OrderInfo):
-    # Validate inputs
-    validation_errors = validate_inputs(order_info)
-    print(order_info)
+#     print("Show Address")
+#     for c, candidate in enumerate(lookup.result):
+#         print(f"Candidate {c} is:")
+#         print(candidate.delivery_line_1)
+#         print(candidate.last_line)
+#         print()
+# @app.post("/process_payment")
+# async def process_checkout(request: Request, order_info: OrderInfo):
+#     # Validate inputs
+#     validation_errors = validate_inputs(order_info)
+#     print(order_info)
 
-    validate_address(
-        full_name = order_info.fullname,
-        street = order_info.address1,
-        street2 = order_info.address2,
-        city = order_info.city,
-        state = order_info.state,
-        zipcode = order_info.zip,
-        candidates = 3
-    )
+#     validate_address(
+#         full_name = order_info.fullname,
+#         street = order_info.address1,
+#         street2 = order_info.address2,
+#         city = order_info.city,
+#         state = order_info.state,
+#         zipcode = order_info.zip,
+#         candidates = 3
+#     )
 
-    if validation_errors:
-        return {"error": validation_errors}
+#     if validation_errors:
+#         return {"error": validation_errors}
 
-    # If all inputs are valid, process the payment
-    # If the payment is successful, send an email to the user
+#     # If all inputs are valid, process the payment
+#     # If the payment is successful, send an email to the user
 
-    return {"message": "Payment processed successfully"}
+#     return {"message": "Payment processed successfully"}
 
     # Validate all inputs
 
@@ -1089,11 +1110,13 @@ async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = Fi
 @app.get("/hostedimage/{title}", response_class=HTMLResponse)
 async def hosted_image(request: Request, title: str):
     file_path = os.path.join(temp_dir.name, f"{title}.png")
-    
+
     if os.path.exists(file_path):
         return FileResponse(file_path, media_type="image/png")
     else:
         raise HTTPException(status_code=404, detail="Image not found")
+
+
     
 # Development Server
 # Run the app
