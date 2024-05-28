@@ -523,7 +523,7 @@ def cleancart(request: Request):
     for item in img_quant_list:
         match = False
         for each in loaded_nocodb_data['list']:
-            if each['img_label'] == item['title']:
+            if each['img_label'].replace("+", " ") == item['title']:
                 match = True
         if match == False:
             img_quant_list.remove(item)
