@@ -31,10 +31,6 @@ urllib3.disable_warnings()
 # Temporary directory to store images
 temp_dir = tempfile.TemporaryDirectory()
 
-def clear_caches():
-    load_nocodb_data.cache_clear()
-    load_nocodb_icon_data.cache_clear()
-
 @lru_cache(maxsize=128)
 def load_nocodb_data():
     nocodb_data = get_nocodb_data()  # Your function to fetch data from NoCodeB
@@ -1115,13 +1111,43 @@ async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = Fi
 @app.get("/hostedimage/{title}", response_class=HTMLResponse)
 async def hosted_image(request: Request, title: str):
     file_path = os.path.join(temp_dir.name, f"{title}.png")
+    
+    # Check if the image exists locally
     if os.path.exists(file_path):
         return FileResponse(file_path, media_type="image/png")
-    else:
+    
+    # If the image does not exist, attempt to fetch it from the database
+    try:
+        nocodb_data = get_nocodb_data()
+        loaded_nocodb_data = json.loads(nocodb_data)
+        
+        for item in loaded_nocodb_data['list']:
+            if item['img_label'] == title:
+                db_path = item['img'][0]['signedPath']
+                url_path = f"http://{site_host}/{db_path}"
+                
+                # Download and save the image
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url_path) as response:
+                        if response.status == 200:
+                            image_data = await response.read()
+                            scale_factor = 0.4
+                            # Open and resize the image by a factor
+                            image = Image.open(BytesIO(image_data))
+                            scaled_width = int(image.width * scale_factor)
+                            scaled_height = int(image.height * scale_factor)
+                            resized_image = image.resize((scaled_width, scaled_height))
+                            # Save the resized image
+                            resized_image.save(file_path)
+                            return FileResponse(file_path, media_type="image/png")
+                        else:
+                            raise HTTPException(status_code=404, detail="Image not found")
+        
+        # If no matching image label is found in the database
         raise HTTPException(status_code=404, detail="Image not found")
-
-
-
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
     
 # Development Server
 # Run the app
