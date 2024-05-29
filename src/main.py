@@ -5,10 +5,10 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from config import NOCODB_PATH, NOCODB_IMG_UPDATE_URL, XC_AUTH
 from logger import logger
-from middleware import add_middleware
-from models import Url, UrlQuantity, OrderInfo, Credentials, Title
-from utils import lifespan, cleancart, scale_image, temp_dir
-from noco import (
+from src.middleware import add_middleware
+from src.models import Url, UrlQuantity, OrderInfo, Credentials, Title
+from src.utils import lifespan, cleancart, scale_image, temp_dir
+from src.noco import (
     get_nocodb_img_data, get_nocodb_data, get_nocodb_icon_data, HTTP, BRIG_PASSWORD, BRIG_USERNAME, OPENAPI_URL, SCENE, SITE, BEN_USERNAME, BEN_PASSWORD, SITE_HOST
 )
 from logger import get_logs
@@ -20,8 +20,6 @@ from urllib.parse import unquote
 import tempfile
 import os
 from typing import List
-from PIL import Image
-from io import BytesIO
 import uvicorn
 
 # Initialize FastAPI App
