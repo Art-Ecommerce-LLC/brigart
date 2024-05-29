@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, File
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from src.config import NOCODB_PATH, NOCODB_IMG_UPDATE_URL, XC_AUTH
-from logger import logger
+from src.logger import logger
 from src.middleware import add_middleware
 from src.models import Url, UrlQuantity, OrderInfo, Credentials, Title
 from src.utils import lifespan, cleancart, scale_image, temp_dir

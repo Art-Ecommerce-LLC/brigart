@@ -11,7 +11,7 @@ from fastapi import HTTPException, Request, Security, status
 from fastapi.security import APIKeyHeader
 from fastapi import FastAPI
 from src.noco import get_nocodb_data, get_nocodb_icons, SITE_HOST, API_KEYS, HTTP
-from logger import logger
+from src.logger import logger
 from src.models import OrderInfo
 from tempfile import TemporaryDirectory
 import asyncio
