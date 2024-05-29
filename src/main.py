@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException, Sec
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from config import NOCODB_PATH, NOCODB_IMG_UPDATE_URL, XC_AUTH
+from src.config import NOCODB_PATH, NOCODB_IMG_UPDATE_URL, XC_AUTH
 from logger import logger
 from src.middleware import add_middleware
 from src.models import Url, UrlQuantity, OrderInfo, Credentials, Title
