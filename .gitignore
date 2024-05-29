@@ -30,4 +30,4 @@ deployment/*
 
 src/address_validation.py
 
-log/*
+src/log/*
