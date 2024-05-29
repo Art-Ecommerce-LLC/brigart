@@ -29,3 +29,5 @@ run_script.sh
 deployment/*
 
 src/address_validation.py
+
+log/*

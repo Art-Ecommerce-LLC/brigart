@@ -16,10 +16,14 @@ async function login() {
         body: JSON.stringify(data)
     });
 
-    if (response.ok) {
+    if (response.status === 201) {
         // Redirect to portal or other page on successful login
+        window.location.href = '/logs';
+    }
+    else if (response.status === 200) {
         window.location.href = '/brig_portal';
-    } else {
+    }
+     else {
         // Show error message on failed login
         errorMessage.style.display = 'block';
     }
