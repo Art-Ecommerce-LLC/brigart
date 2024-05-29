@@ -11,7 +11,7 @@ from src.utils import lifespan, cleancart, scale_image, temp_dir
 from src.noco import (
     get_nocodb_img_data, get_nocodb_data, get_nocodb_icon_data, HTTP, BRIG_PASSWORD, BRIG_USERNAME, OPENAPI_URL, SCENE, SITE, BEN_USERNAME, BEN_PASSWORD, SITE_HOST
 )
-from logger import get_logs
+from src.logger import get_logs
 import requests
 import base64
 import aiohttp
