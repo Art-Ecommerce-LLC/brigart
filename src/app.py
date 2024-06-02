@@ -1,31 +1,28 @@
 # app/main.py
 from fastapi import (
-    FastAPI, Request, Form, UploadFile, File, HTTPException, Security, status
+    FastAPI, Request, Form, UploadFile, File, HTTPException
 )
 from fastapi.responses import ( 
-    HTMLResponse, JSONResponse, RedirectResponse, FileResponse
+    HTMLResponse, JSONResponse, RedirectResponse
 )
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from config import NOCODB_PATH, NOCODB_IMG_UPDATE_URL, XC_AUTH
-from logger import logger
-from middleware import add_middleware
-from models import Credentials, Title, TitleQuantity
-from utils import (
-    cleancart, convert_to_data_uri, hosted_image, get_data_uri_from_title
+from src.config import NOCODB_PATH, NOCODB_IMG_UPDATE_URL, XC_AUTH
+from src.logger import logger
+from src.middleware import add_middleware
+from src.models import Credentials, Title, TitleQuantity
+from src.utils import (
+    cleancart, hosted_image
 )
-from noco import (
-    get_nocodb_img_data, get_nocodb_data, HTTP, BRIG_PASSWORD, BRIG_USERNAME, OPENAPI_URL, SCENE, SITE, BEN_USERNAME, BEN_PASSWORD, SITE_HOST
+from src.noco import (
+    get_nocodb_data, HTTP, BRIG_PASSWORD, BRIG_USERNAME, OPENAPI_URL, SCENE, SITE, BEN_USERNAME, BEN_PASSWORD, SITE_HOST
 )
-from logger import get_logs
+from src.logger import get_logs
 import requests
-import aiohttp
 import json
-from urllib.parse import unquote
 import tempfile
 import os
 from typing import List
-import uvicorn
 
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
@@ -42,9 +39,20 @@ app = FastAPI(
 # Middleware
 add_middleware(app)
 
+# Get path of where the file is running
+script_path = os.path.abspath(__file__)
+
+# Get the directory where the script is located
+script_dir = os.path.dirname(script_path)
+
 # Static files and templates
-app.mount("/static", StaticFiles(directory="src/static"), name="static")
-templates = Jinja2Templates(directory="src/templates")
+static_dir = os.path.join(script_dir, "static")
+templates_dir = os.path.join(script_dir, "templates")
+
+
+# Static files and templates
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+templates = Jinja2Templates(directory=templates_dir)
 
 @app.exception_handler(HTTPException)
 async def custom_http_exception_handler(request: Request, exc: HTTPException):
@@ -119,7 +127,6 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity):
                 request.session["img_quantity_list"] = img_quant_list
                 total_quantity = sum(int(item["quantity"]) for item in img_quant_list)
                 logger.info(f"Updated quantity for {title_quantity.title}, new quantity: {total_quantity}")
-                print(img_quant_list)
                 return JSONResponse({"quantity": total_quantity})
             
         # If title is not in the cart, add it
@@ -218,31 +225,13 @@ async def shop_giclee_prints(request: Request):
 async def increase_quantity(request: Request, title: Title):
     logger.info(f"Increase quantity for {title.title} by {request.client.host}")
     try:
-        title_str = title.title
-        match = False
-        nocodb_data = get_nocodb_data()
-        loaded_nocodb_data = json.loads(nocodb_data)
-        for item in loaded_nocodb_data['list']:
-            title_str = title_str.replace(" ", "+")
-            if item['img_label'] == title_str:
-                url_path = f"{HTTP}://{SITE}/hostedimage/{title_str.replace(' ', '+')}"
-                request.session["img_url"] = url_path
-                request.session["title"] = title_str.replace("+", " ")
-                match = True
-                break
-        if match:
-            img_quantity_list = request.session.get("img_quantity_list")
-            img_url = url_path
-            for each_url in img_quantity_list:
-                if each_url["img_url"] == img_url:
-                    each_url["quantity"] = str(int(each_url["quantity"]) + 1)
-                    request.session["img_quantity_list"] = img_quantity_list
-                    total_quantity = sum(int(item["quantity"]) for item in img_quantity_list)
-                    logger.info(f"Increased quantity for {title.title}, new quantity: {total_quantity}")
-                    return JSONResponse({"quantity": total_quantity})
-        else:
-            logger.warning(f"Invalid URL in Increase Quantity Request: {title.title}")
-            raise HTTPException(status_code=400, detail="Invalid URL in Increase Quantity Request")
+            title = title.title
+            img_quant_list = request.session.get("img_quantity_list")
+            for each in img_quant_list:
+                if title == each["title"]:
+                    # Increase quantity by one
+                    each["quantity"] = str(int(each["quantity"]) + 1)
+
     except Exception as e:
         logger.error(f"Error in increase_quantity: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -251,30 +240,11 @@ async def increase_quantity(request: Request, title: Title):
 async def decrease_quantity(request: Request, title: Title):
     logger.info(f"Decrease quantity for {title.title} by {request.client.host}")
     try:
-        title_str = title.title
-        match = False
-        nocodb_data = get_nocodb_data()
-        loaded_nocodb_data = json.loads(nocodb_data)
-        for item in loaded_nocodb_data['list']:
-            title_str = title_str.replace(" ", "+")
-            if item['img_label'] == title_str:
-                url_path = f"{HTTP}://{SITE}/hostedimage/{title_str.replace(' ', '+')}"
-                request.session["img_url"] = url_path
-                request.session["title"] = title_str.replace("+", " ")
-                match = True
-                break
-        if match:
-            img_quantity_list = request.session.get("img_quantity_list")
-            img_url = url_path
-            for each_url in img_quantity_list:
-                if each_url["img_url"] == img_url:
-                    each_url["quantity"] = str(int(each_url["quantity"]) - 1)
-                    request.session["img_quantity_list"] = img_quantity_list
-                    logger.info(f"Decreased quantity for {title.title}, new quantity: {each_url['quantity']}")
-                    return JSONResponse({"quantity": each_url["quantity"]})
-        else:
-            logger.warning(f"Invalid URL in Decrease Quantity Request: {title.title}")
-            raise HTTPException(status_code=400, detail="Invalid URL in Decrease Quantity Request")
+        img_quant_list = request.session.get("img_quantity_list")
+        for each in img_quant_list:
+            if title == each["title"]:
+                # Increase quantity by one
+                each["quantity"] = str(int(each["quantity"]) - 1)
     except Exception as e:
         logger.error(f"Error in decrease_quantity: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -283,30 +253,15 @@ async def decrease_quantity(request: Request, title: Title):
 async def delete_item(request: Request, title: Title):
     logger.info(f"Delete item {title.title} by {request.client.host}")
     try:
-        title_str = title.title
-        match = False
-        nocodb_data = get_nocodb_data()
-        loaded_nocodb_data = json.loads(nocodb_data)
-        for item in loaded_nocodb_data['list']:
-            title_str = title_str.replace(" ", "+")
-            if item['img_label'] == title_str:
-                url_path = f"{HTTP}://{SITE}/hostedimage/{title_str.replace(' ', '+')}"
-                request.session["img_url"] = url_path
-                request.session["title"] = title_str.replace("+", " ")
-                match = True
-                break
-        if match:
-            img_quantity_list = request.session.get("img_quantity_list")
-            img_url = url_path
-            for item in img_quantity_list:
-                if item["img_url"] == img_url:
-                    img_quantity_list.remove(item)
-                    request.session["img_quantity_list"] = img_quantity_list
-                    logger.info(f"Deleted item {title.title} from cart")
-                    return JSONResponse({"message": "Item deleted"})
-        else:
-            logger.warning(f"Invalid URL in Delete Item Request: {title.title}")
-            raise HTTPException(status_code=400, detail="Invalid URL in Delete Item Request")
+        title = title.title
+        img_quant_list = request.session.get("img_quantity_list")
+        for each in img_quant_list:
+            if title == each["title"]:
+                img_quant_list.remove(each)
+                request.session["img_quantity_list"] = img_quant_list
+                logger.info(f"Item {title} removed from cart")
+                return JSONResponse({"message": "Item removed from cart"})
+        
     except Exception as e:
         logger.error(f"Error in delete_item: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -314,35 +269,36 @@ async def delete_item(request: Request, title: Title):
 @app.get("/checkout", response_class=HTMLResponse)
 async def shop_checkout(request: Request):
     logger.info(f"Checkout page accessed by {request.client.host}")
-    try:
-        img_quant_list = request.session.get("img_quantity_list", [])
+    try: 
+        img_quant_list = request.session.get("img_quantity_list")
+        if not img_quant_list:
+            img_quant_list = []
+
+        hosted_images, titles = await hosted_image()
         img_data_list = []
-        async with aiohttp.ClientSession() as session:
-            for item in img_quant_list:
-                img_dict = {}
-                decoded_url = unquote(item['img_url'])
-                async with session.get(decoded_url) as response:
-                    if response.status == 200:
-                        image_data = await response.read()
-                        decoded_url = convert_to_data_uri(image_data)
-                        img_title = item['title']
-                        img_dict["img_url"] = decoded_url
-                        img_dict["img_title"] = img_title
-                        img_dict["quantity"] = item['quantity']
-                        img_dict["price"] = 225 * int(item['quantity'])
-                        img_data_list.append(img_dict)
-                    else:
-                        logger.error(f"Failed to fetch image for {item['title']}, status code: {response.status}")
-        total_quantity = sum(int(item['quantity']) for item in img_quant_list)
+
+        for item in img_quant_list:
+            for title in titles:
+                if item["title"] in title:
+                    img_url = hosted_images[titles.index(title)]
+                    img_dict = {}
+                    img_dict["img_url"] = img_url
+                    img_dict["img_title"] = title
+                    img_dict["quantity"] = item["quantity"]
+                    img_dict["price"] = 225 * int(item["quantity"])
+                    img_data_list.append(img_dict)
+        total_quantity = sum(int(item["quantity"]) * 225 for item in img_quant_list)
         total_price = 225 * total_quantity
+
         context = {
-            "shopping_cart_url": shopping_cart_url,
-            "hamburger_menu_url": hamburger_menu_url,
-            "brig_logo_url": brig_logo_url,
-            "total_price": total_price,
-            "items": img_quant_list,
             "img_data_list": img_data_list,
+            "shopping_cart_url": hosted_images[-3],
+            "hamburger_menu_url": hosted_images[-2],
+            "brig_logo_url": hosted_images[-1],
+            "total_price": total_price,
+            "total_quantity": total_quantity
         }
+
         return templates.TemplateResponse(request=request, name="checkout.html", context=context)
     except Exception as e:
         logger.error(f"Error in shop_checkout: {e}")
@@ -414,10 +370,14 @@ async def swap_image(title: str = Form(...), new_title: str = Form(...), file: U
 
 @app.get("/portal", response_class=HTMLResponse)
 async def portal(request: Request):
-
     logger.info(f"Portal page accessed by {request.client.host}")
-    context = {"brig_logo_url": brig_logo_url}
-    return templates.TemplateResponse(request=request, name="login.html", context=context)
+    try:
+        hosted_images, titles = await hosted_image()
+        context = {"brig_logo_url": hosted_images[-1]}
+        return templates.TemplateResponse(request=request, name="login.html", context=context)
+    except Exception as e:
+        logger.error(f"Error in portal: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/credentials_check")
 async def credentials_check(request: Request, credentials: Credentials):
@@ -453,9 +413,10 @@ async def get_log_file(request: Request):
 async def brig_portal(request: Request):
     logger.info(f"Brig portal page accessed by {request.client.host}")
     try:
+        hosted_images, titles = await hosted_image()
         if not request.session.get('logged_in'):
             return RedirectResponse(url='/portal')
-        context = {"brig_logo_url": brig_logo_url}
+        context = {"brig_logo_url": hosted_images[-1]}
         return templates.TemplateResponse(request=request, name="brig_portal.html", context=context)
     except Exception as e:
         logger.error(f"Error in brig_portal: {e}")
@@ -547,6 +508,8 @@ async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = Fi
 #         logger.error(f"Failed to fetch hosted image: {e}")
 #         raise HTTPException(status_code=500, detail="Internal server error")
 
-if __name__ == "__main__":
-    if SCENE == "dev":
-        uvicorn.run(app="app:app", host=os.getenv("host"), port=int(os.getenv("port")), reload=True)
+# if __name__ == "__main__":
+    #if SCENE == "dev":
+    #    uvicorn.run(app="app:app", host=os.getenv("host"), port=int(os.getenv("port")), reload=True)
+    # If Mac:
+    # uvicorn.run(app="app:app", host=os.getenv("host"), port=444, reload=True)

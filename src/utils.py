@@ -2,23 +2,17 @@ import json
 import re
 from functools import lru_cache
 from PIL import Image
-from aiohttp import ClientSession, ClientError
 import os
 from io import BytesIO
-from contextlib import asynccontextmanager
 import base64
 from fastapi import HTTPException, Request, Security, status
 from fastapi.security import APIKeyHeader
-from fastapi import FastAPI
 from noco import get_nocodb_data, get_nocodb_icons, SITE_HOST, API_KEYS, HTTP
 from logger import logger
 from models import OrderInfo
 from tempfile import TemporaryDirectory
-import asyncio
-import aiohttp
 import requests
 import tempfile
-from fastapi.responses import FileResponse
 
 scale_factor = 0.4
 temp_dir = TemporaryDirectory()
