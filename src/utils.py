@@ -10,16 +10,26 @@ import base64
 from fastapi import HTTPException, Request, Security, status
 from fastapi.security import APIKeyHeader
 from fastapi import FastAPI
-from src.noco import get_nocodb_data, get_nocodb_icons, SITE_HOST, API_KEYS, HTTP
-from src.logger import logger
-from src.models import OrderInfo
+from noco import get_nocodb_data, get_nocodb_icons, SITE_HOST, API_KEYS, HTTP
+from logger import logger
+from models import OrderInfo
 from tempfile import TemporaryDirectory
 import asyncio
+import aiohttp
 import requests
+import tempfile
+from fastapi.responses import FileResponse
 
 scale_factor = 0.4
 temp_dir = TemporaryDirectory()
 api_key_header = APIKeyHeader(name='X-API_KEY')
+
+class Cache:
+    def __init__(self) -> None:
+        self.data_uris = None
+        self.titles = None
+
+cache = Cache()
 
 @lru_cache(maxsize=128)
 def load_nocodb_data() -> dict:
@@ -43,67 +53,6 @@ def load_nocodb_icon_data() -> dict:
         logger.error(f"Error loading NoCoDB icon data: {e}")
         raise
 
-async def preload_images() -> None:
-    logger.info("Preloading images")
-    try:
-        loaded_nocodb_data = load_nocodb_data()
-        loaded_icon_data = load_nocodb_icon_data()
-        loaded_list = loaded_nocodb_data['list']
-        tasks = []
-        for each in loaded_icon_data['list']:
-            loaded_list.append(each)
-        async with ClientSession() as session:
-            for item in loaded_nocodb_data['list']:
-                for img_info in item['img']:
-                    db_path = img_info['signedPath']
-                    url_path = f"{HTTP}://{SITE_HOST}/{db_path}"
-                    img_label = item['img_label']
-                    file_path = os.path.join(temp_dir.name, f"{img_label}.png")
-                    tasks.append(download_image(session, url_path, file_path))
-
-            await asyncio.gather(*tasks)
-        logger.info("Images preloaded successfully")
-    except Exception as e:
-        logger.error(f"Error preloading images: {e}")
-
-def scale_image(image_data: bytes, file_path: str) -> None:
-    try:
-        image = Image.open(BytesIO(image_data))
-        scaled_width = int(image.width * scale_factor)
-        scaled_height = int(image.height * scale_factor)
-        resized_image = image.resize((scaled_width, scaled_height))
-        resized_image.save(file_path)
-        logger.info(f"Image scaled and saved to {file_path}")
-    except Exception as e:
-        logger.error(f"Error scaling image: {e}")
-        raise
-
-async def download_image(session: ClientSession, url: str, file_path: str) -> None:
-    logger.info(f"Downloading image from {url} to {file_path}")
-    try:
-        async with session.get(url) as response:
-            if response.status == 200:
-                image_data = await response.read()
-                scale_image(image_data, file_path)
-                logger.info(f"Successfully downloaded and saved image to {file_path}")
-            else:
-                logger.error(f"Failed to download image from {url}, status code: {response.status}")
-    except ClientError as e:
-        logger.error(f"Client error while downloading image from {url}: {e}")
-    except Exception as e:
-        logger.error(f"Unexpected error while downloading image from {url}: {e}")
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    try:
-        await preload_images()
-        yield
-    except Exception as e:
-        logger.error(f"Error during app lifespan: {e}")
-    finally:
-        temp_dir.cleanup()
-        logger.info("Temporary directory cleaned up")
-
 def encode_image_to_base64(image_path: str) -> str:
     try:
         with open(image_path, "rb") as image_file:
@@ -113,6 +62,10 @@ def encode_image_to_base64(image_path: str) -> str:
     except Exception as e:
         logger.error(f"Error encoding image at {image_path} to base64: {e}")
         raise
+
+def convert_to_data_uri(image_data: bytes) -> str:
+    base64_data = base64.b64encode(image_data).decode('utf-8')
+    return f"data:image/jpeg;base64,{base64_data}"
 
 def get_api_key(api_key_header: str = Security(api_key_header)) -> str:
     if api_key_header in API_KEYS:
@@ -157,3 +110,143 @@ def cleancart(request: Request) -> None:
     except Exception as e:
         logger.error(f"Error cleaning cart: {e}")
         raise
+def update_cache_if_needed() -> tuple:
+    """Fetch current data, check for inconsistencies, and update cache if needed."""
+    logger.info("Fetching current data from NoCoDB")
+    current_nocodb_data = json.loads(get_nocodb_data())
+    current_icon_data = json.loads(get_nocodb_icons())
+
+    # Fetch cached data
+    cached_nocodb_data = load_nocodb_data()
+    cached_icon_data = load_nocodb_icon_data()
+    # Check for inconsistencies between cache data and current data
+    if check_for_inconsistencies(current_nocodb_data, cached_nocodb_data) or \
+       check_for_inconsistencies(current_icon_data, cached_icon_data):
+        clear_cache()
+        logger.info("Cache cleared due to inconsistencies")
+        nocodb_data = current_nocodb_data
+        icon_data = current_icon_data
+    else:
+        nocodb_data = cached_nocodb_data
+        icon_data = cached_icon_data
+
+    return nocodb_data, icon_data
+
+def check_for_inconsistencies(current_data: dict, cached_data: dict) -> bool:
+    """Check for inconsistencies between current data and cached data."""
+
+    return current_data != cached_data
+def fetch_data_uris() -> tuple:
+    logger.info("Fetching data URIs")
+    try:
+        nocodb_data, icon_data = update_cache_if_needed()
+
+        # Check if cache is already populated and valid
+        if cache.data_uris and cache.titles:
+            logger.info("Using cached data URIs and titles")
+            return cache.data_uris, cache.titles
+
+        # Add icon data to the end of nocodb_data
+        for item in icon_data['list']:
+            nocodb_data['list'].append(item)
+
+        imgs, titles = [], []
+        temp_files = []
+        for item in nocodb_data['list']:
+            db_path = item['img'][0]['signedPath']
+            url_path = f"{HTTP}://{SITE_HOST}/{db_path}"
+            img_data = requests.get(url_path).content
+
+            # Create temporary file for pre-scaled image
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as pre_temp_file:
+                pre_temp_file.write(img_data)
+                pre_temp_file_path = pre_temp_file.name
+                temp_files.append(pre_temp_file_path)
+
+            # Scale image and convert to data URI
+            scaled_img_data = scale_image(pre_temp_file_path)
+            data_uri = convert_to_data_uri(scaled_img_data)
+            imgs.append(data_uri)
+            titles.append(item['img_label'].replace("+", " "))
+
+        # Clean up all temporary files
+        for temp_file in temp_files:
+            try:
+                os.remove(temp_file)
+                logger.info(f"Deleted temporary file {temp_file}")
+            except Exception as e:
+                logger.error(f"Error deleting temporary file {temp_file}: {e}")
+
+        # Update cache
+        cache.data_uris = imgs
+        cache.titles = titles
+
+        return imgs, titles
+    except Exception as e:
+        logger.error(f"Failed to fetch data URIs: {e}")
+        raise
+
+def update_cache_if_needed() -> tuple:
+    """Fetch current data, check for inconsistencies, and update cache if needed."""
+    logger.info("Fetching current data from NoCoDB")
+    current_nocodb_data = json.loads(get_nocodb_data())
+    current_icon_data = json.loads(get_nocodb_icons())
+
+    # Fetch cached data
+    cached_nocodb_data = load_nocodb_data()
+    cached_icon_data = load_nocodb_icon_data()
+    # Check for inconsistencies between cache data and current data
+    if check_for_inconsistencies(current_nocodb_data, cached_nocodb_data) or \
+       check_for_inconsistencies(current_icon_data, cached_icon_data):
+        clear_cache()
+        logger.info("Cache cleared due to inconsistencies")
+        nocodb_data = current_nocodb_data
+        icon_data = current_icon_data
+    else:
+        nocodb_data = cached_nocodb_data
+        icon_data = cached_icon_data
+
+    return nocodb_data, icon_data
+
+def clear_cache():
+    cache.data_uris = None
+    cache.titles = None
+    load_nocodb_data.cache_clear()
+    load_nocodb_icon_data.cache_clear()
+    logger.info("Caches cleared")
+
+def scale_image(file_path: str) -> bytes:
+    try:
+        image = Image.open(file_path)
+        scaled_width = int(image.width * scale_factor)
+        scaled_height = int(image.height * scale_factor)
+        resized_image = image.resize((scaled_width, scaled_height))
+        
+        with BytesIO() as output:
+            resized_image.save(output, format="PNG")
+            logger.info(f"Image scaled and saved to in-memory bytes")
+            return output.getvalue()
+    except Exception as e:
+        logger.error(f"Error scaling image: {e}")
+        raise
+
+
+async def hosted_image() -> tuple:
+    logger.info("Hosted images requested")
+    try:
+        return fetch_data_uris()
+    except Exception as e:
+        logger.error(f"Failed to fetch hosted image: {e}")
+        raise
+
+async def get_data_uri_from_title(title) -> str:
+    logger.info(f"Fetching data URI for {title}")
+    try:
+        data_uris, titles = await hosted_image()
+        index = titles.index(title)
+        data_uri = data_uris[index]
+        return data_uri
+    except Exception as e:
+        logger.error(f"Failed to fetch data URI for {title}: {e}")
+        raise
+            

@@ -1,6 +1,6 @@
 # app/models.py
 from pydantic import BaseModel, EmailStr, Field
-from typing import List
+from typing import List, Union
 
 class Url(BaseModel):
     url: str
@@ -8,8 +8,13 @@ class Url(BaseModel):
 
 class UrlQuantity(BaseModel):
     url: str
-    quantity: str
+    quantity: Union[int, str]
     title2: str
+
+class TitleQuantity(BaseModel):
+    quantity: Union[int, str]
+    title: str
+    
 
 class OrderInfo(BaseModel):
     email: EmailStr = Field(...)

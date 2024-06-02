@@ -23,7 +23,6 @@ base-64-tofile.ps1
 
 kubeconfig.txt
 
-
 run_script.sh
 
 deployment/*
@@ -31,3 +30,5 @@ deployment/*
 src/address_validation.py
 
 src/log/*
+
+log/*

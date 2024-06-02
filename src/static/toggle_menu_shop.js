@@ -1,4 +1,4 @@
-async function togglePageLock(img_url, title) {
+async function togglePageLock(title) {
     // Change the opacity of the body to 0.5 before starting the addToCart function
     document.body.style.opacity = '0.5';
     
@@ -7,9 +7,11 @@ async function togglePageLock(img_url, title) {
     spinner.classList.add('spinner');
     document.body.appendChild(spinner);
 
+    quantityInputValue = document.getElementById('quantity-input').value;
+
     try {
         // Await the addToCart function
-        await addToCart(img_url, title);
+        const cart_quantity = await addToCart(title, quantityInputValue);
     } finally {
         // Change the opacity back to 1 once the addToCart function is done
         document.body.style.opacity = '1';
@@ -18,22 +20,20 @@ async function togglePageLock(img_url, title) {
     }
 }
 
-function getCartQuantity() {
-    return fetch('/get_cart_quantity') // Assuming this endpoint returns the total quantity
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            return data.quantity; // Assuming the response has a 'quantity' property
-        })
-        .catch(error => {
-            console.error('Error fetching cart quantity:', error);
-            return 0; // Default to 0 in case of error
-        });
+async function getCartQuantity() {
+    try {
+        const response = await fetch('/get_cart_quantity');
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        return data.quantity; 
+    } catch (error) {
+        console.error('Error fetching cart quantity:', error);
+        return 0;
+    }
 }
+
 
 function emailListEnter() {
     // Get the email input value
@@ -117,19 +117,14 @@ function isValidEmail(email) {
     return emailRegex.test(email);
 }
 
-function updateCartQuantity() {
-    fetch('/get_cart_quantity') // Assuming you have an endpoint to get cart quantity
-        .then(response => response.json())
-        
-        .then(data => {
-            if (data.quantity !== 0) {
-                document.getElementById('cartQuantity').innerText = data.quantity;
-                document.getElementById('mobileCartQuantity').innerText = data.quantity;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
+async function updateCartQuantity(cart_quantity) {
+    if (cart_quantity !== 0) {
+        document.getElementById('cartQuantity').innerText = cart_quantity;
+        document.getElementById('mobileCartQuantity').innerText = cart_quantity;
+    } else {
+        document.getElementById('cartQuantity').innerText = '';
+        document.getElementById('mobileCartQuantity').innerText = '';
+    }
 }
 let quantity = 1; // Initial quantity
 
@@ -151,71 +146,53 @@ let messageAdded = false;
 // Flag to track if the message has been added
 
 
-async function addToCart(img_url, title) {
-
-    let quantityInputValue = document.getElementById('quantity-input').value;
-
-
-    // turn the input value into an integer
+async function addToCart(title, quantityInputValue) {
     if (isNaN(quantityInputValue)) {
         displayQuantityErrorMessage();
         return;
     }
 
-    if (quantityInputValue > 1000 || quantityInputValue < 1 ) {
+    if (quantityInputValue > 1000 || quantityInputValue < 1) {
         displayQuantityErrorMessage();
         return;
     }
-    // Fetch the current cart quantity
-    fetch('/get_cart_quantity')
-        .then(response => response.json())
-        .then(data => {
-            // Check if adding the selected quantity will exceed the limit
-            if (data.quantity + parseInt(quantityInputValue) > 1000) {
-                displayTotalQuantityErrorMessage();
-                return;
-            }
-            
 
-            // Proceed with adding to cart if the limit is not exceeded
-            if (!messageAdded) {
-                submitPostForm(img_url, quantityInputValue, title)
-                    .then(data => {
-                        updateCartQuantity();
-                        // delete the message-container div from the page
-                        const messageDiv = document.querySelector('.message-container1');
-                        const messageDiv2 = document.querySelector('.message-container2');
-                        if (messageDiv) {
-                            messageDiv.remove();
-                            
-                        }
-                        if (messageDiv2) {
-                            messageDiv2.remove();
-                        }
+    // Grab current quantity from the cartQuantity element
+    const currentQuantity = parseInt(document.getElementById('cartQuantity').innerText, 10);
+    if (currentQuantity + parseInt(quantityInputValue) > 1000) {
+        displayTotalQuantityErrorMessage();
+        return;
+    }
 
-                        const quantityBox = document.getElementById('quantityBox');
-                        quantityBox.style.display = 'none';
+    try {
+        const cart_quantity = await submitPostForm(quantityInputValue, title);
 
-                        // Change the text of the button to "Checkout" and change its class
-                        const addToCartButton = document.getElementById('addToCartLink');
-                        addToCartButton.textContent = 'Checkout';
-                        addToCartButton.classList.remove('add-to-cart-btn'); // Remove the old class
-                        addToCartButton.classList.add('checkout-btn'); // Add the new class
-                        addToCartButton.setAttribute('onclick', 'checkoutRedirect(); return false;'); // Add onclick event for checkout
-                    })
-                    .catch(error => {
+        const messageDiv = document.querySelector('.message-container1');
+        const messageDiv2 = document.querySelector('.message-container2');
+        if (messageDiv) {
+            messageDiv.remove();
+        }
+        if (messageDiv2) {
+            messageDiv2.remove();
+        }
 
-                        displayTotalQuantityErrorMessage();
-                        console.error('Error:', error);
-                    });
-            }
-            // Reset the quantity back to 1
-            document.getElementById('quantity-input').value = '1';
-        })
-        .catch(error => {
-            console.error('Error fetching cart quantity:', error);
-        });
+        const quantityBox = document.getElementById('quantityBox');
+        quantityBox.style.display = 'none';
+
+        const addToCartButton = document.getElementById('addToCartLink');
+        addToCartButton.textContent = 'Checkout';
+        addToCartButton.classList.remove('add-to-cart-btn');
+        addToCartButton.classList.add('checkout-btn');
+        addToCartButton.setAttribute('onclick', 'checkoutRedirect(); return false;');
+        await updateCartQuantity(cart_quantity);
+    } catch (error) {
+        displayTotalQuantityErrorMessage();
+        console.error('Error:', error);
+    }
+
+    document.getElementById('quantity-input').value = '1';
 }
+
 let errorMessageElement = null; // Global variable to store the error message element
 
 function displayQuantityErrorMessage() {
@@ -285,26 +262,32 @@ function checkoutRedirect() {
 }
 // Disply a total qunatity error message if the submit post form returns an error
 
-function submitPostForm(img_url, quantityInputValue, title) {
-    return new Promise((resolve, reject) => {
-        let requestOptions = {
+async function submitPostForm(quantity, title) {
+
+    const requestData = {
+        quantity: parseInt(quantity, 10), // Ensure quantity is an integer
+        title: title
+    };
+    try {
+        const response = await fetch('/shop_art', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ url: img_url, quantity: quantityInputValue, title2 : title })
-        };
+            body: JSON.stringify(requestData)
+        });
 
-        fetch('/shop_art', requestOptions)
-            .then(response => response.json())
-            .then(data => {
-                resolve(data); // Resolve the promise with the response data
-            })
-            .catch(error => {
-
-                reject(error); // Reject the promise with the error
-            });
-    });
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const quantityData = await response.json();
+        const cart_quantity = quantityData.quantity;
+        return cart_quantity;
+    } catch (error) {
+        console.error('Error:', error);
+        // Display an error message to the user if needed
+        displayTotalQuantityErrorMessage();
+    }
 }
 
 //Create a second toggle for the mobile menu to be a dropdown menu when hamburger icon is clicked
@@ -352,20 +335,28 @@ function toggleMenu() {
     }
 }
 
+
+
 // Initial toggle when the page loads
-document.addEventListener('DOMContentLoaded', function() {
-    updateCartQuantity();
+document.addEventListener('DOMContentLoaded', async function() {
     toggleMenu();
     document.getElementById('currentYear').innerText = new Date().getFullYear();
     // Attach event listeners to the increment and decrement buttons
     document.getElementById('increment-btn').addEventListener('click', incrementQuantity);
     document.getElementById('decrement-btn').addEventListener('click', decrementQuantity);
-    
+     // Call addToCart with quantityInputValue set to 0 to get the total cart quantity
+    try {
+        const cartQuantity = await getCartQuantity();
+        await updateCartQuantity(cartQuantity);
+    } catch (error) {
+        console.error('Error fetching cart quantity on page load:', error);
+    }
     const titleDiv = document.getElementById('title');
     const titleH2 = titleDiv.querySelector('h2');
     if (titleH2.textContent === 'None') {
         window.location.href = '/';
     }
+    
 });
 
 // Toggle the menu on window resize

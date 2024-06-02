@@ -1,7 +1,7 @@
 import os
 import requests
 import json
-from src.config import NOCODB_KEY_URL, NOCODB_IMG_URL, NOCODB_ICON_URL, XC_AUTH
+from config import NOCODB_KEY_URL, NOCODB_IMG_URL, NOCODB_ICON_URL, XC_AUTH
 
 
 def get_nocodb_key_data() -> str:
@@ -44,12 +44,14 @@ def get_nocodb_icon_data() -> list:
     response.raise_for_status()
     data = response.json()
     images = []
+    titles = []
     for item in data['list']:
         if item['img'] and len(item['img']) > 0:
             image_url = item['img'][0]['signedPath']
             images.append(image_url)
+            titles.append(item["img_label"])
         
-    return images
+    return images, titles
 
 def get_parsed_nocodb_data(data) -> tuple:
     try:
