@@ -25,10 +25,9 @@ function toggleNextSection(currentSectionId, nextSectionId) {
         updateArrow(currentSectionHeader);
 
         const nextSection = document.getElementById(nextSectionId);
-        console.log(nextSection)
-        const nextSectionHeader = nextSection.querySelector('.collapsible-header');
         const nextSectionContent = nextSection.querySelector('.collapsible-content');
-
+        const nextSectionHeader = nextSection.querySelector('.collapsible-header');
+    
         nextSectionHeader.classList.remove('disabled');
         nextSectionHeader.style.fontWeight = 'bold';
         nextSection.classList.add('open');

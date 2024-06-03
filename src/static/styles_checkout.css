@@ -35,6 +35,7 @@
     display: block;
 }
 
+
 .collapsible-section.open .arrow {
     transform: rotate(180deg);
 }
