@@ -1,4 +1,29 @@
 // Returns cart quantity from python backend which takes the cookies and returns the total quantity
+async function togglePageLock(response) {
+    // Change the opacity of the body to 0.5 before starting the addToCart function
+    document.body.style.opacity = '0.5';
+    
+    // Add a spinner to indicate loading
+    const spinner = document.createElement('div');
+    spinner.classList.add('spinner');
+    document.body.appendChild(spinner);
+
+    try {
+        // Await the addToCart function
+        // Check if response is ok
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        // Return the response
+    } finally {
+        // Change the opacity back to 1 once the addToCart function is done
+        document.body.style.opacity = '1';
+        // Remove the spinner once the addToCart function is done
+        spinner.remove();
+    }
+}
+
 function setButtonsState(disabled) {
     const buttons = document.querySelectorAll('.increase-quantity, .decrease-quantity, .remove-item'); // Adjust the selector to match your button classes
     buttons.forEach(button => button.disabled = disabled);
@@ -213,7 +238,7 @@ async function increaseQuantity(button) {
         };
 
         const response = await fetch('/increase_quantity', requestOptions);
-
+        await togglePageLock(response);
         if (response.ok) {
             // Update the UI with the new quantity only after the API call succeeds
             quantityElement.value = newQuantity;

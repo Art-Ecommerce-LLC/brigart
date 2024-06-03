@@ -1,12 +1,15 @@
 /* General Styles */
+
 html {
     height: 100%;
 }
+
 a:link,
 a:visited {
     text-decoration: none; /* Remove underline for both unvisited and visited links */
     color: #349ef5; /* Inherit the color from the parent element */
 }
+
 body {
     background-color: #040404;
     margin: 0;

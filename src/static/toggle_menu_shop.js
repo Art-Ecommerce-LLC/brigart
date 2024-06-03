@@ -11,7 +11,7 @@ async function togglePageLock(title) {
 
     try {
         // Await the addToCart function
-        const cart_quantity = await addToCart(title, quantityInputValue);
+        await addToCart(title, quantityInputValue);
     } finally {
         // Change the opacity back to 1 once the addToCart function is done
         document.body.style.opacity = '1';
