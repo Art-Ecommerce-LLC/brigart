@@ -1,3 +1,66 @@
+document.addEventListener('DOMContentLoaded', function() {
+    // Dropwdown the contact info section initially on page load
+    document.getElementById('contactInfoSection').classList.add('open');
+    // Add event listeners to the collapsible headers
+
+
+    document.querySelectorAll('.collapsible-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const section = header.parentElement;
+            if (!header.classList.contains('disabled') || section.classList.contains('open')) {
+                section.classList.toggle('open');
+                updateArrow(header);
+            }
+        });
+    });
+});
+
+function toggleNextSection(currentSectionId, nextSectionId) {
+    console.log(currentSectionId, nextSectionId)
+    if (validateSection(currentSectionId)) {
+        console.log('valid')
+        const currentSection = document.getElementById(currentSectionId);
+        const currentSectionHeader = currentSection.querySelector('.collapsible-header');
+        currentSection.classList.remove('open');
+        updateArrow(currentSectionHeader);
+
+        const nextSection = document.getElementById(nextSectionId);
+        console.log(nextSection)
+        const nextSectionHeader = nextSection.querySelector('.collapsible-header');
+        const nextSectionContent = nextSection.querySelector('.collapsible-content');
+
+        nextSectionHeader.classList.remove('disabled');
+        nextSectionHeader.style.fontWeight = 'bold';
+        nextSection.classList.add('open');
+        nextSectionContent.style.display = 'block';
+        updateArrow(nextSectionHeader);
+
+        // Scroll to the next section smoothly
+        nextSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+        alert('Please fill out all fields in this section.');
+    }
+}
+
+function validateSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    const inputs = section.querySelectorAll('input');
+    for (let input of inputs) {
+        if (!input.value.trim()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function updateArrow(header) {
+    const arrow = header.querySelector('.arrow');
+    if (header.parentElement.classList.contains('open')) {
+        arrow.style.transform = 'rotate(180deg)';
+    } else {
+        arrow.style.transform = 'rotate(0deg)';
+    }
+}
 
 function setButtonsState(disabled) {
     const buttons = document.querySelectorAll('.increase-quantity, .decrease-quantity, .remove-item'); // Adjust the selector to match your button classes

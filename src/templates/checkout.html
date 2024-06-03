@@ -40,40 +40,50 @@
 </div>
 <div class="content">
     <div class="left-section">
-        <div class="email-enter">
-            <h1>Contact Info</h1>
-            <label for="email">Email:</label><br>
-            <input type="email" id="email" name="email" placeholder="Enter Email"><br>
-            <label for="phone">Phone Number:</label><br>
-            <input type="text" id="phone" name="phone" placeholder="Enter Phone Number"><br>
+        <div class="collapsible-section" id="contactInfoSection">
+            <h1 class="collapsible-header">Contact Info <span class="arrow">&#9660;</span></h1>
+            <div class="collapsible-content">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" placeholder="Enter Email"><br>
+                <label for="phone">Phone Number:</label>
+                <input type="text" id="phone" name="phone" placeholder="Enter Phone Number"><br>
+                <button class="continue-btn" onclick="toggleNextSection('contactInfoSection', 'paymentInfoSection')">Continue</button>
+            </div>
         </div>
-        <div class="payment-info">
-            <h1>Payment Information</h1>
-            <label for="card-name">Card Name:</label><br>
-            <input type="text" id="card-name" name="card-name" placeholder="Enter Card Name"><br>
-            <label for="card-number">Card Number:</label><br>
-            <input type="text" id="card-number" name="card-number" placeholder="Enter Card Number"><br>
-            <label for="expiry">Expiration Date:</label><br>
-            <input type="text" id="expiry" name="expiry" placeholder="MM/YY"><br>
-            <label for="cvv">CVV:</label><br>
-            <input type="text" id="cvv" name="cvv" placeholder="CVV"><br>
+    
+        <div class="collapsible-section" id="paymentInfoSection">
+            <h1 class="collapsible-header disabled">Payment Information <span class="arrow">&#9660;</span></h1>
+            <div class="collapsible-content" style="display: none;">
+                <label for="card-name">Card Name:</label>
+                <input type="text" id="card-name" name="card-name" placeholder="Enter Card Name"><br>
+                <label for="card-number">Card Number:</label>
+                <input type="text" id="card-number" name="card-number" placeholder="Enter Card Number"><br>
+                <label for="expiry">Expiration Date:</label>
+                <input type="text" id="expiry" name="expiry" placeholder="MM/YY"><br>
+                <label for="cvv">CVV:</label>
+                <input type="text" id="cvv" name="cvv" placeholder="CVV"><br>
+                <button class="continue-btn" onclick="toggleNextSection('paymentInfoSection', 'billingAddressSection')">Continue</button>
+            </div>
         </div>
-        <div class="billing-address">
-            <h1>Billing Address</h1>
-            <label for="fullname">Full Name:</label><br>
-            <input type="text" id="fullname" name="fullname" placeholder="Enter Full Name"><br>
-            <label for="address">Street Address:</label><br>
-            <input type="text" id="address1" name="address" placeholder="Enter Street Address 1"><br>
-            <label for="address">Street Address 2:</label><br>
-            <input type="text" id="address2" name="address" placeholder="Enter Street Address 2"><br>
-            <label for="city">City:</label><br>
-            <input type="text" id="city" name="city" placeholder="Enter City"><br>
-            <label for="state">State:</label><br>
-            <input type="text" id="state" name="state" placeholder="Enter State"><br>
-            <label for="zip">ZIP Code:</label><br>
-            <input type="text" id="zip" name="zip" placeholder="Enter ZIP Code"><br>
+    
+        <div class="collapsible-section" id="billingAddressSection">
+            <h1 class="collapsible-header disabled">Billing Address <span class="arrow">&#9660;</span></h1>
+            <div class="collapsible-content" style="display: none;">
+                <label for="fullname">Full Name:</label>
+                <input type="text" id="fullname" name="fullname" placeholder="Enter Full Name"><br>
+                <label for="address1">Street Address 1:</label>
+                <input type="text" id="address1" name="address1" placeholder="Enter Street Address 1"><br>
+                <label for="address2">Street Address 2:</label>
+                <input type="text" id="address2" name="address2" placeholder="Enter Street Address 2"><br>
+                <label for="city">City:</label>
+                <input type="text" id="city" name="city" placeholder="Enter City"><br>
+                <label for="state">State:</label>
+                <input type="text" id="state" name="state" placeholder="Enter State"><br>
+                <label for="zip">ZIP Code:</label>
+                <input type="text" id="zip" name="zip" placeholder="Enter ZIP Code"><br>
+                <button class="continue-btn" onclick="handlePurchase(this)">Complete Purchase</button>
+            </div>
         </div>
-        <button class="continue-btn" onclick="handlePurchase(this)" disabled>Complete Purchase</button>
         <p>Shop coming soon! Contact Brig for info</p>
     </div>
     
