@@ -2,6 +2,8 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 async function togglePageLock(responsePromise) {
+    // Lock the buttons the page
+    setButtonsState(true);
     document.body.style.opacity = '0.5';
     const spinner = document.createElement('div');
     spinner.classList.add('spinner');
@@ -12,9 +14,12 @@ async function togglePageLock(responsePromise) {
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
+
         return response
     } finally {
         // await sleep(2000)
+        // Unlock the buttons and the page
+        setButtonsState(false);
         document.body.style.opacity = '1';
         spinner.remove();
     }
