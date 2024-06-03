@@ -246,11 +246,14 @@ async def increase_quantity(request: Request, title: Title):
 async def decrease_quantity(request: Request, title: Title):
     logger.info(f"Decrease quantity for {title.title} by {request.client.host}")
     try:
+        title = title.title
         img_quant_list = request.session.get("img_quantity_list")
         for each in img_quant_list:
             if title == each["title"]:
                 # Increase quantity by one
                 each["quantity"] = str(int(each["quantity"]) - 1)
+
+        print(img_quant_list)
     except Exception as e:
         logger.error(f"Error in decrease_quantity: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")

@@ -2,7 +2,6 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 async function togglePageLock(responsePromise) {
-    // Lock the buttons the page
     setButtonsState(true);
     document.body.style.opacity = '0.5';
     const spinner = document.createElement('div');
@@ -14,12 +13,12 @@ async function togglePageLock(responsePromise) {
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
-
+        
         return response
     } finally {
         // await sleep(2000)
         // Unlock the buttons and the page
-        setButtonsState(false);
+        
         document.body.style.opacity = '1';
         spinner.remove();
     }
@@ -267,8 +266,9 @@ async function decreaseQuantity(button) {
         setButtonsState(true);
 
         const cartQuantity = await getCartQuantity(); // Fetch the cart quantity
+        // Get the necessary DOM elements
         let quantityElement = button.parentElement.querySelector('.quantity-input');
-        let quantityPrice = button.parentElement.parentElement.querySelector('.price');
+        let quantityPrice = button.parentElement.parentElement.parentElement.querySelector('.price');
 
         let currentQuantity = parseInt(quantityElement.value);
 
