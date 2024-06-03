@@ -26,6 +26,9 @@ async function togglePageLock(responsePromise) {
 }
 function setButtonsState(disabled) {
     const buttons = document.querySelectorAll('.increase-quantity, .decrease-quantity, .remove-item'); // Adjust the selector to match your button classes
+    // Can you also disable any links on the page
+    const links = document.querySelectorAll('a');
+    links.forEach(link => link.disabled = disabled);
     buttons.forEach(button => button.disabled = disabled);
 }
 
