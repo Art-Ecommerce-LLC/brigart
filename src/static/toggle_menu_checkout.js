@@ -1,7 +1,33 @@
 
 function setButtonsState(disabled) {
     const buttons = document.querySelectorAll('.increase-quantity, .decrease-quantity, .remove-item'); // Adjust the selector to match your button classes
+    // Can you also disable any links on the page
+    const links = document.querySelectorAll('a');
+    links.forEach(link => link.disabled = disabled);
     buttons.forEach(button => button.disabled = disabled);
+}
+
+async function togglePageLock(responsePromise) {
+    setButtonsState(true);
+    document.body.style.opacity = '0.5';
+    const spinner = document.createElement('div');
+    spinner.classList.add('spinner');
+    document.body.appendChild(spinner);
+
+    try {
+        const response = await responsePromise;
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        
+        return response
+    } finally {
+        // await sleep(2000)
+        // Unlock the buttons and the page
+        
+        document.body.style.opacity = '1';
+        spinner.remove();
+    }
 }
 async function getCartQuantity() {
     return fetch('/get_cart_quantity')
@@ -179,9 +205,9 @@ async function increaseQuantity(button) {
             body: JSON.stringify({title: img_title})
         };
 
-        const response = await fetch('/increase_quantity', requestOptions);
-
-        if (response.ok) {
+        const response = fetch('/increase_quantity', requestOptions);
+        const responseData = await togglePageLock(response);
+        if (responseData) {
             // Update the UI with the new quantity only after the API call succeeds
             quantityElement.value = newQuantity;
             quantityPrice.innerText = '$' + newQuantity * 225;
@@ -224,9 +250,9 @@ async function decreaseQuantity(button) {
                 body: JSON.stringify({ title: img_title})
             };
 
-            const response = await fetch('/decrease_quantity', requestOptions);
-
-            if (response.ok) {
+            const response = fetch('/decrease_quantity', requestOptions);
+            const responseData = await togglePageLock(response);
+            if (responseData) {
                 // Update the UI with the new quantity only after the API call succeeds
                 quantityElement.value = newQuantity;
                 quantityPrice.innerText = '$' + newQuantity * 225;
@@ -276,9 +302,10 @@ async function removeItem(button) {
             body: JSON.stringify({title : img_title})
         };
 
-        const response = await fetch('/delete_item', requestOptions);
+        const response = fetch('/delete_item', requestOptions);
+        const responseData = await togglePageLock(response);
 
-        if (response.ok) {
+        if (responseData) {
             const input_quantity = parseInt(quantityElement.value);
             const updated_cart_quantity = cartQuantity - input_quantity;
             await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item
@@ -319,9 +346,10 @@ async function removeItemButton(button) {
             body: JSON.stringify({ title : img_title})
         };
 
-        const response = await fetch('/delete_item', requestOptions);
+        const response = fetch('/delete_item', requestOptions);
+        const responseData = await togglePageLock(response);
 
-        if (response.ok) {
+        if (responseData) {
             const input_quantity = parseInt(quantityElement.value);
             const updated_cart_quantity = cartQuantity - input_quantity;
             await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item

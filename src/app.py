@@ -253,7 +253,6 @@ async def decrease_quantity(request: Request, title: Title):
                 # Increase quantity by one
                 each["quantity"] = str(int(each["quantity"]) - 1)
 
-        print(img_quant_list)
     except Exception as e:
         logger.error(f"Error in decrease_quantity: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
