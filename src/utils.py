@@ -7,6 +7,9 @@ from io import BytesIO
 import base64
 from fastapi import HTTPException, Request, Security, status
 from fastapi.security import APIKeyHeader
+import sys
+# Add the parent directory of src to the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from src.noco import get_nocodb_data, get_nocodb_icons, SITE_HOST, API_KEYS, HTTP
 from src.logger import logger
 from src.models import OrderInfo

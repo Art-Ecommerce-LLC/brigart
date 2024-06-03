@@ -1,29 +1,24 @@
-// Returns cart quantity from python backend which takes the cookies and returns the total quantity
-async function togglePageLock(response) {
-    // Change the opacity of the body to 0.5 before starting the addToCart function
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+async function togglePageLock(responsePromise) {
     document.body.style.opacity = '0.5';
-    
-    // Add a spinner to indicate loading
     const spinner = document.createElement('div');
     spinner.classList.add('spinner');
     document.body.appendChild(spinner);
 
     try {
-        // Await the addToCart function
-        // Check if response is ok
+        const response = await responsePromise;
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
-
-        // Return the response
+        return response
     } finally {
-        // Change the opacity back to 1 once the addToCart function is done
+        // await sleep(2000)
         document.body.style.opacity = '1';
-        // Remove the spinner once the addToCart function is done
         spinner.remove();
     }
 }
-
 function setButtonsState(disabled) {
     const buttons = document.querySelectorAll('.increase-quantity, .decrease-quantity, .remove-item'); // Adjust the selector to match your button classes
     buttons.forEach(button => button.disabled = disabled);
@@ -237,9 +232,10 @@ async function increaseQuantity(button) {
             body: JSON.stringify({title: img_title })
         };
 
-        const response = await fetch('/increase_quantity', requestOptions);
-        await togglePageLock(response);
-        if (response.ok) {
+        const response = fetch('/increase_quantity', requestOptions);
+        const responseData = await togglePageLock(response);
+        // Check if response data ok
+        if (responseData) {
             // Update the UI with the new quantity only after the API call succeeds
             quantityElement.value = newQuantity;
             quantityPrice.innerText = '$' + newQuantity * 225;
@@ -282,9 +278,9 @@ async function decreaseQuantity(button) {
                 body: JSON.stringify({ title: img_title})
             };
 
-            const response = await fetch('/decrease_quantity', requestOptions);
-
-            if (response.ok) {
+            const response = fetch('/decrease_quantity', requestOptions);
+            const responseData = await togglePageLock(response);
+            if (responseData) {
                 // Update the UI with the new quantity only after the API call succeeds
                 quantityElement.value = newQuantity;
                 quantityPrice.innerText = '$' + newQuantity * 225;
@@ -328,9 +324,9 @@ async function removeItem(button) {
             body: JSON.stringify({title: img_title})
         };
 
-        const response = await fetch('/delete_item', requestOptions);
-
-        if (response.ok) {
+        const response = fetch('/delete_item', requestOptions);
+        const responseData = await togglePageLock(response);
+        if (responseData) {
             const input_quantity = parseInt(quantityElement.value);
             const updated_cart_quantity = cartQuantity - input_quantity;
             await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item

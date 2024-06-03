@@ -7,6 +7,11 @@ from fastapi.responses import (
 )
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+import os
+import sys
+# Add the parent directory of src to the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from src.config import NOCODB_PATH, NOCODB_IMG_UPDATE_URL, XC_AUTH
 from src.logger import logger
 from src.middleware import add_middleware
@@ -23,6 +28,7 @@ import json
 import tempfile
 import os
 from typing import List
+import uvicorn
 
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
@@ -508,8 +514,8 @@ async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = Fi
 #         logger.error(f"Failed to fetch hosted image: {e}")
 #         raise HTTPException(status_code=500, detail="Internal server error")
 
-# if __name__ == "__main__":
-    #if SCENE == "dev":
-    #    uvicorn.run(app="app:app", host=os.getenv("host"), port=int(os.getenv("port")), reload=True)
+if __name__ == "__main__":
+    if SCENE == "dev":
+       uvicorn.run(app="app:app", host=os.getenv("host"), port=int(os.getenv("port")), reload=True)
     # If Mac:
     # uvicorn.run(app="app:app", host=os.getenv("host"), port=444, reload=True)
