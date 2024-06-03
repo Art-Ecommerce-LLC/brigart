@@ -16,6 +16,8 @@ def get_nocodb_data() -> str:
     response.raise_for_status()
     return response.text
 
+print(get_nocodb_data())
+
 def get_nocodb_icons() -> str:
     headers = {'xc-token': XC_AUTH}
     response = requests.get(NOCODB_ICON_URL, headers=headers)

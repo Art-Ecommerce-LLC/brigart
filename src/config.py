@@ -2,7 +2,11 @@
 import dotenv
 import os
 
-dotenv.load_dotenv()
+# Get file path of .env file
+dotenv_path = dotenv.find_dotenv()
+
+# Load environment variables from .env file
+dotenv.load_dotenv(dotenv_path)
 
 NOCODB_KEY_URL = os.getenv("key_url")
 NOCODB_IMG_URL = os.getenv("img_url")
