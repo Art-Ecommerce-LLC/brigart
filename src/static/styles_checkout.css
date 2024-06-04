@@ -6,11 +6,15 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    /* font-size: 1.2em; */
+    font-size: 1.5em;
     padding: 10px;
     border-bottom: 1px solid #ddd;
     background-color: #f9f9f9;
     transition: background-color 0.3s ease;
+    font-weight: bold;
+}
+.right-section h1{
+    font-size: 1.5em;
     font-weight: bold;
 }
 
@@ -425,7 +429,7 @@ a:visited {
     font-size: 15px;
     height:20px;
     margin-top:7px;
-    width: 293px;
+    width: 100%;
     text-align:right;
     position: relative;
     padding-bottom: 6px;
