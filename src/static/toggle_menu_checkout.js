@@ -16,29 +16,29 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function toggleNextSection(currentSectionId, nextSectionId) {
-    console.log(currentSectionId, nextSectionId)
+
+    
     if (validateSection(currentSectionId)) {
-        console.log('valid')
+
         const currentSection = document.getElementById(currentSectionId);
         const currentSectionHeader = currentSection.querySelector('.collapsible-header');
         currentSection.classList.remove('open');
         updateArrow(currentSectionHeader);
 
         const nextSection = document.getElementById(nextSectionId);
-        const nextSectionContent = nextSection.querySelector('.collapsible-content');
         const nextSectionHeader = nextSection.querySelector('.collapsible-header');
-    
+        
+        nextSection.classList.add('open');
         nextSectionHeader.classList.remove('disabled');
         nextSectionHeader.style.fontWeight = 'bold';
-        nextSection.classList.add('open');
-        nextSectionContent.style.display = 'block';
         updateArrow(nextSectionHeader);
-
         // Scroll to the next section smoothly
         nextSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
         alert('Please fill out all fields in this section.');
     }
+
+
 }
 
 function validateSection(sectionId) {

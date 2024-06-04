@@ -1,10 +1,12 @@
+:root{
+    --section-width: 320px;
+}
 .collapsible-header {
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 1.2em;
-    margin: 0;
+    /* font-size: 1.2em; */
     padding: 10px;
     border-bottom: 1px solid #ddd;
     background-color: #f9f9f9;
@@ -40,7 +42,7 @@
     transform: rotate(180deg);
 }
 .left-section input{
-    width: calc(100% - 22px);
+    width: calc(100%);
     padding: 10px;
     margin: 10px 0;
     border: 1px solid #ccc;
@@ -309,7 +311,7 @@ a:visited {
     z-index: 1 ;
     align-items: center;
     margin-right:70px;
-    width: 300px;
+    width: var(--section-width);
 }
 .price {
     display: inline-block;
@@ -322,7 +324,7 @@ a:visited {
 .right-section {
     display: flex;
     flex-direction: column;
-    width: 300px
+    width: var(--section-width);
 }
 .quantity-input {
     width: 100%;

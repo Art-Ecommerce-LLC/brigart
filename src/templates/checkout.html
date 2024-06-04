@@ -53,7 +53,7 @@
     
         <div class="collapsible-section" id="paymentInfoSection">
             <h1 class="collapsible-header disabled">Payment Information <span class="arrow">&#9660;</span></h1>
-            <div class="collapsible-content" style="display: none;">
+            <div class="collapsible-content" >
                 <label for="card-name">Card Name:</label>
                 <input type="text" id="card-name" name="card-name" placeholder="Enter Card Name"><br>
                 <label for="card-number">Card Number:</label>
@@ -68,7 +68,7 @@
     
         <div class="collapsible-section" id="billingAddressSection">
             <h1 class="collapsible-header disabled">Billing Address <span class="arrow">&#9660;</span></h1>
-            <div class="collapsible-content" style="display: none;">
+            <div class="collapsible-content" >
                 <label for="fullname">Full Name:</label>
                 <input type="text" id="fullname" name="fullname" placeholder="Enter Full Name"><br>
                 <label for="address1">Street Address 1:</label>
@@ -81,7 +81,7 @@
                 <input type="text" id="state" name="state" placeholder="Enter State"><br>
                 <label for="zip">ZIP Code:</label>
                 <input type="text" id="zip" name="zip" placeholder="Enter ZIP Code"><br>
-                <button class="continue-btn" onclick="handlePurchase(this)">Complete Purchase</button>
+                <button class="continue-btn" onclick="handlePurchase(this)" disabled>Complete Purchase</button>
             </div>
         </div>
         <p>Shop coming soon! Contact Brig for info</p>
