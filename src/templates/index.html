@@ -18,18 +18,37 @@
         <a class= "home" href="/">HOME</a>
         <a class= "giclee" href="/giclee_prints">GICLÉE PRINTS</a>
         <a class= "shop" href="/shop_art_menu">SHOP ART</a>
-        <a class= "cart_a" href="/shop_art">
-            <img src="{{ shopping_cart_url}}" id = "shoppingCart" class = "cart" oncontextmenu="return false;" draggable="false">
-        </a>
+        <a href="/shop_art">
+            <div class="icon-cart" style="clear: left; float: left">
+                <div class="cart-line-1" style="background-color: white;"></div>
+                <div class="cart-line-2" style="background-color: white;"></div>
+                <div class="cart-line-3" style="background-color: white;"></div>
+                <div class="cart-wheel" style="background-color: white;"></div>
+            </div>
+        </a>    
         <span id="cartQuantity" class="cart-quantity"></span>
     </div>
     <div class="mobile-menu">
-        <label class="hamburger-menu">
-            <input type="checkbox" onclick = "toggleMenu(); toggleDropdown();">
-        </label>
+        <div class="hamburger-icon">
+            <label class="hambuger-menu" onclick="toggleIcon(); toggleMenu(); toggleDropdown()" >
+                <div id="nav-icon3">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+            </label>
+        </div>
+        <div class = "shopping_cart_icon">
             <a href="/shop_art">
-                <img src="{{ shopping_cart_url}}" id = "shoppingCart" class = "cart-mobile" oncontextmenu="return false;" draggable="false">
-            </a>
+                <div class="icon-cart" style="clear: left; float: left">
+                    <div class="cart-line-1" style="background-color: white;"></div>
+                    <div class="cart-line-2" style="background-color: white;"></div>
+                    <div class="cart-line-3"style="background-color: white;"></div>
+                    <div class="cart-wheel"style="background-color: white;"></div>
+                    </div>
+            </a>   
+        </div>     
         <span id="mobileCartQuantity" class="cart-quantity-mobile"></span>
         <div class="mobile-dropdown">
             <a href="/">HOME</a>
@@ -65,11 +84,7 @@
             <input id="emailInput" type="email" placeholder="EMAIL ADDRESS">
             <button onclick="emailListEnter()" type="submit">SIGN UP</button>
         </div>
-        <div class="footer_navbar">
-            <a href="/">HOME | </a>
-            <a href="/giclee_prints"> GICLÉE PRINTS |</a>
-            <a href="/shop_art_menu"> SHOP ART</a>
-        </div>
+        
     </div>
     <div class="contact_info">
         <h1>Brig Light Art</h1>
@@ -79,6 +94,11 @@
     </div>
     <div class="container">
         <p>UIcons by <a href="https://www.flaticon.com/uicons">Flaticon</a></p>
+        <div class="footer_navbar">
+            <a href="/">HOME</a> |
+            <a href="/giclee_prints">GICLÉE PRINTS</a> |
+            <a href="/shop_art_menu">SHOP ART</a>
+        </div>
         <p>&copy; <span id="currentYear"></span> Brig Light. All rights reserved.</p>
     </div>
 </footer>

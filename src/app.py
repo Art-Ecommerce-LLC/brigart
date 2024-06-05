@@ -8,21 +8,17 @@ from fastapi.responses import (
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import os
-import sys
-# Add the parent directory of src to the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from src.config import NOCODB_PATH, NOCODB_IMG_UPDATE_URL, XC_AUTH
-from src.logger import logger
-from src.middleware import add_middleware
-from src.models import Credentials, Title, TitleQuantity
-from src.utils import (
+from artapi.config import NOCODB_PATH, NOCODB_IMG_UPDATE_URL, XC_AUTH
+from artapi.logger import logger
+from artapi.middleware import add_middleware
+from artapi.models import Credentials, Title, TitleQuantity
+from artapi.utils import (
     cleancart, hosted_image
 )
-from src.noco import (
+from artapi.noco import (
     get_nocodb_data, HTTP, BRIG_PASSWORD, BRIG_USERNAME, OPENAPI_URL, SCENE, SITE, BEN_USERNAME, BEN_PASSWORD, SITE_HOST
 )
-from src.logger import get_logs
+from artapi.logger import get_logs
 import requests
 import json
 import tempfile

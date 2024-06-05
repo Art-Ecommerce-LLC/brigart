@@ -246,16 +246,15 @@ a:visited {
     background-color: white;
     padding: 20px 40px;
 }
-.mobile-menu {
-    display: none;
-}
-.navbar,
-.mobile-menu {
+
+.navbar{
     display: flex;
     align-items: center;
     white-space: nowrap;
 }
-
+.mobile-menu {
+    display: none;
+}
 .navbar a {
     color: black;
     text-decoration: none;

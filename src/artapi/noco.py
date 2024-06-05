@@ -1,11 +1,7 @@
 import os
 import requests
 import json
-import sys
-# Add the parent directory of src to the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from src.config import NOCODB_KEY_URL, NOCODB_IMG_URL, NOCODB_ICON_URL, XC_AUTH
+from artapi.config import NOCODB_KEY_URL, NOCODB_IMG_URL, NOCODB_ICON_URL, XC_AUTH
 
 
 def get_nocodb_key_data() -> str:

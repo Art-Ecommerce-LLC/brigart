@@ -36,3 +36,7 @@ log/*
 .DS_Store
 
 filestructure.py
+
+src/BrigArtAPI.egg-info/*
+
+src/artapi/__pycache__/*

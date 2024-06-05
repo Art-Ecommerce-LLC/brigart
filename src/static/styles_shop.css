@@ -1,4 +1,17 @@
 /* CSS for the shop page */
+:root {
+    --bar-width: 45px;
+    --bar-height: 8px;
+    --hamburger-gap:4px;
+    --foreground: black;
+    --background: white;
+    --animation-timing: 200ms ease-in-out;
+    --hamburger-height: calc(var(--bar-height) * 3 + var(--hamburger-gap) * 2);
+    --image-width: 300px;
+    --image-height: 450px; 
+    --background-color-blue: #349ef5;
+}
+
 html, body {
     margin: 0;
     padding: 0;
@@ -33,11 +46,6 @@ html, body {
         transform: rotate(360deg);
     }
 }
-a:link,
-a:visited {
-    text-decoration: none; /* Remove underline for both unvisited and visited links */
-    color: #1d5685; /* Inherit the color from the parent element */
-}
 .header {
     display: flex;
     justify-content: space-between;
@@ -50,17 +58,6 @@ a:visited {
     display: flex;
     align-items: center;
     white-space: nowrap;
-}
-:root {
-    --bar-width: 45px;
-    --bar-height: 8px;
-    --hamburger-gap:4px;
-    --foreground: black;
-    --background: white;
-    --animation-timing: 200ms ease-in-out;
-    --hamburger-height: calc(var(--bar-height) * 3 + var(--hamburger-gap) * 2);
-    --image-width: 300px;
-    --image-height: 450px; 
 }
 
 *,
@@ -189,20 +186,31 @@ a:visited {
 .footer.hide{
     display:none;
 }
+.footer_navbar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: white;
+    color: black;
+    z-index: 999;
+}
+.footer_navbar a{
+    color: black;
+    text-decoration: none;
+    margin: 0 20px;
+}
+.footer_navbar a:hover{
+    text-decoration: underline var(--background-color-blue) 2px;
+    color:black;
+
+}
 
 .image_container {
     display: flex;
     justify-content: center;
     align-items: center;
 }
-/* .image_container img {
-    width: auto;
-    max-width: 600px;
-    min-width: 270px;
-    height: auto;
-    margin-left: 40px;
-    margin-right: 40px;
-} */
+
 .artwork_wrapper {
     width: auto;
     height: auto;
@@ -255,6 +263,7 @@ a:visited {
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-bottom:17px;
 }
 
 .quantity-btn-left, .quantity-btn-right {
@@ -273,38 +282,50 @@ a:visited {
     position: relative;
 }
 .button-container {
-    display: flex;
-    justify-content: center;
-    margin-top: 5px;
+    font-size: 20px;
+
 }
+.button-container a{
+    text-decoration: none;
+    color: white;
+}
+
 
 .add-to-cart-btn,
 .checkout-btn {
     padding: 10px 20px;
-    background-color: #349ef5;
-    color: white !important;
-    border: none;
+    background-color: black;
+    color: white;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    text-transform: uppercase;
-    transition: background-color 0.3s, color 0.3s;
-    text-decoration: none;
-    text-decoration-color: white;
+    border: 1px solid black;
+    font-size: 1.3em;
+    width: 100%;
+    height: 70px;
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
 }
 
-.addToCartLink{
-    text-decoration: none;
-    color: white;
-}
-.add-to-cart-btn:hover,
+/* .add-to-cart-btn:hover,
 .checkout-btn:hover {
-    background-color: #0056b3;
+    background-color:black;
+    color: white;
+    transition: background-color 0.3s, color 0.3s;
+} */
+
+.add-to-cart-btn:hover,
+.checkout-btn:hover{
+    background-color:white;
+    color: black;
+    /* transition: background-color 0.3s, color 0.3s; */
+    border: black 1px solid;
 }
 .mobile-menu a{
     text-decoration: none;
 }
+
 .mobile-menu {
     display: none;
 }
@@ -330,6 +351,8 @@ a:visited {
     text-align: left;
 }
 
+
+
 .email-input-container {
     display: flex;
     justify-content: center; /* Horizontally center items */
@@ -351,16 +374,18 @@ a:visited {
 
 .contact_form button[type="submit"] {
     padding: 10px;
-    background-color: #349ef5;
+    background-color: black;
+    border : 1px solid white;
     color: white;
     font-weight: bold;
-    border: none;
     border-radius: 5px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
 }
 .contact_form button[type="submit"]:hover {
-    background-color: #0056b3; /* Change to desired hover color */
+    background-color: white;
+    color: black;
+    border: 1px solid black; /* Change to desired hover color */
 }
 
 .contact_info {
@@ -393,6 +418,16 @@ a:visited {
     color: black;
     font-family: monospace;
     margin-top: 20px;
+    /* Add any other styles as per your design */
+}
+.container a{
+    color: black;
+    text-decoration: none;
+
+}
+.container a:hover{
+    text-decoration: underline var(--background-color-blue) 2px;
+    color: black;
 }
 
 .description {
@@ -413,12 +448,6 @@ a:visited {
 }
 .message-container {
     margin-top: 10px;
-}
-.confirmation-msg {
-    display: flex;
-    justify-content: center;
-    text-align: center;
-    margin: auto;
 }
 /* Media Queries */
 @media (max-width: 827px) {

@@ -1,3 +1,10 @@
+function toggleIcon() {
+    const icon = document.querySelector('#nav-icon3');
+    icon.classList.toggle('open');
+
+}
+
+
 function emailListEnter() {
     // Get the email input value
     const emailInput = document.getElementById('emailInput');
@@ -19,7 +26,7 @@ function emailListEnter() {
     if (!isValidEmail(email)) {
         emailInput.value = '';
         // Display an error message next to the input box
-        displayCustomMessage(emailInput, 'Your email is not valid. Please try again.', 'error-msg');
+        displayCustomMessage(emailInput, 'Your email is not valid. Please try again', 'error-msg');
         return;
     }
 
@@ -41,7 +48,7 @@ function emailListEnter() {
         // Clear the input box after successful submission
         emailInput.value = '';
         // Display a confirmation message next to the input box
-        displayCustomMessage(emailInput, 'Your email has been added to the email list.', 'confirmation-msg');
+        displayCustomMessage(emailInput, 'Your email has been added to the email list', 'confirmation-msg');
         return response.json();
     })
     .catch(error => {
@@ -60,11 +67,8 @@ function displayCustomMessage(element, message, className) {
         customMessageElement.classList.add(className); // Add the specified CSS class
 
         // Get the navbar div
-        const navbar = document.querySelector('.footer_navbar');
-
-        // Insert the message element into the navbar div
-        navbar.insertBefore(customMessageElement, navbar.firstChild);
-
+        const navbar = document.querySelector('.contact_form');;
+        navbar.appendChild(customMessageElement);
     // Scroll to the new message element
         customMessageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
@@ -255,7 +259,10 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     });
 
+
 });
+
+
 
 
 // Load images when scrolling
