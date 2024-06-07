@@ -16,6 +16,7 @@
     --hamburger-menu-icon-width: 40px;
 
 }
+
 .hamburger-icon{
     display: flex;
     justify-content: center;
@@ -23,23 +24,37 @@
 
 }
 
-.icon-cart {
+.shopping_cart_icon {
+    margin-bottom: 15px;
+}
+.icon-wrapper {
+    height: 56px;
+    
+}
+.icon-cart{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 44px;
+    border-bottom: 2px solid black;
+}
+
+.icon-wrapper {
     width: var(--shopping-cart-icon-width);
     height: var(--shopping-cart-icon-height);
     position: relative;
     overflow: hidden;
-    border-bottom: 2px solid black;
+}
 
-  }
-.icon-cart:hover{
+.icon-cart:hover {
     border-bottom: 2px solid var(--background-color-blue);
 }
 
-.icon-cart .cart-line-1 {
-    width: 15%;
+.icon-wrapper .cart-line-1 {
+    width: 30%;
     height: 7%;
     position: absolute;
-    left: 4%;
+    right:73%;
     top: 35%;
     /* -webkit-transform: rotate(5deg);
     -moz-transform: rotate(5deg);
@@ -49,12 +64,12 @@
     border-bottom-left-radius: 35%;
 }
 
-.icon-cart .cart-line-2 {
+.icon-wrapper .cart-line-2 {
     width: 39%;
     height: 7%;
     position: absolute;
     left: 6%;
-    top: 45%;
+    top: 47%;
     -webkit-transform: rotate(80deg);
     -moz-transform: rotate(80deg);
     -ms-transform: rotate(80deg);
@@ -62,13 +77,13 @@
     background-color: #000;
 }
 
-.icon-cart .cart-line-2:before {
+.icon-wrapper .cart-line-2:before {
     content: "";
-    width: 120%;
-    height: 100%;
+    width: 125%;
+    height: 90%;
     position: absolute;
-    left: 45%;
-    top: -220%;
+    left: 40%;
+    top: -210%;
     -webkit-transform: rotate(-80deg);
     -moz-transform: rotate(-80deg);
     -ms-transform: rotate(-80deg);
@@ -78,26 +93,26 @@
 
 .icon-cart .cart-line-2:after {
     content: "";
-    width: 70%;
-    height: 120%;
+    width: 87%;
+    height: 113%;
     position: absolute;
-    left: 49%;
-    top: -520%;
+    left: 40%;
+    top: -549%;
     background-color: inherit;
     -webkit-transform: rotate(40deg);
     -moz-transform: rotate(40deg);
     -ms-transform: rotate(40deg);
     transform: rotate(40deg); 
     border-top-left-radius: 70%;
-    border-bottom-left-radius: 25%;
+    border-bottom-left-radius: 10%;
 }
 
 .icon-cart .cart-line-3 {
     width: 30%;
-    height: 7%;
+    height: 5%;
     position: absolute;
-    left: 33%;
-    top: 45%;
+    left: 35%;
+    top: 53%;
     background-color: #000;
 }
 
@@ -112,13 +127,13 @@
 }
 
 .icon-cart .cart-wheel {
-    width: 12%;
-    height: 12%;
+    width: 13%;
+    height: 11%;
     background-color: #000;
     border-radius: 100%;
     position: absolute;
-    left: 28%;
-    bottom: 20%;
+    left: 30%;
+    bottom: 19%;
 }
 
 .icon-cart .cart-wheel:after {
@@ -152,7 +167,7 @@
 #nav-icon3 span{
     display: block;
     position: absolute;
-    height: 6px;
+    height: 4.5px;
     width: 100%;
     background: white;
     border-radius: 9px;
@@ -171,15 +186,15 @@
 
 
 #nav-icon3 span:nth-child(1) {
-    top: 15px;
+    top: 19px;
 }
 
 #nav-icon3 span:nth-child(2),#nav-icon3 span:nth-child(3) {
-    top: 27px;
+    top: 29px;
 }
 
 #nav-icon3 span:nth-child(4) {
-    top: 38px;
+    top: 39px;
 }
 
 
@@ -262,18 +277,13 @@ body {
     text-decoration: none;
     font-size: 27px;
     transition: color 0.3s;
+    height: 44px;
 }
-.home {
-    margin-right: 40px;
-}
-
-.giclee {
-    margin-right: 40px;
-}
-
+.home,
+.giclee,
 .shop {
     margin-right: 40px;
-
+    margin-top: 20px;
 }
 .navbar a:hover {
     text-decoration: underline var(--background-color-blue) 2px;
@@ -553,7 +563,18 @@ body {
 } */
 /* Media Queries */
 @media (max-width: 827px) {
-
+    .icon-wrapper {      
+        border-bottom: 2px solid black;
+    }
+    .icon-wrapper:hover{      
+        border-bottom: 2px solid var(--background-color-blue);
+    }
+    .icon-cart {
+        border-bottom: 0
+    }
+    .icon-cart:hover{
+        border-bottom: 0
+    }
     .cart-quantity-mobile {
         display:inline-block;
         color: white;
