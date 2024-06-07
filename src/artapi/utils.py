@@ -13,6 +13,8 @@ from artapi.models import OrderInfo
 from tempfile import TemporaryDirectory
 import requests
 import tempfile
+import threading
+import time
 
 scale_factor = 0.4
 temp_dir = TemporaryDirectory()
@@ -244,3 +246,23 @@ async def get_data_uri_from_title(title) -> str:
         logger.error(f"Failed to fetch data URI for {title}: {e}")
         raise
             
+def refresh_caches():
+    try:
+        logger.info("Refreshing all caches")
+        clear_cache()
+        load_nocodb_data()
+        load_nocodb_icon_data()
+        logger.info("All caches refreshed successfully")
+    except Exception as e:
+        logger.error(f"Error refreshing caches: {e}")
+
+def periodic_cache_refresh(interval_hours: int):
+    while True:
+        refresh_caches()
+        time.sleep(interval_hours * 3600)
+
+# Start a background thread to refresh caches every 2 hours
+refresh_interval_hours = 2
+refresh_thread = threading.Thread(target=periodic_cache_refresh, args=(refresh_interval_hours,))
+refresh_thread.daemon = True
+refresh_thread.start()
