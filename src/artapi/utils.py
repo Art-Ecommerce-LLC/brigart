@@ -7,9 +7,9 @@ from io import BytesIO
 import base64
 from fastapi import HTTPException, Request, Security, status
 from fastapi.security import APIKeyHeader
-from artapi.noco import get_nocodb_data, get_nocodb_icons, SITE_HOST, API_KEYS, HTTP
-from artapi.logger import logger
-from artapi.models import OrderInfo
+from src.artapi.noco import get_nocodb_data, get_nocodb_icons, SITE_HOST, API_KEYS, HTTP
+from src.artapi.logger import logger
+from src.artapi.models import OrderInfo
 from tempfile import TemporaryDirectory
 import requests
 import tempfile
