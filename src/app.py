@@ -13,10 +13,10 @@ from artapi.logger import logger
 from artapi.middleware import add_middleware
 from artapi.models import Credentials, Title, TitleQuantity
 from artapi.utils import (
-    cleancart, hosted_image
+    cleancart, hosted_image, periodic_cache_refresh
 )
 from artapi.noco import (
-    get_nocodb_data, HTTP, BRIG_PASSWORD, BRIG_USERNAME, OPENAPI_URL, SCENE, SITE, BEN_USERNAME, BEN_PASSWORD, SITE_HOST
+    get_nocodb_data, BRIG_PASSWORD, BRIG_USERNAME, OPENAPI_URL,BEN_USERNAME, BEN_PASSWORD
 )
 from artapi.logger import get_logs
 import requests
@@ -25,7 +25,13 @@ import tempfile
 import os
 from typing import List
 import uvicorn
+import threading
 
+# Start a background thread to refresh caches every 2 hours
+refresh_interval_hours = 2
+refresh_thread = threading.Thread(target=periodic_cache_refresh, args=(refresh_interval_hours,))
+refresh_thread.daemon = True
+refresh_thread.start()
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
 

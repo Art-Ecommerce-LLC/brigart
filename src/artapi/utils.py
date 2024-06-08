@@ -13,7 +13,6 @@ from artapi.models import OrderInfo
 from tempfile import TemporaryDirectory
 import requests
 import tempfile
-import threading
 import time
 
 scale_factor = 0.4
@@ -261,8 +260,3 @@ def periodic_cache_refresh(interval_hours: int):
         refresh_caches()
         time.sleep(interval_hours * 3600)
 
-# Start a background thread to refresh caches every 2 hours
-refresh_interval_hours = 2
-refresh_thread = threading.Thread(target=periodic_cache_refresh, args=(refresh_interval_hours,))
-refresh_thread.daemon = True
-refresh_thread.start()

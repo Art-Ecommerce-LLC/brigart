@@ -19,17 +19,37 @@
         <a class= "giclee" href="/giclee_prints">GICLÉE PRINTS</a>
         <a class= "shop" href="/shop_art_menu">SHOP ART</a>
         <a class= "cart_a" href="/shop_art">
-            <img src="{{ shopping_cart_url}}" id = "shoppingCart" class = "cart_img" oncontextmenu="return false;" draggable="false">           
+            <div class="icon-cart" style="clear: left; float: left">
+                <div class="icon-wrapper">
+                    <div class="cart-line-1" style="background-color: white;"></div>
+                    <div class="cart-line-2" style="background-color: white;"></div>
+                    <div class="cart-line-3" style="background-color: white;"></div>
+                    <div class="cart-wheel" style="background-color: white;"></div>
+                </div>                
+            </div>           
         </a>
         <span id="cartQuantity" class="cart-quantity"></span>
     </div>
     <div class="mobile-menu">
-        
-        <label class="hamburger-menu">
-            <input type="checkbox" onclick = "toggleMenu(); toggleDropdown();">
-        </label>
+        <div class="hamburger-icon">
+            <label class="hambuger-menu" onclick="toggleIcon(); toggleMenu(); toggleDropdown()" >
+                <div id="nav-icon3">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+            </label>
+        </div>
         <a href="/shop_art">
-            <img src="{{ shopping_cart_url}}" id = "shoppingCart" class = "cart" oncontextmenu="return false;" draggable="false">
+            <div class="icon-cart" style="clear: left; float: left">
+                <div class="icon-wrapper">
+                    <div class="cart-line-1" style="background-color: black;"></div>
+                    <div class="cart-line-2" style="background-color: black;"></div>
+                    <div class="cart-line-3" style="background-color: black;"></div>
+                    <div class="cart-wheel" style="background-color: black;"></div>
+                </div>                
+            </div>
         </a>
         <span id="mobileCartQuantity" class="cart-quantity-mobile"></span>
         <div class="mobile-dropdown">

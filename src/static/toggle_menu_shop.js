@@ -1,3 +1,8 @@
+function toggleIcon() {
+    const icon = document.querySelector('#nav-icon3');
+    icon.classList.toggle('open');
+
+}
 async function togglePageLock(title) {
     // Change the opacity of the body to 0.5 before starting the addToCart function
     document.body.style.opacity = '0.5';
