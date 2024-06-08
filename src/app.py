@@ -8,17 +8,17 @@ from fastapi.responses import (
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import os
-from artapi.config import NOCODB_PATH, NOCODB_IMG_UPDATE_URL, XC_AUTH
-from artapi.logger import logger
-from artapi.middleware import add_middleware
-from artapi.models import Credentials, Title, TitleQuantity
-from artapi.utils import (
+from src.artapi.config import NOCODB_PATH, NOCODB_IMG_UPDATE_URL, XC_AUTH
+from src.artapi.logger import logger
+from src.artapi.middleware import add_middleware
+from src.artapi.models import Credentials, Title, TitleQuantity
+from src.artapi.utils import (
     cleancart, hosted_image, periodic_cache_refresh
 )
-from artapi.noco import (
+from src.artapi.noco import (
     get_nocodb_data, BRIG_PASSWORD, BRIG_USERNAME, OPENAPI_URL,BEN_USERNAME, BEN_PASSWORD
 )
-from artapi.logger import get_logs
+from src.artapi.logger import get_logs
 import requests
 import json
 import tempfile
