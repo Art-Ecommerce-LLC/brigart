@@ -1,3 +1,9 @@
+function toggleIcon() {
+    const icon = document.querySelector('#nav-icon3');
+    icon.classList.toggle('open');
+
+}
+
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -69,7 +75,7 @@ function emailListEnter() {
     if (!isValidEmail(email)) {
         emailInput.value = '';
         // Display an error message next to the input box
-        displayCustomMessage(emailInput, 'Your email is not valid. Please try again.', 'error-msg');
+        displayCustomMessage(emailInput, 'Your email is not valid. Please try again', 'error-msg');
         return;
     }
 
@@ -91,7 +97,7 @@ function emailListEnter() {
         // Clear the input box after successful submission
         emailInput.value = '';
         // Display a confirmation message next to the input box
-        displayCustomMessage(emailInput, 'Your email has been added to the email list.', 'confirmation-msg');
+        displayCustomMessage(emailInput, 'Your email has been added to the email list', 'confirmation-msg');
         return response.json();
     })
     .catch(error => {
@@ -110,10 +116,8 @@ function displayCustomMessage(element, message, className) {
         customMessageElement.classList.add(className); // Add the specified CSS class
 
         // Get the navbar div
-        const navbar = document.querySelector('.footer_navbar');
-
-        // Insert the message element into the navbar div
-        navbar.insertBefore(customMessageElement, navbar.firstChild);
+        const navbar = document.querySelector('.contact_form');;
+        navbar.appendChild(customMessageElement);
 
     // Scroll to the new message element
         customMessageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -139,14 +143,18 @@ async function updateCartQuantity(cart_quantity) {
         document.getElementById('cartQuantity').innerText = '';
         document.getElementById('mobileCartQuantity').innerText = '';
         // Add a button right below h1 with id moreShop that leads to /shop_art_menu 
+        // Add the hide class to the checkout-container div
+        document.querySelector('.checkout-container').classList.add('hide');
+
+
         const moreShop = document.createElement('button');
-        moreShop.innerText = 'Continue Shopping';
+        moreShop.innerText = 'CONTINUE SHOPPING';
         moreShop.addEventListener('click', () => {
             window.location.href = '/shop_art_menu';
         });
         moreShop.classList.add('more-shop-styles');
         // put inside the shop-more div
-        document.querySelector('.shop-more').appendChild(moreShop);
+        document.querySelector('.shop-more-wrapper').appendChild(moreShop);
     }
     return Promise.resolve(); // Ensure it returns a promise
 }

@@ -21,7 +21,6 @@
     justify-content: center;
     align-items: center;
     margin-bottom:4px;
-
 }
 
 .icon-wrapper {
@@ -156,7 +155,7 @@
     -o-transform: rotate(0deg);
     transform: rotate(0deg);
     cursor: pointer;
-    border-bottom: 2px solid white;
+    border-bottom: 2px solid white  ;
     margin-right:10px;
 }
 #nav-icon3:hover {
@@ -338,25 +337,18 @@ html, body {
     transition: color 0.3s;
 }
 
-.home {
-    margin-right: 40px;
-}
-
-.giclee {
-    margin-right: 40px;
-}
-
+.home,
+.giclee,
 .shop {
     margin-right: 40px;
-
+    margin-top: 17px;
 }
 /* .cart_img {
     margin-right: 1px;
 } */
 
 .navbar a:hover {
-    color: #349ef5;
-    text-decoration: underline;
+    text-decoration: underline var(--background-color-blue) 2px;
 }
 
 .navbar img, .mobile-menu img {
@@ -549,8 +541,9 @@ html, body {
 .cart-quantity {
     color: black;
     text-align: center;
-    font-size: 27px;
+    font-size: 26px;
     padding: 0 1px;
+    margin-top: 14px;
 }
 .footer {
     display: flex;
@@ -684,8 +677,9 @@ html, body {
     .cart-quantity-mobile {
         display:inline-block;
         color: black;
-        font-size: 27px;
+        font-size: 26px;
         padding: 0 1px;
+        margin-top: 14px;
     }
     .navbar {
         display: none;
@@ -706,7 +700,7 @@ html, body {
     }
     .mobile-dropdown a {
         color: black;
-        text-decoration: none;
+        
         padding: 20px;
         font-size: 50px;
         width: 100%;
@@ -718,8 +712,7 @@ html, body {
         text-overflow: ellipsis;
     }
     .mobile-dropdown a:hover {
-        color: #349ef5;
-        text-decoration: underline;
+        text-decoration: underline var(--background-color-blue) 2px;
     }
     .mobile-dropdown.show {
         display: block;
