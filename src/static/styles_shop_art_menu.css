@@ -326,7 +326,7 @@ body {
 .giclee,
 .shop {
     margin-right: 40px;
-    margin-top: 30px;
+    margin-top: 17px;
 }
 .navbar a:hover { /* Change to your desired hover color */
     text-decoration: underline var(--background-color-blue) 2px;
@@ -381,8 +381,25 @@ body {
 .content.hide {
     display: none;
 }
-.footer.hide  {
-    display: none;
+.footer_navbar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #040404;
+    color: white;
+    z-index: 999;
+}
+.footer_navbar a{
+    color: white;
+    text-decoration: none;
+    margin: 0 20px;
+}
+.footer_navbar a:hover{
+    text-decoration: underline var(--background-color-blue) 2px;
+
+}
+.footer.hide{
+    display:none;
 }
 
 .artwork {
@@ -481,6 +498,7 @@ body {
     text-align: center;
     font-size: 27px;
     padding: 0 1px;
+    margin-top: 14px;
 }
 
 
@@ -521,18 +539,21 @@ body {
     margin-bottom: auto; /* Push input box to the bottom */
 }
 
+
 .contact_form button[type="submit"] {
     padding: 10px;
-    background-color: #349ef5;
-    color: #040404;
+    background-color: white;
+    border : 1px solid #040404;
+    color: black;
     font-weight: bold;
-    border: none;
     border-radius: 5px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
 }
 .contact_form button[type="submit"]:hover {
-    background-color: #0056b3; /* Change to desired hover color */
+    background-color: #040404;
+    color: white;
+    border: 1px solid white; /* Change to desired hover color */
 }
 
 .contact_info {
@@ -589,8 +610,9 @@ body {
     .cart-quantity-mobile {
         display:inline-block;
         color: white;
-        font-size: 27px;
+        font-size: 26px;
         padding: 0 1px;
+        margin-top: 14px;
     }
     .navbar {
         display: none;
@@ -632,8 +654,7 @@ body {
     }
     
     .mobile-dropdown a:hover {
-        color: #349ef5;
-        text-decoration: underline;
+        text-decoration: underline var(--background-color-blue) 2px;
     }
     
     .mobile-dropdown.show {

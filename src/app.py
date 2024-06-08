@@ -518,8 +518,8 @@ async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = Fi
 #         logger.error(f"Failed to fetch hosted image: {e}")
 #         raise HTTPException(status_code=500, detail="Internal server error")
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     # if SCENE == "dev":
     #    uvicorn.run(app="app:app", host=os.getenv("host"), port=int(os.getenv("port")), reload=True)
     # If Mac:
-    uvicorn.run(app="app:app", host=os.getenv("host"), port=444, reload=True)
+    # uvicorn.run(app="app:app", host=os.getenv("host"), port=444, reload=True)

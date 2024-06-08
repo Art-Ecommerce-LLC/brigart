@@ -1,3 +1,8 @@
+function toggleIcon() {
+    const icon = document.querySelector('#nav-icon3');
+    icon.classList.toggle('open');
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Dropwdown the contact info section initially on page load
     document.getElementById('contactInfoSection').classList.add('open');
@@ -446,6 +451,8 @@ async function updateCartQuantity() {
             // Only create and add the "Continue Shopping" button once
             if (!document.querySelector('.shop-more button')) {
                 const moreShop = document.createElement('button');
+                // Add claslist element hid eto checkout-container
+                document.querySelector('.checkout-container').classList.add('hide');
                 moreShop.innerText = 'Continue Shopping';
                 moreShop.addEventListener('click', () => {
                     window.location.href = '/shop_art_menu';

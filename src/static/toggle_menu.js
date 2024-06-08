@@ -1,9 +1,7 @@
 function toggleIcon() {
     const icon = document.querySelector('#nav-icon3');
     icon.classList.toggle('open');
-
 }
-
 
 function emailListEnter() {
     // Get the email input value
