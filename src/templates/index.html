@@ -6,8 +6,10 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <title>Art Showcase</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles.css') }}" />
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/general_styles.css') }}" />
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon" />
-
+    <script src="{{ url_for('static', path='/toggle_menu.js') }}"></script>
+    <script src="{{ url_for('static', path='/general_scripts.js') }}"></script>
 </head>
 <body>
 <div class="header">
@@ -105,7 +107,6 @@
         <p>&copy; <span id="currentYear"></span> Brig Light. All rights reserved.</p>
     </div>
 </footer>
-<script src="{{ url_for('static', path='/toggle_menu.js') }}"></script>
 </body>
 </html>
 

@@ -6,6 +6,8 @@
     <meta charset="UTF-8">
     <title>Art Showcase</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles_checkout.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/general_styles.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles_page_white.css') }}">
     <script src="{{ url_for('static', path='/toggle_menu_checkout.js') }}"></script>
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
 </head>
@@ -140,11 +142,6 @@
 </div>
 <footer class="footer">
     <div class="container">
-        <div class="footer_navbar">
-            <a href="/">HOME</a> |
-            <a href="/giclee_prints">GICLÉE PRINTS</a> |
-            <a href="/shop_art_menu">SHOP ART</a>
-        </div>
         <p>&copy; <span id="currentYear"></span> Brig Light. All rights reserved.</p>
     </div>
 </footer>

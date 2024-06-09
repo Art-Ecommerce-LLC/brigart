@@ -1,0 +1,60 @@
+
+html, 
+body,
+.footer,
+.content,
+.header,
+.footer_navbar,
+.footer_navbar a,
+.footer p,
+.navbar a{
+    background-color:white !important;
+    color: black !important;
+}
+
+.icon-cart {
+    border-bottom: 2px solid white !important;
+}
+
+.icon-cart:hover {
+    border-bottom: 2px solid var(--background-color-blue) !important;
+}
+.contact_form button {
+    background-color: black !important;
+    color: white !important;
+    border: 1px solid black !important;
+}
+
+.contact_form button:hover {
+    background-color: white !important;
+    color: black !important;
+    border: 1px solid black ;
+}
+
+#nav-icon3 span {
+    background-color: black !important;    
+}
+
+
+#nav-icon3 {
+    border-bottom: 2px solid white !important;
+}
+#nav-icon3:hover {
+    border-bottom: 2px solid var(--background-color-blue) !important;
+}
+
+.cart-quantity{
+    color:black !important;
+}
+.cart-quantity-mobile{
+    color:black !important;
+
+}
+
+.mobile-dropdown {
+    background-color: white !important;
+    color: black !important;
+}
+.mobile-dropdown a {
+    color: black !important;
+}
