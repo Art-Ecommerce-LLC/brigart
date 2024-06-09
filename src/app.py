@@ -13,7 +13,7 @@ from src.artapi.logger import logger
 from src.artapi.middleware import add_middleware
 from src.artapi.models import Credentials, Title, TitleQuantity
 from src.artapi.utils import (
-    cleancart, hosted_image, periodic_cache_refresh
+    cleancart, hosted_image
 )
 from src.artapi.noco import (
     get_nocodb_data, BRIG_PASSWORD, BRIG_USERNAME, OPENAPI_URL,BEN_USERNAME, BEN_PASSWORD
