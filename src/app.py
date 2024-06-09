@@ -25,13 +25,7 @@ import tempfile
 import os
 from typing import List
 import uvicorn
-import threading
 
-# Start a background thread to refresh caches every 2 hours
-refresh_interval_hours = 2
-refresh_thread = threading.Thread(target=periodic_cache_refresh, args=(refresh_interval_hours,))
-refresh_thread.daemon = True
-refresh_thread.start()
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
 

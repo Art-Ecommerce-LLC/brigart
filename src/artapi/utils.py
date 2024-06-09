@@ -13,7 +13,6 @@ from src.artapi.models import OrderInfo
 from tempfile import TemporaryDirectory
 import requests
 import tempfile
-import time
 
 scale_factor = 0.4
 temp_dir = TemporaryDirectory()
@@ -129,7 +128,6 @@ def update_cache_if_needed() -> tuple:
 
 def check_for_inconsistencies(current_data: dict, cached_data: dict) -> bool:
     """Check for inconsistencies between current data and cached data."""
-
     return current_data != cached_data
 def fetch_data_uris() -> tuple:
     logger.info("Fetching data URIs")
@@ -244,19 +242,3 @@ async def get_data_uri_from_title(title) -> str:
     except Exception as e:
         logger.error(f"Failed to fetch data URI for {title}: {e}")
         raise
-            
-def refresh_caches():
-    try:
-        logger.info("Refreshing all caches")
-        clear_cache()
-        load_nocodb_data()
-        load_nocodb_icon_data()
-        logger.info("All caches refreshed successfully")
-    except Exception as e:
-        logger.error(f"Error refreshing caches: {e}")
-
-def periodic_cache_refresh(interval_hours: int):
-    while True:
-        refresh_caches()
-        time.sleep(interval_hours * 3600)
-
