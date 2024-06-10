@@ -193,7 +193,7 @@ function displayTotalQuantityError(message) {
     // Create a new error message element
     errorMessageElement = document.createElement('p');
     errorMessageElement.innerText = message;
-    errorMessageElement.classList.add('error-message');
+    errorMessageElement.classList.add('error-msg');
 
     // Get the parent element of the total price element
     const totalElement = document.querySelector('.total');

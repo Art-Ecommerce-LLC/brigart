@@ -55,43 +55,6 @@
     box-sizing: border-box;
     font-size: 1em;
 }
-.spinner {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999; /* Ensure it's on top */
-}
-
-.spinner::before {
-    content: '';
-    box-sizing: border-box;
-    width: 50px;
-    height: 50px;
-    border: 5px solid #ccc;
-    border-top-color: #333;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-
-@keyframes progress {
-    0% {
-        width: 0;
-    }
-    100% {
-        width: 100%;
-    }
-}
 
 .email-enter,
 .payment-info,

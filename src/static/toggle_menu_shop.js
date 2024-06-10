@@ -366,4 +366,3 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 // Toggle the menu on window resize
 window.addEventListener('resize', toggleMenu);
-

@@ -200,7 +200,8 @@ input[readonly]:focus {
     font-size: 20px;
     font-weight: bold;
     color: white;
-    margin: 8px 0;
+    margin-bottom: 17px;
+    margin-top: 0;
 }
 .cart-quantity {
     color: white;

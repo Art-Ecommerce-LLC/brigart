@@ -58,3 +58,8 @@ body,
 .mobile-dropdown a {
     color: black !important;
 }
+
+.error-msg {
+    color: black !important;
+    margin-bottom: 17px !important;
+}

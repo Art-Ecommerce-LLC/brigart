@@ -140,19 +140,13 @@
 }
 
 .confirmation-msg {
-    margin-top: 0px;
-    color: black; 
-    font-size: 14px;
+    margin-top: 0px; /* Adjust the margin as needed */
+    color: black; /* Color of the confirmation message */
+    font-size: 14px; /* Font size of the confirmation message */
+    /* Add any other styles as per your design */
 }
 
-.error-msg {
-    margin: 0px; 
-    color: black; 
-    font-size: 14px; 
-}
-.message-container {
-    margin-top: 10px;
-}
+
 /* Media Queries */
 @media (max-width: 827px) {
 
