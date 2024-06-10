@@ -56,10 +56,10 @@
 }
 
 .icon-wrapper .cart-line-1 {
-    width: 35%;
+    width: 38%;
     height: 6.5%;
     position: absolute;
-    right: 75%;
+    right: 74.8%;
     top: 51%;
     /* -webkit-transform: rotate(5deg);
     -moz-transform: rotate(5deg);
@@ -70,7 +70,7 @@
 }
 
 .icon-wrapper .cart-line-2 {
-    width: 41%;
+    width: 41.3%;
     height: 7%;
     position: absolute;
     left: 2%;
@@ -84,27 +84,27 @@
 
 .icon-wrapper .cart-line-2:before {
     content: "";
-    width: 147%;
-    height: 85%;
+    width: 144%;
+    height: 95%;
     position: absolute;
-    left: 30%;
-    border-bottom-left-radius: 15%;
-    border-bottom-right-radius: 25%;
-    top: -190%;
+    left: 28.4%;
+    top: -194.1%;
     -webkit-transform: rotate(-80deg);
     -moz-transform: rotate(-80deg);
     -ms-transform: rotate(-80deg);
     transform: rotate(-80deg); 
     background-color: inherit;
+    border-bottom-left-radius: 8%;
+
 }
 
 .icon-cart .cart-line-2:after {
     content: "";
-    width: 86%;
+    width: 89%;
     height: 100%;
     position: absolute;
     left: 39%;
-    top: -485%;
+    top: -487%;
     background-color: inherit;
     -webkit-transform: rotate(40deg);
     -moz-transform: rotate(40deg);
@@ -112,6 +112,7 @@
     transform: rotate(40deg); 
     border-top-left-radius: 70%;
     border-bottom-left-radius: 10%;
+    border-top-right-radius: 6%;
 }
 
 .icon-cart .cart-line-3 {
@@ -119,7 +120,7 @@
     height:5%;
     position: absolute;
     left: 35%;
-    bottom: 26%;
+    bottom: 30%;
     background-color: #000;
 }
 
@@ -134,12 +135,12 @@
 }
 
 .icon-cart .cart-wheel {
-    width: 15%;
-    height: 9%;
+    width: 18%;
+    height: 10%;
     background-color: #000;
     border-radius: 100%;
     position: absolute;
-    left: 25%;
+    left: 23%;
     bottom: 6%;
 }
 
@@ -150,7 +151,7 @@
     background-color: inherit;
     border-radius: 100%;
     position: absolute;
-    left: 213%;
+    left: 170%;
     bottom: 0;
 }
 
