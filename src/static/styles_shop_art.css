@@ -229,6 +229,7 @@ input[readonly]:focus {
 
 .more-shop-styles {
     background-color: white;
+    margin-top: 100px;
     color: black;
     border: none;
     border-radius: 5px;
@@ -241,12 +242,12 @@ input[readonly]:focus {
     text-decoration: none; /* Remove underline from anchor tag */
 }
 .shop-more {
-    margin-top: 20px;
     display: flex;
     justify-content: center;
     align-items: center;
     width:100%;
 }
+
 
 .more-shop-styles:hover {
     background-color: black;

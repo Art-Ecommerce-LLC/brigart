@@ -11,35 +11,42 @@
     --grid-gap: 25px;
     --background-color-blue: #349ef5;
     --shopping-cart-icon-height: 56px;
-    --shopping-cart-icon-width: 39px;
-    --hamburger-menu-icon-height: 48px;
+    --shopping-cart-icon-width: 32px;
+    --hamburger-menu-icon-height: 56px;
     --hamburger-menu-icon-width: 32px;
+}
 
+.shopping_cart_icon{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: var(--shopping-cart-icon-height);
+    width: var(--shopping-cart-icon-width);
+    margin: auto;
+}
+.shopping_cart_icon a{
+    height: var(--shopping-cart-icon-height);
+    width: var(--shopping-cart-icon-width);
 }
 
 .hamburger-icon{
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-bottom:4px;
-
 }
 
-.icon-wrapper {
-    height: 56px;
-    
-}
 .icon-cart{
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 44px;
     border-bottom: 2px solid black;
+    height: var(--shopping-cart-icon-height);
+    width: var(--shopping-cart-icon-width);
 }
 
 .icon-wrapper {
-    width: var(--shopping-cart-icon-width);
-    height: var(--shopping-cart-icon-height);
+    width: inherit;
+    height: inherit;
     position: relative;
     overflow: hidden;
 }
@@ -49,11 +56,11 @@
 }
 
 .icon-wrapper .cart-line-1 {
-    width: 30%;
-    height: 7%;
+    width: 29%;
+    height: 8%;
     position: absolute;
-    right: 73%;
-    top: 43%;
+    right: 75%;
+    top: 51%;
     /* -webkit-transform: rotate(5deg);
     -moz-transform: rotate(5deg);
     -ms-transform: rotate(5deg);
@@ -63,11 +70,11 @@
 }
 
 .icon-wrapper .cart-line-2 {
-    width: 39%;
+    width: 41%;
     height: 7%;
     position: absolute;
-    left: 6%;
-    top: 55%;
+    left: 3%;
+    bottom: 27%;
     -webkit-transform: rotate(80deg);
     -moz-transform: rotate(80deg);
     -ms-transform: rotate(80deg);
@@ -77,11 +84,11 @@
 
 .icon-wrapper .cart-line-2:before {
     content: "";
-    width: 125%;
-    height: 95%;
+    width: 140%;
+    height: 85%;
     position: absolute;
-    left: 40%;
-    top: -200%;
+    left: 29%;
+    top: -190%;
     -webkit-transform: rotate(-80deg);
     -moz-transform: rotate(-80deg);
     -ms-transform: rotate(-80deg);
@@ -91,11 +98,11 @@
 
 .icon-cart .cart-line-2:after {
     content: "";
-    width: 87%;
-    height: 113%;
+    width: 88%;
+    height: 100%;
     position: absolute;
     left: 40%;
-    top: -510%;
+    top: -490%;
     background-color: inherit;
     -webkit-transform: rotate(40deg);
     -moz-transform: rotate(40deg);
@@ -106,32 +113,32 @@
 }
 
 .icon-cart .cart-line-3 {
-    width: 30%;
-    height: 5%;
+    width: 35%;
+    height:5%;
     position: absolute;
     left: 35%;
-    top: 60%;
+    bottom: 26%;
     background-color: #000;
 }
 
 .icon-cart .cart-line-3:after {
     content: "";
-    width: 124%;
+    width: 130%;
     height: 100%;
     position: absolute;
-    top: -150%;
+    top: -140%;
     left: -5%;
     background-color: inherit;
 }
 
 .icon-cart .cart-wheel {
-    width: 13%;
-    height: 11%;
+    width: 15%;
+    height: 9%;
     background-color: #000;
     border-radius: 100%;
     position: absolute;
     left: 27%;
-    bottom: 15%;
+    bottom: 6%;
 }
 
 .icon-cart .cart-wheel:after {
@@ -184,15 +191,15 @@
 
 
 #nav-icon3 span:nth-child(1) {
-    top: 21px;
+    top: 27px;
 }
 
 #nav-icon3 span:nth-child(2),#nav-icon3 span:nth-child(3) {
-    top: 30.5px;
+    top: 37px;
 }
 
 #nav-icon3 span:nth-child(4) {
-    top: 40px;
+    top: 47px;
 }
 
 
@@ -275,13 +282,12 @@ body {
     text-decoration: none;
     font-size: 27px;
     transition: color 0.3s;
-    height: 44px;
 }
 .home,
 .giclee,
 .shop {
     margin-right: 40px;
-    margin-top: 30px;
+    margin-top: 26px;
 }
 .navbar a:hover {
     text-decoration: underline var(--background-color-blue) 2px;
@@ -310,7 +316,9 @@ body {
     text-align: center;
     font-size: 26px;
     padding: 0 1px;
-    margin-top: 14px;
+    margin-top: 23px;
+    /* Remove cursor text cursore*/
+    cursor: default;
 }
 
 .cart-mobile {
@@ -459,7 +467,8 @@ body {
         color: white;
         font-size: 26px;
         padding: 0 1px;
-        margin-top:14px;
+        margin-top: 23px;
+        cursor: default;
     }
     .navbar {
         display: none;

@@ -1,3 +1,41 @@
+function toggleIcon() {
+    const icon = document.querySelector('#nav-icon3');
+    icon.classList.toggle('open');
+
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+async function togglePageLock(responsePromise) {
+    setButtonsState(true);
+    document.body.style.opacity = '0.5';
+    const spinner = document.createElement('div');
+    spinner.classList.add('spinner');
+    document.body.appendChild(spinner);
+
+    try {
+        const response = await responsePromise;
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        
+        return response
+    } finally {
+        // await sleep(2000)
+        // Unlock the buttons and the page
+        
+        document.body.style.opacity = '1';
+        spinner.remove();
+    }
+}
+function setButtonsState(disabled) {
+    const buttons = document.querySelectorAll('.increase-quantity, .decrease-quantity, .remove-item'); // Adjust the selector to match your button classes
+    // Can you also disable any links on the page
+    const links = document.querySelectorAll('a');
+    links.forEach(link => link.disabled = disabled);
+    buttons.forEach(button => button.disabled = disabled);
+}
 
 async function getCartQuantity() {
     return fetch('/get_cart_quantity')
@@ -16,8 +54,88 @@ async function getCartQuantity() {
         });
 }
 
+function emailListEnter() {
+    // Get the email input value
+    const emailInput = document.getElementById('emailInput');
+    const email = emailInput.value;
+
+    // Check if an existing error message exists and remove it
+    const existingErrorMessage = document.querySelector('.error-msg');
+    if (existingErrorMessage) {
+        existingErrorMessage.remove();
+    }
+
+    // Check if an existing confirmation message exists and remove it
+    const existingConfirmationMsg = document.querySelector('.confirmation-msg');
+    if (existingConfirmationMsg) {
+        existingConfirmationMsg.remove();
+    }
+
+    // Validate the email format (you can add more robust validation)
+    if (!isValidEmail(email)) {
+        emailInput.value = '';
+        // Display an error message next to the input box
+        displayCustomMessage(emailInput, 'Your email is not valid. Please try again', 'error-msg');
+        return;
+    }
+
+    // Prepare the data to send to the backend
+    const data = { email: email };
+
+    // Send the data to your Python backend using fetch
+    fetch('/subscribe', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        // Clear the input box after successful submission
+        emailInput.value = '';
+        // Display a confirmation message next to the input box
+        displayCustomMessage(emailInput, 'Your email has been added to the email list', 'confirmation-msg');
+        return response.json();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+// Function to display a custom message next to an input element
+function displayCustomMessage(element, message, className) {
+    // Check if a message element of the specified class already exists
+    let customMessageElement = element.nextElementSibling;
+    if (!customMessageElement || !customMessageElement.classList.contains(className)) {
+        // If message element doesn't exist, create and append it
+        const customMessageElement = document.createElement('p');
+        customMessageElement.textContent = message;
+        customMessageElement.classList.add(className); // Add the specified CSS class
+
+        // Get the navbar div
+        const navbar = document.querySelector('.contact_form');;
+        navbar.appendChild(customMessageElement);
+
+    // Scroll to the new message element
+        customMessageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+        // If message element already exists, update its content
+        customMessageElement.textContent = message;
+    }
+}
+
+// Basic email validation function
+function isValidEmail(email) {
+    // Basic email format validation using regex
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
 // Updates the UI on the page to reflect the cart quantity
-async function updateCartQuantityAsync(cart_quantity) {
+async function updateCartQuantity(cart_quantity) {
     if (cart_quantity !== 0) {
         document.getElementById('cartQuantity').innerText = cart_quantity;
         document.getElementById('mobileCartQuantity').innerText = cart_quantity;
@@ -136,7 +254,7 @@ async function increaseQuantity(button) {
             // Update the UI with the new quantity only after the API call succeeds
             quantityElement.value = newQuantity;
             quantityPrice.innerText = '$' + newQuantity * 225;
-            await updateCartQuantityAsync(cartQuantity + 1);
+            await updateCartQuantity(cartQuantity + 1);
             updateTotalPrice();
             removeMaxQuantityErrorMessage();
         }
@@ -182,7 +300,7 @@ async function decreaseQuantity(button) {
                 // Update the UI with the new quantity only after the API call succeeds
                 quantityElement.value = newQuantity;
                 quantityPrice.innerText = '$' + newQuantity * 225;
-                await updateCartQuantityAsync(cartQuantity - 1);
+                await updateCartQuantity(cartQuantity - 1);
                 updateTotalPrice();
                 removeMaxQuantityErrorMessage();
             }
@@ -227,7 +345,7 @@ async function removeItem(button) {
         if (responseData) {
             const input_quantity = parseInt(quantityElement.value);
             const updated_cart_quantity = cartQuantity - input_quantity;
-            await updateCartQuantityAsync(updated_cart_quantity); // Update cart quantity after removing the item
+            await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item
             updateTotalPrice(); // Update total price after updating cart quantity
             removeMaxQuantityErrorMessage(); // Remove the error message here
 
@@ -271,7 +389,7 @@ async function removeItemButton(button) {
         if (response.ok) {
             const input_quantity = parseInt(quantityElement.value);
             const updated_cart_quantity = cartQuantity - input_quantity;
-            await updateCartQuantityAsync(updated_cart_quantity); // Update cart quantity after removing the item
+            await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item
             updateTotalPrice(); // Update total price after updating cart quantity
             removeMaxQuantityErrorMessage(); // Remove the error message here
         }
@@ -331,7 +449,7 @@ function toggleMenu() {
 // Initial toggle when the page loads
 document.addEventListener('DOMContentLoaded', function() {
     getCartQuantity().then(cartQuantity => {
-        updateCartQuantityAsync(cartQuantity);
+        updateCartQuantity(cartQuantity);
         toggleMenu();
         document.getElementById('currentYear').innerText = new Date().getFullYear();
         updateTotalPrice();
@@ -372,4 +490,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 // Toggle the menu on window resize
 window.addEventListener('resize', toggleMenu);
-
