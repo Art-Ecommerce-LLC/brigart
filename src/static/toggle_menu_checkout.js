@@ -1,14 +1,9 @@
-function toggleIcon() {
-    const icon = document.querySelector('#nav-icon3');
-    icon.classList.toggle('open');
-}
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Dropwdown the contact info section initially on page load
-    document.getElementById('contactInfoSection').classList.add('open');
+    // Drop down the contact info section initially on page load
+    const contactInfoSection = document.getElementById('contactInfoSection');
+    contactInfoSection.classList.add('open');
+
     // Add event listeners to the collapsible headers
-
-
     document.querySelectorAll('.collapsible-header').forEach(header => {
         header.addEventListener('click', () => {
             const section = header.parentElement;
@@ -20,40 +15,185 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+function toggleIcon() {
+    const icon = document.querySelector('#nav-icon3');
+    icon.classList.toggle('open');
+}
+
+function toggleInputsAndButtons(section, disable) {
+    console.log("Section:", section);
+    console.log("Disable:", disable);
+
+    const inputs = section.querySelectorAll('input');
+    const buttons = section.querySelectorAll('button.continue-btn'); // Target 
+
+    console.log("Buttons:", buttons);
+    console.log("Inputs:", inputs);
+
+    // Add the class disabled to the buttons and inputs to disable them
+    inputs.forEach(input => {
+        console.log("Disabling input:", input);
+        input.disabled = disable;
+    });
+
+    buttons.forEach(button => {
+        console.log("Disabling button:", button);
+        button.disabled = disable;
+    });
+}
 function toggleNextSection(currentSectionId, nextSectionId) {
 
-    
-    if (validateSection(currentSectionId)) {
 
-        const currentSection = document.getElementById(currentSectionId);
-        const currentSectionHeader = currentSection.querySelector('.collapsible-header');
-        currentSection.classList.remove('open');
-        updateArrow(currentSectionHeader);
+    validateSection(currentSectionId).then(isValid => {
+        if (isValid) {
+            removeFormErrorMessage();
+            if (nextSectionId === 'SubmitButton') {
+                handlePurchase(currentSectionId);
+                return;
+            }
+            const currentSection = document.getElementById(currentSectionId);
+            const currentSectionHeader = currentSection.querySelector('.collapsible-header');
+            currentSection.classList.remove('open');
 
-        const nextSection = document.getElementById(nextSectionId);
-        const nextSectionHeader = nextSection.querySelector('.collapsible-header');
-        
-        nextSection.classList.add('open');
-        nextSectionHeader.classList.remove('disabled');
-        nextSectionHeader.style.fontWeight = 'bold';
-        updateArrow(nextSectionHeader);
-        // Scroll to the next section smoothly
-        nextSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
-        alert('Please fill out all fields in this section.');
+            // Remove the continue button from the current section
+            const continueButton = currentSection.querySelector('.continue-btn');
+            if (continueButton) {
+                continueButton.remove();
+            }
+
+            updateArrow(currentSectionHeader);
+            toggleInputsAndButtons(currentSection, true);
+
+
+            const nextSection = document.getElementById(nextSectionId);
+            const nextSectionHeader = nextSection.querySelector('.collapsible-header');
+            
+            nextSection.classList.add('open');
+            nextSectionHeader.classList.remove('disabled');
+            nextSectionHeader.style.fontWeight = 'bold';
+            updateArrow(nextSectionHeader);
+            toggleInputsAndButtons(nextSection, false);
+            // Scroll to the next section smoothly
+        } else {
+            // Display custom error message as the second to last element in the collapsible-content div in the current section
+            displayErrorMessage(currentSectionId, 'Please enter a valid email and phone number.');
+        }
+    }).catch(error => {
+        console.error('Validation failed:', error);
+        displayErrorMessage(currentSectionId, 'An error occurred while validating. Please try again.');
+    });
+}
+function removeFormErrorMessage() {
+    const existingErrorMessage = document.querySelector('.error-message');
+    if (existingErrorMessage) {
+        existingErrorMessage.remove();
     }
+}
 
+function displayErrorMessage(currentSectionId, message) {
+    // check if there is an existing error message
+    const existingErrorMessage = document.querySelector('.error-message');
+    if (existingErrorMessage) {
+        existingErrorMessage.remove();
+    }
+    // Check if message is not null or empty
+    if (message) {
+        const currentSection = document.getElementById(currentSectionId);
+        const content = currentSection.querySelector('.collapsible-content');
+        const errorMessage = document.createElement('p');
+        errorMessage.innerText = message;
+        errorMessage.classList.add('error-message');
+        content.insertBefore(errorMessage, content.lastElementChild);
+    }
 
 }
 
-function validateSection(sectionId) {
+async function validateSection(sectionId) {
     const section = document.getElementById(sectionId);
     const inputs = section.querySelectorAll('input');
-    for (let input of inputs) {
-        if (!input.value.trim()) {
+
+    if (sectionId === 'contactInfoSection') {
+        const email = document.getElementById('email').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        if (!email || !phone) {
             return false;
         }
+
+        // Send the email and phone in an async function that triggers the spinner and disables the buttons until the response is received
+        const responsePromise = fetch('/validate_contact_info', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email: email, phone: phone })
+        });
+
+        // Use togglePageLock to manage the page lock and response handling
+        return togglePageLock(responsePromise).then(response => {
+            if (!response.ok) {
+                return false;
+            }
+            removeFormErrorMessage();
+            return true;
+        });
     }
+    if (sectionId === 'paymentInfoSection') {
+        const cardName = document.getElementById('card-name').value.trim();
+        const cardNumber = document.getElementById('card-number').value.trim();
+        const expiryDate = document.getElementById('expiry').value.trim();
+        const cvv = document.getElementById('cvv').value.trim();
+        if (!cardName || !cardNumber || !expiry || !cvv) {
+            return false;
+        }
+
+        // Send the card details in an async function that triggers the spinner and disables the buttons until the response is received
+        const responsePromise = fetch('/validate_payment_info', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ cardName: cardName, cardNumber: cardNumber, expiryDate: expiryDate, cvv: cvv })
+        });
+
+        // Use togglePageLock to manage the page lock and response handling
+        return togglePageLock(responsePromise).then(response => {
+            if (!response.ok) {
+                return false;
+            }
+            removeFormErrorMessage();
+            return true;
+        });
+    }
+    if (sectionId === 'billingAddressSection') {
+        const fullname = document.getElementById('fullname').value.trim();
+        const address1 = document.getElementById('address1').value.trim();
+        const address2 = document.getElementById('address2').value.trim();
+        const city = document.getElementById('city').value.trim();
+        const state = document.getElementById('state').value.trim();
+        const zip = document.getElementById('zip').value.trim();
+        if (!fullname || !address1 || !city || !state || !zip) {
+            return false;
+        }
+
+        // Send the shipping details in an async function that triggers the spinner and disables the buttons until the response is received
+        const responsePromise = fetch('/validate_shipping_info', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ fullname: fullname, address1: address1, address2: address2, city: city, state: state, zip: zip })
+        });
+
+        // Use togglePageLock to manage the page lock and response handling
+        return togglePageLock(responsePromise).then(response => {
+            if (!response.ok) {
+                return false;
+            }
+            removeFormErrorMessage();
+            return true;
+        });
+    }
+
     return true;
 }
 
@@ -132,64 +272,36 @@ async function updateCartQuantity(cart_quantity) {
     return Promise.resolve(); // Ensure it returns a promise
 }
 //Create a second toggle for the mobile menu to be a dropdown menu when hamburger icon is clicked
-function handlePurchase(button) {
-    // Gather form data
-    const email = document.getElementById("email").value;
-    const phone = document.getElementById("phone").value;
-    const cardName = document.getElementById("card-name").value;
-    const cardNumber = document.getElementById("card-number").value;
-    const expiryDate = document.getElementById("expiry").value;
-    const cvv = document.getElementById("cvv").value;
-    const fullname = document.getElementById("fullname").value;
-    const address1 = document.getElementById("address1").value;
-    const address2 = document.getElementById("address2").value;
-    const city = document.getElementById("city").value;
-    const state = document.getElementById("state").value;
-    const zip = document.getElementById("zip").value;
+function handlePurchase(sectionId) {
+    // Grab the continue-btn in the sectionID
+    const continueButton = document.getElementById(sectionId).querySelector('.continue-btn');
+    // Disable the buttons and inputs in the section
+    toggleInputsAndButtons(document.getElementById(sectionId), true);
 
-    // Now you have all the form data stored in variables
-    // You can use this data to process the purchase, send it to the server, etc.
-    // For example, you can make a fetch request to a backend endpoint to process the payment
+    // Change the text of the continue button to "Purchase"
+    continueButton.innerText = 'Purchase';
 
-    const formData = {
-        email : email,
-        phone : phone,
-        cardName : cardName,
-        cardNumber : cardNumber,
-        expiryDate : expiryDate,
-        cvv : cvv,
-        fullname : fullname,
-        address1 : address1,
-        address2 : address2,
-        city : city,
-        state : state,
-        zip : zip,
-    };
+    // If it gets clicked while its text is "Purchase", then submit a fetch request
+    continueButton.addEventListener('click', () => {
+        // Send the purchase request
+        const responsePromise = fetch('/purchase', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ purchase: true })
+        });
 
-    // Make a fetch request to send the form data to the backend
-    fetch('/process_payment', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
-        // Handle the response data
-        console.log(data);
-        // Redirect to a success page, display a success message, etc.
-        window.location.href = '/';
-
-    })
-    .catch(error => {
-        console.error('Error processing payment:', error);
-        // Handle the error, display an error message, etc.
+        // Use togglePageLock to manage the page lock and response handling
+        togglePageLock(responsePromise).then(response => {
+            if (response.ok) {
+                // Redirect to the confirmation page
+                window.location.href = '/confirmation';
+            } else {
+                // Display an error message
+                displayErrorMessage(sectionId, 'An error occurred while processing your purchase. Please try again.');
+            }
+        });
     });
 }
 

@@ -11,7 +11,9 @@ import os
 from src.artapi.config import NOCODB_PATH, NOCODB_IMG_UPDATE_URL, XC_AUTH
 from src.artapi.logger import logger
 from src.artapi.middleware import add_middleware
-from src.artapi.models import Credentials, Title, TitleQuantity
+from src.artapi.models import (
+    Credentials, Title, TitleQuantity, ContactInfo, PaymentInfo, BillingInfo
+)
 from src.artapi.utils import (
     cleancart, hosted_image
 )
@@ -484,36 +486,46 @@ async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = Fi
                 os.remove(each)
         return return_list[0] if return_list else {"message": "No images added"}
 
-# @app.get("/hostedimage/{title}", response_class=HTMLResponse)
-# async def hosted_image(request: Request, title: str):
-#     logger.info(f"Hosted image request for {title} by {request.client.host}")
-#     file_path = os.path.join(temp_dir.name, f"{title}.png")
-#     if os.path.exists(file_path):
-#         return FileResponse(file_path, media_type="image/png")
-#     try:
-#         nocodb_data = get_nocodb_data()
-#         loaded_nocodb_data = json.loads(nocodb_data)
-#         for item in loaded_nocodb_data['list']:
-#             if item['img_label'] == title:
-#                 db_path = item['img'][0]['signedPath']
-#                 url_path = f"{HTTP}://{SITE_HOST}/{db_path}"
-#                 async with aiohttp.ClientSession() as session:
-#                     async with session.get(url_path) as response:
-#                         if response.status == 200:
-#                             image_data = await response.read()
-#                             scale_image(image_data, file_path)
-#                             return FileResponse(file_path, media_type="image/png")
-#                         else:
-#                             logger.error(f"Failed to fetch image for {title}, status code: {response.status}")
-#                             raise HTTPException(status_code=404, detail="Image not found")
-#         logger.warning(f"Image not found for {title}")
-#         raise HTTPException(status_code=404, detail="Image not found")
-#     except Exception as e:
-#         logger.error(f"Failed to fetch hosted image: {e}")
-#         raise HTTPException(status_code=500, detail="Internal server error")
+@app.post("/validate_contact_info")
+async def validate_contact_info(request: Request, contact_info: ContactInfo):
+    print(contact_info.email, contact_info.phone)
+    logger.info(f"Validate contact info for {contact_info.email} by {request.client.host}")
+    try:
+        if not contact_info.email or not contact_info.phone:
+            logger.warning("Email or phone number not provided")
+            raise HTTPException(status_code=400, detail="Email or phone number not provided")
+        
+        # Insert into NoCodeDB
 
-# if __name__ == "__main__":
-    # if SCENE == "dev":
-    #    uvicorn.run(app="app:app", host=os.getenv("host"), port=int(os.getenv("port")), reload=True)
-    # If Mac:
-    # uvicorn.run(app="app:app", host=os.getenv("host"), port=444, reload=True)
+        
+    except Exception as e:
+        logger.error(f"Error in validate_contact_info: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@app.post("/validate_payment_info")
+async def validate_payment_info(request: Request, payment_info: PaymentInfo):
+    logger.info(f"Validate payment info for {payment_info.cardName} by {request.client.host}")
+    try:
+        if not payment_info.cardName or not payment_info.cardNumber or not payment_info.expiryDate or not payment_info.cvv:
+            logger.warning("Payment information not provided")
+            raise HTTPException(status_code=400, detail="Payment information not provided")
+        
+        # Insert into NoCodeDB
+
+    except Exception as e:
+        logger.error(f"Error in validate_payment_info: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+    
+@app.post("/validate_shipping_info")
+async def validate_billing_info(request: Request, billing_info: BillingInfo):
+    logger.info(f"Validate billing info for {billing_info.fullname} by {request.client.host}")
+    try:
+        if not billing_info.fullname or not billing_info.address1 or not billing_info.city or not billing_info.state or not billing_info.zip:
+            logger.warning("Billing information not provided")
+            raise HTTPException(status_code=400, detail="Billing information not provided")
+        
+        # Insert into NoCodeDB
+
+    except Exception as e:
+        logger.error(f"Error in validate_billing_info: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")

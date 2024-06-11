@@ -36,3 +36,22 @@ class Credentials(BaseModel):
 
 class Title(BaseModel):
     title: str
+
+
+class ContactInfo(BaseModel):
+    email: EmailStr = Field(...)
+    phone: str = Field(..., min_length=10, max_length=15)
+
+class PaymentInfo(BaseModel):
+    cardName: str = Field(...)
+    cardNumber: str = Field(..., min_length=15, max_length=16)
+    expiryDate: str = Field(..., pattern=r'^\d{2}/\d{2}$')
+    cvv: str = Field(..., min_length=3, max_length=4)
+
+class BillingInfo(BaseModel):
+    fullname: str = Field(...)
+    address1: str = Field(...)
+    address2: str = Field(...)
+    city: str = Field(...)
+    state: str = Field(...)
+    zip: str = Field(..., min_length=5, max_length=10)
