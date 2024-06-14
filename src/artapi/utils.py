@@ -7,12 +7,18 @@ from io import BytesIO
 import base64
 from fastapi import HTTPException, Request, Security, status
 from fastapi.security import APIKeyHeader
-from src.artapi.noco import get_nocodb_data, get_nocodb_icons, SITE_HOST, API_KEYS, HTTP
+from src.artapi.noco import (
+    post_nocodb_contact_data, post_nocodb_order_data, post_nocodb_content_data, get_nocodb_data, get_nocodb_icons, get_nocodb_email_data,  SITE_HOST, API_KEYS, HTTP
+)
 from src.artapi.logger import logger
 from src.artapi.models import OrderInfo
 from tempfile import TemporaryDirectory
 import requests
 import tempfile
+import time
+import string
+import random
+from typing import List
 
 scale_factor = 0.4
 temp_dir = TemporaryDirectory()
@@ -45,6 +51,17 @@ def load_nocodb_icon_data() -> dict:
         return data
     except Exception as e:
         logger.error(f"Error loading NoCoDB icon data: {e}")
+        raise
+
+@lru_cache(maxsize=128)
+def load_nocodb_email_data() -> dict:
+    try:
+        logger.info("Loading NoCoDB email data")
+        data = json.loads(get_nocodb_email_data())
+        logger.info("NoCoDB email data loaded successfully")
+        return data
+    except Exception as e:
+        logger.error(f"Error loading NoCoDB email data: {e}")
         raise
 
 def encode_image_to_base64(image_path: str) -> str:
@@ -126,6 +143,24 @@ def update_cache_if_needed() -> tuple:
 
     return nocodb_data, icon_data
 
+def update_email_cache_if_needed() -> dict:
+    """Fetch current email data, check for inconsistencies, and update cache if needed."""
+    logger.info("Fetching current email data from NoCoDB")
+    current_email_data = json.loads(get_nocodb_email_data())
+
+    # Fetch cached data
+    cached_email_data = load_nocodb_email_data()
+
+    # Check for inconsistencies between cache data and current data
+    if check_for_inconsistencies(current_email_data, cached_email_data):
+        load_nocodb_email_data.cache_clear()
+        logger.info("Email cache cleared due to inconsistencies")
+        email_data = current_email_data
+    else:
+        email_data = cached_email_data
+
+    return email_data
+
 def check_for_inconsistencies(current_data: dict, cached_data: dict) -> bool:
     """Check for inconsistencies between current data and cached data."""
     return current_data != cached_data
@@ -179,33 +214,12 @@ def fetch_data_uris() -> tuple:
         logger.error(f"Failed to fetch data URIs: {e}")
         raise
 
-def update_cache_if_needed() -> tuple:
-    """Fetch current data, check for inconsistencies, and update cache if needed."""
-    logger.info("Fetching current data from NoCoDB")
-    current_nocodb_data = json.loads(get_nocodb_data())
-    current_icon_data = json.loads(get_nocodb_icons())
-
-    # Fetch cached data
-    cached_nocodb_data = load_nocodb_data()
-    cached_icon_data = load_nocodb_icon_data()
-    # Check for inconsistencies between cache data and current data
-    if check_for_inconsistencies(current_nocodb_data, cached_nocodb_data) or \
-       check_for_inconsistencies(current_icon_data, cached_icon_data):
-        clear_cache()
-        logger.info("Cache cleared due to inconsistencies")
-        nocodb_data = current_nocodb_data
-        icon_data = current_icon_data
-    else:
-        nocodb_data = cached_nocodb_data
-        icon_data = cached_icon_data
-
-    return nocodb_data, icon_data
-
 def clear_cache():
     cache.data_uris = None
     cache.titles = None
     load_nocodb_data.cache_clear()
     load_nocodb_icon_data.cache_clear()
+    load_nocodb_email_data.cache_clear()
     logger.info("Caches cleared")
 
 def scale_image(file_path: str) -> bytes:
@@ -241,4 +255,61 @@ async def get_data_uri_from_title(title) -> str:
         return data_uri
     except Exception as e:
         logger.error(f"Failed to fetch data URI for {title}: {e}")
+        raise
+
+async def get_email_list() -> list:
+    logger.info("Fetching email list")
+    try:
+        return fetch_email_list()
+    except Exception as e:
+        logger.error(f"Failed to fetch email list: {e}")
+        raise
+
+def fetch_email_list() -> list:
+    try:
+        email_data = update_email_cache_if_needed()
+        email_list = [item['email'] for item in email_data['list']]
+        logger.info("Email list fetched successfully")
+        return email_list
+    except Exception as e:
+        logger.error(f"Failed to fetch email list: {e}")
+        raise
+def generate_order_number():
+    timestamp = int(time.time())  # Current timestamp as an integer
+    random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))  # Random string of 6 characters
+    return f"{timestamp}{random_str}"
+
+def post_order_data(contact_info: dict, shipping_info:dict, order_contents : list) -> str:
+    try:
+        order_number = generate_order_number()
+        shipping_info['order_number'] = order_number
+        logger.info(f"Posting order data for order number {order_number}")
+        contact_payload = {
+            "email" : contact_info['email'],
+            "phone" : contact_info['phone'],
+            "order_number" : order_number
+        }
+
+        post_nocodb_contact_data(contact_payload)
+        post_nocodb_order_data(shipping_info)
+        post_content_data(shipping_info['order_number'], order_contents)
+        logger.info("Order data posted successfully")
+    except Exception as e:
+        logger.error(f"Failed to post order data: {e}")
+        raise
+
+def post_content_data(order_number: str, order_contents : list) -> str:
+    try:
+        logger.info("Posting content data")
+        order = {
+            "order" : order_contents
+        }
+        order_data = {
+            "order_number": order_number,
+            "order_contents": order
+        }
+        post_nocodb_content_data(order_data)
+        logger.info("Content data posted successfully")
+    except Exception as e:
+        logger.error(f"Failed to post content data: {e}")
         raise

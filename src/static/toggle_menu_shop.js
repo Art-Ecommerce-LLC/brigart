@@ -3,7 +3,7 @@ function toggleIcon() {
     icon.classList.toggle('open');
 
 }
-async function togglePageLock(title) {
+async function togglePageLockShop(title) {
     // Change the opacity of the body to 0.5 before starting the addToCart function
     document.body.style.opacity = '0.5';
     
@@ -39,88 +39,6 @@ async function getCartQuantity() {
     }
 }
 
-
-function emailListEnter() {
-    // Get the email input value
-    const emailInput = document.getElementById('emailInput');
-    const email = emailInput.value;
-
-    // Check if an existing error message exists and remove it
-    const existingErrorMessage = document.querySelector('.error-msg');
-    if (existingErrorMessage) {
-        existingErrorMessage.remove();
-    }
-
-    // Check if an existing confirmation message exists and remove it
-    const existingConfirmationMsg = document.querySelector('.confirmation-msg');
-    if (existingConfirmationMsg) {
-        existingConfirmationMsg.remove();
-    }
-
-    // Validate the email format (you can add more robust validation)
-    if (!isValidEmail(email)) {
-        emailInput.value = '';
-        // Display an error message next to the input box
-        displayCustomMessage(emailInput, 'Your email is not valid. Please try again', 'error-msg');
-        return;
-    }
-
-    // Prepare the data to send to the backend
-    const data = { email: email };
-
-    // Send the data to your Python backend using fetch
-    fetch('/subscribe', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        // Clear the input box after successful submission
-        emailInput.value = '';
-        // Display a confirmation message next to the input box
-        displayCustomMessage(emailInput, 'Your email has been added to the email list', 'confirmation-msg');
-        return response.json();
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
-}
-
-// Function to display a custom message next to an input element
-function displayCustomMessage(element, message, className) {
-    // Check if a message element of the specified class already exists
-    let customMessageElement = element.nextElementSibling;
-    if (!customMessageElement || !customMessageElement.classList.contains(className)) {
-        // If message element doesn't exist, create and append it
-        const customMessageElement = document.createElement('p');
-        customMessageElement.textContent = message;
-        customMessageElement.classList.add(className); // Add the specified CSS class
-
-        // Get the navbar div
-        const navbar = document.querySelector('.contact_form');
-
-        // Insert the message element at the end of the container
-        navbar.appendChild(customMessageElement);
-
-    // Scroll to the new message element
-        customMessageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
-        // If message element already exists, update its content
-        customMessageElement.textContent = message;
-    }
-}
-
-// Basic email validation function
-function isValidEmail(email) {
-    // Basic email format validation using regex
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
 
 async function updateCartQuantity(cart_quantity) {
     if (cart_quantity !== 0) {

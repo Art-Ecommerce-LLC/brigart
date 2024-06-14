@@ -66,7 +66,7 @@
 <div class="content">
     <div class="left-section">
         <div class="collapsible-section" id="contactInfoSection">
-            <h1 class="collapsible-header">Contact Info <span class="arrow">&#9660;</span></h1>
+            <h1 class="collapsible-header">Contact Information <span class="arrow">&#9660;</span></h1>
             <div class="collapsible-content">
                 <label for="email">Email:</label>
                 <input type="email" id="email" name="email" placeholder="Enter Email"><br>
@@ -92,7 +92,7 @@
         </div>
     
         <div class="collapsible-section" id="billingAddressSection">
-            <h1 class="collapsible-header disabled">Billing Address <span class="arrow">&#9660;</span></h1>
+            <h1 class="collapsible-header disabled">Billing Information<span class="arrow">&#9660;</span></h1>
             <div class="collapsible-content" >
                 <label for="fullname">Full Name:</label>
                 <input type="text" id="fullname" name="fullname" placeholder="Enter Full Name"><br>
@@ -106,13 +106,37 @@
                 <input type="text" id="state" name="state" placeholder="Enter State"><br>
                 <label for="zip">ZIP Code:</label>
                 <input type="text" id="zip" name="zip" placeholder="Enter ZIP Code"><br>
+                <!-- Add checkbox for billing address being the same as shipping address -->
+                 <label class="address-checkbox">
+                    <input class="same-as-shipping" type="checkbox" id="sameAsShipping" name="sameAsShipping" value="sameAsShipping" onclick="copyShippingAddress()">
+                 </label>
+                Same as Shipping Address
+                <br>              
+                <button class="continue-btn" onclick="toggleNextSection('billingAddressSection', 'shippingAddressSection')" >Continue</button>
+            </div>
+        
+        </div>
+        <div class="collapsible-section" id="shippingAddressSection">
+            <h1 class="collapsible-header disabled">Shipping Information<span class="arrow">&#9660;</span></h1>
+            <div class="collapsible-content" >
+                <label for="shipFullname">Full Name:</label>
+                <input type="text" id="shipFullname" name="shipFullname" placeholder="Enter Full Name"><br>
+                <label for="shipAddress1">Street Address 1:</label>
+                <input type="text" id="shipAddress1" name="shipAddress1" placeholder="Enter Street Address 1"><br>
+                <label for="shipAddress2">Street Address 2:</label>
+                <input type="text" id="shipAddress2" name="shipAddress2" placeholder="Enter Street Address 2"><br>
+                <label for="shipCity">City:</label>
+                <input type="text" id="shipCity" name="shipCity" placeholder="Enter City"><br>
+                <label for="shipState">State:</label>
+                <input type="text" id="shipState" name="shipState" placeholder="Enter State"><br>
+                <label for="shipZip">ZIP Code:</label>
+                <input type="text" id="shipZip" name="shipZip" placeholder="Enter ZIP Code"><br>
                 <!-- <button class="continue-btn" onclick="handlePurchase(this)" >Complete Purchase</button> -->
-                <button class="continue-btn" onclick="toggleNextSection('billingAddressSection', 'SubmitButton')" >Purchase</button>
+                <button class="continue-btn" onclick="toggleNextSection('shippingAddressSection', 'SubmitButton')" >Purchase</button>
             </div>
         </div>
         <p>Shop coming soon! Contact Brig for info</p>
     </div>
-    
     <div class="right-section">
         <h1>Order Summary</h1>
         <div class="shop-more"></div>

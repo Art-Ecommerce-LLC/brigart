@@ -12,13 +12,13 @@ from src.artapi.config import NOCODB_PATH, NOCODB_IMG_UPDATE_URL, XC_AUTH
 from src.artapi.logger import logger
 from src.artapi.middleware import add_middleware
 from src.artapi.models import (
-    Credentials, Title, TitleQuantity, ContactInfo, PaymentInfo, BillingInfo
+    Credentials, Title, TitleQuantity, ContactInfo, PaymentInfo, BillingInfo, Email, CheckoutInfo
 )
 from src.artapi.utils import (
-    cleancart, hosted_image
+    cleancart, hosted_image, fetch_email_list, post_order_data
 )
 from src.artapi.noco import (
-    get_nocodb_data, BRIG_PASSWORD, BRIG_USERNAME, OPENAPI_URL,BEN_USERNAME, BEN_PASSWORD
+    get_nocodb_data, post_nocodb_email_data, BRIG_PASSWORD, BRIG_USERNAME, OPENAPI_URL,BEN_USERNAME, BEN_PASSWORD
 )
 from src.artapi.logger import get_logs
 import requests
@@ -26,7 +26,7 @@ import json
 import tempfile
 import os
 from typing import List
-import uvicorn
+import datetime
 
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
@@ -311,10 +311,19 @@ async def shop_checkout(request: Request):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/subscribe")
-async def subscribe(request: Request):
+async def subscribe(request: Request, email: Email):
+    logger.info(f"Subscribe request by {email.email} from {request.client.host}")
     try:
-        json_body = await request.json()
-        logger.info(f"Received subscription request: {json_body}")
+        if email.email:
+            # Insert into NoCodeDB
+            email_address = email.email
+            if email_address in fetch_email_list():
+                logger.warning(f"Email {email_address} already subscribed")
+                return {"message": "Email already subscribed"}
+            
+            post_nocodb_email_data({"email": email_address})
+            logger.info(f"Email subscribed and inserted into nocodb: {email_address}")
+            return {"message": "Email subscribed successfully"}           
     except Exception as e:
         logger.error(f"Error in subscribe: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -488,15 +497,11 @@ async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = Fi
 
 @app.post("/validate_contact_info")
 async def validate_contact_info(request: Request, contact_info: ContactInfo):
-    print(contact_info.email, contact_info.phone)
     logger.info(f"Validate contact info for {contact_info.email} by {request.client.host}")
     try:
         if not contact_info.email or not contact_info.phone:
             logger.warning("Email or phone number not provided")
             raise HTTPException(status_code=400, detail="Email or phone number not provided")
-        
-        # Insert into NoCodeDB
-
         
     except Exception as e:
         logger.error(f"Error in validate_contact_info: {e}")
@@ -528,4 +533,63 @@ async def validate_billing_info(request: Request, billing_info: BillingInfo):
 
     except Exception as e:
         logger.error(f"Error in validate_billing_info: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+    
+@app.post("/purchase")
+async def checkout_info(request: Request, checkout_info: CheckoutInfo):
+    logger.info(f"Checkout info for {checkout_info.email} by {request.client.host}")
+    try:
+        # Insert shipping info and contact info into NoCodeDB
+        contact_info = {
+            "email": checkout_info.email,
+            "phone": checkout_info.phone,
+        }
+        billing_info = {
+            "fullname": checkout_info.fullname,
+            "address1": checkout_info.address1,
+            "address2": checkout_info.address2,
+            "city": checkout_info.city,
+            "state": checkout_info.state,
+            "zip": checkout_info.zip,
+        }
+        # Insert into NoCodeDB
+        post_order_data(contact_info, billing_info, request.session.get("img_quantity_list"))
+
+        request.session["contact_info"] = contact_info
+        request.session["billing_info"] = billing_info
+
+    except Exception as e:
+        logger.error(f"Error in checkout_info: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+    
+@app.get("/confirmation")
+async def confirmation(request: Request):
+    logger.info(f"Confirmation page accessed by {request.client.host}")
+    try:
+        hosted_images, titles = await hosted_image()
+        img_quant_list = request.session.get("img_quantity_list")
+        if img_quant_list:
+            request.session["img_quantity_list"] = []
+
+        contact_info = request.session.get("contact_info")
+        billing_info = request.session.get("billing_info")
+
+        order_payload = {
+            "email": contact_info['email'],
+            "phone": contact_info['phone'],
+            "shipping_name": billing_info['fullname'],
+            "shipping_address": billing_info['address1'],
+            "shipping_city": billing_info['city'],
+            "shipping_state": billing_info['state'],
+            "shipping_zip": billing_info['zip'],
+        }
+        context = {
+            "shopping_cart_url": hosted_images[-3],
+            "hamburger_menu_url": hosted_images[-2],
+            "brig_logo_url": hosted_images[-1],
+            "order_payload": order_payload,
+        }
+        return templates.TemplateResponse(request=request, name="confirmation.html", context=context)
+    except Exception as e:
+        logger.error(f"Error in confirmation: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")

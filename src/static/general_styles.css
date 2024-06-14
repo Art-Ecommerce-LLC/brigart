@@ -82,6 +82,11 @@
     border-bottom-right-radius: 6%;
 }
 
+.content.hide {
+    display: none;
+
+}
+
 .icon-wrapper .cart-line-2:before {
     content: "";
     width: 135%;

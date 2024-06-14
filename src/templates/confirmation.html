@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name = "viewport" content = "width = device-width, initial-scale = 1.0" />
+    <meta charset = "UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Art Showcase</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles_confirmation.css') }}" />
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/general_styles.css') }}" />
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles_page_white.css') }}" />
+    <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon" />
+    <script src="{{ url_for('static', path='/general_scripts.js') }}"></script>
+</head>
+<body>
+<div class="header">
+    <div class="brigLogo">
+        <img src="{{ brig_logo_url }}" oncontextmenu="return false;" draggable="false">
+    </div>
+    <div class="navbar">
+        <a class= "home" href="/">HOME</a>
+        <a class= "giclee" href="/giclee_prints">GICLÉE PRINTS</a>
+        <a class= "shop" href="/shop_art_menu">SHOP ART</a>
+        <div class="shopping_cart_icon">
+            <div class = "center_cart">            
+                <a href="/shop_art">
+                    <div class="icon-cart" style="clear: left; float: left">
+                        <div class="icon-wrapper">
+                            <div class="cart-line-1" style="background-color: black;"></div>
+                            <div class="cart-line-2" style="background-color: black;"></div>
+                            <div class="cart-line-3" style="background-color: black;"></div>
+                            <div class="cart-wheel" style="background-color: black;"></div>
+                        </div>                
+                    </div>
+                </a>   
+            </div>
+        </div>
+        <span id="cartQuantity" class="cart-quantity"></span>
+    </div>
+    <div class="mobile-menu">
+        <div class="hamburger-icon">
+            <label class="hambuger-menu" onclick="toggleIcon(); toggleMenu(); toggleDropdown()" >
+                <div id="nav-icon3">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+            </label>
+        </div>
+        <div class = "shopping_cart_icon">
+            <a href="/shop_art">
+                <div class="icon-cart" style="clear: left; float: left">
+                    <div class="icon-wrapper">
+                        <div class="cart-line-1" style="background-color: black;"></div>
+                        <div class="cart-line-2" style="background-color: black;"></div>
+                        <div class="cart-line-3" style="background-color: black;"></div>
+                        <div class="cart-wheel" style="background-color: black;"></div>
+                    </div>                
+                </div>
+            </a>   
+        </div>     
+        <span id="mobileCartQuantity" class="cart-quantity-mobile"></span>
+        <div class="mobile-dropdown">
+            <a href="/">HOME</a>
+            <a href="/giclee_prints">GICLÉE PRINTS</a>
+            <a href="/shop_art_menu">SHOP ART</a>
+        </div>
+    </div>
+</div>
+<div class="content">
+    <div class="order-confirmation-container">
+        <div class="order-confirmation">
+            <h1>Order Confirmation</h1>
+            <p>Thank you for your purchase! Your order has been successfully placed.</p>
+            <div class="order-details">
+                <h2>Order Details</h2>
+                <p><strong>Order Number:</strong> {{ order_payload.order_number }}</p>
+                <p><strong>Order Date:</strong> {{ order_payload.order_date }}</p>
+                <p><strong>Total Amount:</strong> ${{ order_payload.total_amount }}</p>
+            </div>
+            <div class="shipping-details">
+                <h2>Shipping Details</h2>
+                <p><strong>Name:</strong> {{ order_payload.shipping_name }}</p>
+                <p><strong>Address:</strong> {{ order_payload.shipping_address }}</p>
+                <p><strong>City:</strong> {{ order_payload.shipping_city }}</p>
+                <p><strong>State:</strong> {{ order_payload.shipping_state }}</p>
+                <p><strong>Zip Code:</strong> {{ order_payload.shipping_zip }}</p>
+            </div>
+            <div class="order-items">
+                <h2>Order Items</h2>
+                <ul>
+                    {% for item in order_items %}
+                        <li>
+                            <p><strong>Product:</strong> {{ item.name }}</p>
+                            <p><strong>Quantity:</strong> {{ item.quantity }}</p>
+                            <p><strong>Price:</strong> ${{ item.price }}</p>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="footer">
+    <div class="contact_form">
+        <h1>Stay Connected</h1>
+        <div class="description">
+            <p>SIGN UP WITH YOUR EMAIL ADDRESS TO RECEIVE UPDATES</p>
+        </div>
+        <div class="email-input-container">
+            <input id="emailInput" type="email" placeholder="EMAIL ADDRESS">
+            <button onclick="emailListEnter()" type="submit">SIGN UP</button>
+        </div>
+        
+    </div>
+    <div class="contact_info">
+        <h1>Brig Light Art</h1>
+        <p>Carlsbad,CA</p>
+        <p>INFO@BRIGLIGHT.COM</p>
+        <p>760-613-5898</p>
+    </div>
+    <div class="container">
+        <div class="footer_navbar">
+            <a href="/">HOME</a> |
+            <a href="/giclee_prints">GICLÉE PRINTS</a> |
+            <a href="/shop_art_menu">SHOP ART</a>
+        </div>
+        <p>&copy; <span id="currentYear"></span> Brig Light. All rights reserved.</p>
+    </div>
+</footer>
+</body>
+</html>
+
