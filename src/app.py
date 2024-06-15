@@ -270,52 +270,52 @@ async def delete_item(request: Request, title: Title):
         logger.error(f"Error in delete_item: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-@app.get("/checkout", response_class=HTMLResponse)
-async def shop_checkout(request: Request):
-    logger.info(f"Checkout page accessed by {request.client.host}")
-    try: 
-        img_quant_list = request.session.get("img_quantity_list")
-        if not img_quant_list:
-            img_quant_list = []
+# @app.get("/checkout", response_class=HTMLResponse)
+# async def shop_checkout(request: Request):
+#     logger.info(f"Checkout page accessed by {request.client.host}")
+#     try: 
+#         img_quant_list = request.session.get("img_quantity_list")
+#         if not img_quant_list:
+#             img_quant_list = []
 
-        hosted_images, titles = await hosted_image()
-        img_data_list = []
+#         hosted_images, titles = await hosted_image()
+#         img_data_list = []
 
-        for item in img_quant_list:
-            for title in titles:
-                if item["title"] in title:
-                    img_url = hosted_images[titles.index(title)]
-                    img_dict = {}
-                    img_dict["img_url"] = img_url
-                    img_dict["img_title"] = title
-                    img_dict["quantity"] = item["quantity"]
-                    img_dict["price"] = 225 * int(item["quantity"])
-                    img_data_list.append(img_dict)
-        total_quantity = sum(int(item["quantity"]) * 225 for item in img_quant_list)
-        total_price = 225 * total_quantity
+#         for item in img_quant_list:
+#             for title in titles:
+#                 if item["title"] in title:
+#                     img_url = hosted_images[titles.index(title)]
+#                     img_dict = {}
+#                     img_dict["img_url"] = img_url
+#                     img_dict["img_title"] = title
+#                     img_dict["quantity"] = item["quantity"]
+#                     img_dict["price"] = 225 * int(item["quantity"])
+#                     img_data_list.append(img_dict)
+#         total_quantity = sum(int(item["quantity"]) * 225 for item in img_quant_list)
+#         total_price = 225 * total_quantity
 
-        context = {
-            "img_data_list": img_data_list,
-            "shopping_cart_url": hosted_images[-3],
-            "hamburger_menu_url": hosted_images[-2],
-            "brig_logo_url": hosted_images[-1],
-            "total_price": total_price,
-            "total_quantity": total_quantity
-        }
+#         context = {
+#             "img_data_list": img_data_list,
+#             "shopping_cart_url": hosted_images[-3],
+#             "hamburger_menu_url": hosted_images[-2],
+#             "brig_logo_url": hosted_images[-1],
+#             "total_price": total_price,
+#             "total_quantity": total_quantity
+#         }
 
-        return templates.TemplateResponse(request=request, name="checkout.html", context=context)
-    except Exception as e:
-        logger.error(f"Error in shop_checkout: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+#         return templates.TemplateResponse(request=request, name="checkout.html", context=context)
+#     except Exception as e:
+#         logger.error(f"Error in shop_checkout: {e}")
+#         raise HTTPException(status_code=500, detail="Internal server error")
 
-@app.post("/subscribe")
-async def subscribe(request: Request):
-    try:
-        json_body = await request.json()
-        logger.info(f"Received subscription request: {json_body}")
-    except Exception as e:
-        logger.error(f"Error in subscribe: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+# @app.post("/subscribe")
+# async def subscribe(request: Request):
+#     try:
+#         json_body = await request.json()
+#         logger.info(f"Received subscription request: {json_body}")
+#     except Exception as e:
+#         logger.error(f"Error in subscribe: {e}")
+#         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/swap_image")
 async def swap_image(title: str = Form(...), new_title: str = Form(...), file: UploadFile = File(...)):
