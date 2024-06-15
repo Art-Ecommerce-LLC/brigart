@@ -15,7 +15,7 @@ from src.artapi.models import (
     Credentials, Title, TitleQuantity, ContactInfo, PaymentInfo, BillingInfo, Email, CheckoutInfo
 )
 from src.artapi.utils import (
-    cleancart, hosted_image, fetch_email_list, post_order_data
+    cleancart, hosted_image, fetch_email_list, post_order_data, get_prices
 )
 from src.artapi.noco import (
     get_nocodb_data, post_nocodb_email_data, BRIG_PASSWORD, BRIG_USERNAME, OPENAPI_URL,BEN_USERNAME, BEN_PASSWORD
@@ -70,6 +70,7 @@ async def homepage(request: Request):
     logger.info(f"Homepage accessed by: {request.client.host}")
     try:
         hosted_images, titles = await hosted_image()
+        
         zipped_imgs_titles = zip(hosted_images[:-3], titles[:-3])
         context = {
             "shopping_cart_url": hosted_images[-3],
@@ -87,15 +88,19 @@ async def shop(request: Request, title: str):
     logger.info(f"Shop page accessed for title {title} by {request.client.host}")
     try:
         hosted_images, titles = await hosted_image()
+        prices = await get_prices()
         for each in titles:
             if title.lower().replace("+"," ") in each.lower():
                 img_url = hosted_images[titles.index(each)]
                 img_title = each
+                price = prices[titles.index(each)]
                 break
+
     
         context = {
             "img_url": img_url,
             "img_title": img_title,
+            "price": price,
             "shopping_cart_url": hosted_images[-3],
             "hamburger_menu_url": hosted_images[-2],
             "brig_logo_url": hosted_images[-1],
@@ -110,10 +115,13 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity):
     logger.info(f"Shop art URL for {title_quantity.title} by {request.client.host}")
 
     try:
+        hosted_images, titles = await hosted_image()
+        
         img_quant_dict = {}
         img_quant_dict["title"] = title_quantity.title
         img_quant_dict["quantity"] = title_quantity.quantity
         # img_quant_dict["img_url"] = await get_data_uri_from_title(title_quantity.title)
+        
 
         img_quant_list = request.session.get("img_quantity_list")
 
@@ -552,6 +560,14 @@ async def checkout_info(request: Request, checkout_info: CheckoutInfo):
             "state": checkout_info.state,
             "zip": checkout_info.zip,
         }
+        if checkout_info.shipFullname:
+            billing_info["fullname"] = checkout_info.shipFullname
+            billing_info["address1"] = checkout_info.shipAddress1
+            billing_info["address2"] = checkout_info.shipAddress2
+            billing_info["city"] = checkout_info.shipCity
+            billing_info["state"] = checkout_info.shipState
+            billing_info["zip"] = checkout_info.shipZip
+
         # Insert into NoCodeDB
         post_order_data(contact_info, billing_info, request.session.get("img_quantity_list"))
 
@@ -583,6 +599,7 @@ async def confirmation(request: Request):
             "shipping_state": billing_info['state'],
             "shipping_zip": billing_info['zip'],
         }
+
         context = {
             "shopping_cart_url": hosted_images[-3],
             "hamburger_menu_url": hosted_images[-2],

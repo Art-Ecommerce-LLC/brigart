@@ -1,3 +1,5 @@
+
+
 document.addEventListener('DOMContentLoaded', function() {
     // Drop down the contact info section initially on page load
     const contactInfoSection = document.getElementById('contactInfoSection');
@@ -5,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // uncheck the sameAsShipping checkbox
     const sameAsShipping = document.getElementById('sameAsShipping');
     sameAsShipping.checked = false;
-
+    
     // Add event listeners to the collapsible headers
     document.querySelectorAll('.collapsible-header').forEach(header => {
         header.addEventListener('click', () => {
@@ -16,16 +18,36 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    const continueButton = document.querySelector('#paymentInfoSection .continue-btn');
+    continueButton.addEventListener('click', maskCreditCardAndCVV);
 
-    // Make a request to get the cart quantity, if it is 0, then block display of info_container div
-    getCartQuantity().then(cartQuantity => {
-        if (cartQuantity === 0) {
-            
-            document.querySelector('.info_container').style.display = 'none';
-        }
-    });
+    // Make a request to get the cart quantity, if it is 0, then redirect response to /shop_art_menu
+    // getCartQuantity().then(cartQuantity => {
+    //     if (cartQuantity === 0) {
+    //         window.location.href = '/shop_art_menu';
+    //     }
+
+    // });
 
 });
+function maskCreditCardAndCVV() {
+    // Mask the credit card number except for the last four digits
+    const cardNumberInput = document.getElementById('card-number');
+    const cardNumberValue = cardNumberInput.value.trim();
+    if (cardNumberValue.length > 4) {
+        const maskedCardNumber = '*'.repeat(cardNumberValue.length - 4) + cardNumberValue.slice(-4);
+        cardNumberInput.value = maskedCardNumber;
+    }
+
+    // Mask the entire CVV
+    const cvvInput = document.getElementById('cvv');
+    const cvvValue = cvvInput.value.trim();
+    if (cvvValue.length > 0) {
+        cvvInput.value = '*'.repeat(cvvValue.length);
+    }
+}
+
+
 function copyShippingAddress() {
     // Toggle the display of the shipping address form by the id of its div shippingAddressSection
     const shippingAddressSection = document.getElementById('shippingAddressSection');
@@ -296,29 +318,7 @@ async function getCartQuantity() {
             return 0;
         });
 }
-async function updateCartQuantity(cart_quantity) {
-    if (cart_quantity !== 0) {
-        document.getElementById('cartQuantity').innerText = cart_quantity;
-        document.getElementById('mobileCartQuantity').innerText = cart_quantity;
-    } else {
-        document.getElementById('cartQuantity').innerText = '';
-        document.getElementById('mobileCartQuantity').innerText = '';
-        // Add a button right below h1 with id moreShop that leads to /shop_art_menu 
-        const moreShop = document.createElement('button');
 
-        // Evoke classlist show for right and left section
-        document.querySelector('.content').classList.add('show');
-
-        moreShop.innerText = 'Continue Shopping';
-        moreShop.addEventListener('click', () => {
-            window.location.href = '/shop_art_menu';
-        });
-        moreShop.classList.add('more-shop-styles');
-        // put inside the shop-more div
-        document.querySelector('.shop-more').appendChild(moreShop);
-    }
-    return Promise.resolve(); // Ensure it returns a promise
-}
 //Create a second toggle for the mobile menu to be a dropdown menu when hamburger icon is clicked
 async function handlePurchase(sectionId) {
     // Grab the continue-btn in the sectionID
@@ -381,7 +381,6 @@ async function handlePurchase(sectionId) {
     }
 
     try {
-        console.log(checkout_payload)
         const response = await fetch('/purchase', {
             method: 'POST',
             headers: {
@@ -659,6 +658,10 @@ async function updateCartQuantity() {
             document.getElementById('cartQuantity').innerText = '';
             document.getElementById('mobileCartQuantity').innerText = '';
             // Only create and add the "Continue Shopping" button once
+            // add style to content to hide it
+            document.querySelector('.left-section').classList.add('hide');
+            document.querySelector('.right-section').classList.add('hide');
+            document.querySelector('.content').classList.add('show');
             if (!document.querySelector('.shop-more button')) {
                 const moreShop = document.createElement('button');
                 // Add claslist element hid eto checkout-container

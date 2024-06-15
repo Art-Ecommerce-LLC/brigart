@@ -285,13 +285,21 @@ def post_order_data(contact_info: dict, shipping_info:dict, order_contents : lis
         shipping_info['order_number'] = order_number
         logger.info(f"Posting order data for order number {order_number}")
         contact_payload = {
+            "order_number" : order_number,
             "email" : contact_info['email'],
-            "phone" : contact_info['phone'],
+            "phone" : contact_info['phone'],           
+        }
+        shipping_payload = {
+            "fullname" : shipping_info['fullname'],
+            "address1" : shipping_info['address1'],
+            "address2" : shipping_info['address2'],
+            "city" : shipping_info['city'],
+            "state" : shipping_info['state'],
+            "zip" : shipping_info['zip'],
             "order_number" : order_number
         }
-
-        post_nocodb_contact_data(contact_payload)
-        post_nocodb_order_data(shipping_info)
+        post_nocodb_contact_data(shipping_payload)
+        post_nocodb_order_data(contact_payload)
         post_content_data(shipping_info['order_number'], order_contents)
         logger.info("Order data posted successfully")
     except Exception as e:
@@ -312,4 +320,19 @@ def post_content_data(order_number: str, order_contents : list) -> str:
         logger.info("Content data posted successfully")
     except Exception as e:
         logger.error(f"Failed to post content data: {e}")
+        raise
+
+async def get_prices() -> list:
+    """ Function to get prices from NoCoDB """
+    try:
+        # Fetch cached nocodb img data
+        nocodb_data = json.loads(get_nocodb_data())
+        prices = []
+        print(json.dumps(nocodb_data, indent=4))
+        for item in nocodb_data['list']:
+            prices.append(str(item['price']))
+        print(prices)
+        return prices
+    except Exception as e:
+        logger.error(f"Failed to fetch prices: {e}")
         raise

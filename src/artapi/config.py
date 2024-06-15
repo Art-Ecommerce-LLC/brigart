@@ -18,3 +18,4 @@ NOCODB_IMG_UPDATE_URL = os.getenv("nocodb_img_update_url")
 NOCODB_CONTACT_URL = os.getenv("nocodb_contact_url")
 NOCODB_ORDER_URL = os.getenv("nocodb_order_url")
 NOCODB_CONTENT_URL = os.getenv("nocodb_content_url")
+

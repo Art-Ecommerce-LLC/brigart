@@ -63,8 +63,11 @@
         </div>
     </div>
 </div>
+<div class="shop-more-wrapper">
+    <div class="shop-more"></div>
+</div>
 <div class="content">
-    <div class="left-section">
+    <div class="left-section" id="leftSection">
         <div class="collapsible-section" id="contactInfoSection">
             <h1 class="collapsible-header">Contact Information <span class="arrow">&#9660;</span></h1>
             <div class="collapsible-content">
@@ -82,7 +85,7 @@
                 <label for="card-name">Card Name:</label>
                 <input type="text" id="card-name" name="card-name" placeholder="Enter Card Name"><br>
                 <label for="card-number">Card Number:</label>
-                <input type="text" id="card-number" name="card-number" placeholder="Enter Card Number"><br>
+                <input type="text" id="card-number" name="card-number" placeholder="Enter Card Number">
                 <label for="expiry">Expiration Date:</label>
                 <input type="text" id="expiry" name="expiry" placeholder="MM/YY"><br>
                 <label for="cvv">CVV:</label>
@@ -137,9 +140,8 @@
         </div>
         <p>Shop coming soon! Contact Brig for info</p>
     </div>
-    <div class="right-section">
+    <div class="right-section" id="rightSection">
         <h1>Order Summary</h1>
-        <div class="shop-more"></div>
         {% for img_data in img_data_list %}
          <div class="info_container">
             <div class="image_container" style="background-image: url('{{ img_data.img_url }}')" draggable="false" oncontextmenu="return false">
