@@ -7,6 +7,7 @@ class Cache:
     def __init__(self) -> None:
         self.data_uris = None
         self.titles = None
+        self.icons = None
 
 @lru_cache(maxsize=128)
 def load_nocodb_data() -> dict:

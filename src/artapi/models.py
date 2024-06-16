@@ -78,3 +78,6 @@ class CheckoutInfo(BaseModel):
     shipCity: str = Field(None)
     shipState: str = Field(None)
     shipZip: str = Field(None, min_length=5, max_length=10)
+
+class TotalPrice(BaseModel):
+    totalPrice: Union[int, str]

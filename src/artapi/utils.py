@@ -12,57 +12,20 @@ from src.artapi.noco import (
 )
 from src.artapi.logger import logger
 from src.artapi.models import OrderInfo
+from src.artapi.cache import Cache, load_nocodb_data, load_nocodb_icon_data, load_nocodb_email_data
 from tempfile import TemporaryDirectory
 import requests
 import tempfile
 import time
 import string
 import random
-from typing import List
+from typing import Union
 
 scale_factor = 0.4
 temp_dir = TemporaryDirectory()
 api_key_header = APIKeyHeader(name='X-API_KEY')
 
-class Cache:
-    def __init__(self) -> None:
-        self.data_uris = None
-        self.titles = None
-
 cache = Cache()
-
-@lru_cache(maxsize=128)
-def load_nocodb_data() -> dict:
-    try:
-        logger.info("Loading NoCoDB data")
-        data = json.loads(get_nocodb_data())
-        logger.info("NoCoDB data loaded successfully")
-        return data
-    except Exception as e:
-        logger.error(f"Error loading NoCoDB data: {e}")
-        raise
-
-@lru_cache(maxsize=128)
-def load_nocodb_icon_data() -> dict:
-    try:
-        logger.info("Loading NoCoDB icon data")
-        data = json.loads(get_nocodb_icons())
-        logger.info("NoCoDB icon data loaded successfully")
-        return data
-    except Exception as e:
-        logger.error(f"Error loading NoCoDB icon data: {e}")
-        raise
-
-@lru_cache(maxsize=128)
-def load_nocodb_email_data() -> dict:
-    try:
-        logger.info("Loading NoCoDB email data")
-        data = json.loads(get_nocodb_email_data())
-        logger.info("NoCoDB email data loaded successfully")
-        return data
-    except Exception as e:
-        logger.error(f"Error loading NoCoDB email data: {e}")
-        raise
 
 def encode_image_to_base64(image_path: str) -> str:
     try:
@@ -180,11 +143,11 @@ def fetch_data_uris() -> tuple:
 
         imgs, titles = [], []
         temp_files = []
-        for item in nocodb_data['list']:
+        for i, item in enumerate(nocodb_data['list']):
             db_path = item['img'][0]['signedPath']
             url_path = f"{HTTP}://{SITE_HOST}/{db_path}"
             img_data = requests.get(url_path).content
-
+    
             # Create temporary file for pre-scaled image
             with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as pre_temp_file:
                 pre_temp_file.write(img_data)
@@ -217,6 +180,7 @@ def fetch_data_uris() -> tuple:
 def clear_cache():
     cache.data_uris = None
     cache.titles = None
+    cache.icons = None
     load_nocodb_data.cache_clear()
     load_nocodb_icon_data.cache_clear()
     load_nocodb_email_data.cache_clear()
@@ -322,17 +286,26 @@ def post_content_data(order_number: str, order_contents : list) -> str:
         logger.error(f"Failed to post content data: {e}")
         raise
 
-async def get_prices() -> list:
-    """ Function to get prices from NoCoDB """
+
+async def get_price_from_title_and_quantity(title: str, quantity: Union[str,int]) -> str:
+    """ Function to get price from title """
     try:
-        # Fetch cached nocodb img data
         nocodb_data = json.loads(get_nocodb_data())
-        prices = []
-        print(json.dumps(nocodb_data, indent=4))
         for item in nocodb_data['list']:
-            prices.append(str(item['price']))
-        print(prices)
-        return prices
+            if item['img_label'].replace("+", " ") == title:
+                total_price = str(int(item['price']) * int(quantity))
+                return total_price
     except Exception as e:
-        logger.error(f"Failed to fetch prices: {e}")
+        logger.error(f"Failed to fetch price for {title}: {e}")
+        raise
+
+async def get_price_from_title(title: str) -> str:
+    """ Function to get price from title """
+    try:
+        nocodb_data = json.loads(get_nocodb_data())
+        for item in nocodb_data['list']:
+            if item['img_label'] == title:
+                return item['price']
+    except Exception as e:
+        logger.error(f"Failed to fetch price for {title}: {e}")
         raise

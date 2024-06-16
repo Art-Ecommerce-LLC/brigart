@@ -481,16 +481,19 @@ async function increaseQuantity(button) {
             body: JSON.stringify({title: img_title})
         };
 
-        const response = fetch('/increase_quantity', requestOptions);
-        const responseData = await togglePageLock(response);
-        if (responseData) {
-            // Update the UI with the new quantity only after the API call succeeds
-            quantityElement.value = newQuantity;
-            quantityPrice.innerText = '$' + newQuantity * 225;
-            await updateCartQuantity(cartQuantity + 1);
-            updateTotalPrice();
-            removeMaxQuantityErrorMessage();
-        }
+        let response = fetch('/increase_quantity', requestOptions);
+        let responseData = await togglePageLock(response)
+            .then((response) => {
+                return response.json();
+            });
+        // Update the UI with the new quantity only after the API call succeeds
+        quantityElement.value = newQuantity;
+        quantityPrice.innerText = '$' + responseData.price;
+        
+        await updateCartQuantity(cartQuantity + 1);
+        updateTotalPrice();
+        removeMaxQuantityErrorMessage();
+        
 
         // Re-enable the button
         setButtonsState(false);
@@ -526,16 +529,19 @@ async function decreaseQuantity(button) {
                 body: JSON.stringify({ title: img_title})
             };
 
-            const response = fetch('/decrease_quantity', requestOptions);
-            const responseData = await togglePageLock(response);
-            if (responseData) {
-                // Update the UI with the new quantity only after the API call succeeds
-                quantityElement.value = newQuantity;
-                quantityPrice.innerText = '$' + newQuantity * 225;
-                await updateCartQuantity(cartQuantity - 1);
-                updateTotalPrice();
-                removeMaxQuantityErrorMessage();
-            }
+            let response = fetch('/decrease_quantity', requestOptions);
+            let responseData = await togglePageLock(response)
+                .then((response => {
+                    return response.json();
+                }));
+            
+
+            quantityElement.value = newQuantity;
+            quantityPrice.innerText = '$' + responseData.price;
+            await updateCartQuantity(cartQuantity - 1);
+            updateTotalPrice();
+            removeMaxQuantityErrorMessage();
+            setButtonsState(false);
         } else {
             await removeItem(button);
         }
@@ -548,7 +554,6 @@ async function decreaseQuantity(button) {
         setButtonsState(false);
     }
 }
-
 
 async function removeItem(button) {
     try {

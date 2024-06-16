@@ -12,10 +12,10 @@ from src.artapi.config import NOCODB_PATH, NOCODB_IMG_UPDATE_URL, XC_AUTH
 from src.artapi.logger import logger
 from src.artapi.middleware import add_middleware
 from src.artapi.models import (
-    Credentials, Title, TitleQuantity, ContactInfo, PaymentInfo, BillingInfo, Email, CheckoutInfo
+    Credentials, Title, TitleQuantity, ContactInfo, PaymentInfo, BillingInfo, Email, CheckoutInfo, TotalPrice
 )
 from src.artapi.utils import (
-    cleancart, hosted_image, fetch_email_list, post_order_data, get_prices
+    cleancart, hosted_image, fetch_email_list, post_order_data, get_price_from_title_and_quantity, get_price_from_title
 )
 from src.artapi.noco import (
     get_nocodb_data, post_nocodb_email_data, BRIG_PASSWORD, BRIG_USERNAME, OPENAPI_URL,BEN_USERNAME, BEN_PASSWORD
@@ -88,15 +88,14 @@ async def shop(request: Request, title: str):
     logger.info(f"Shop page accessed for title {title} by {request.client.host}")
     try:
         hosted_images, titles = await hosted_image()
-        prices = await get_prices()
+
         for each in titles:
             if title.lower().replace("+"," ") in each.lower():
                 img_url = hosted_images[titles.index(each)]
                 img_title = each
-                price = prices[titles.index(each)]
+                price = await get_price_from_title(title)
                 break
-
-    
+        print(f"Price: {price}")
         context = {
             "img_url": img_url,
             "img_title": img_title,
@@ -115,13 +114,11 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity):
     logger.info(f"Shop art URL for {title_quantity.title} by {request.client.host}")
 
     try:
-        hosted_images, titles = await hosted_image()
-        
+
         img_quant_dict = {}
         img_quant_dict["title"] = title_quantity.title
         img_quant_dict["quantity"] = title_quantity.quantity
-        # img_quant_dict["img_url"] = await get_data_uri_from_title(title_quantity.title)
-        
+        img_quant_dict["price"] = await get_price_from_title_and_quantity(title_quantity.title, title_quantity.quantity)
 
         img_quant_list = request.session.get("img_quantity_list")
 
@@ -146,7 +143,6 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity):
         request.session["img_quantity_list"] = img_quant_list
         total_quantity = sum(int(item["quantity"]) for item in img_quant_list)
         logger.info(f"Total cart quantity: {total_quantity}")
-        print(img_quant_list)
         return JSONResponse({"quantity": total_quantity})
 
     except Exception as e:
@@ -188,7 +184,7 @@ async def shop_art(request: Request):
                     img_dict["img_url"] = img_url
                     img_dict["img_title"] = title
                     img_dict["quantity"] = item["quantity"]
-                    img_dict["price"] = 225 * int(item["quantity"])
+                    img_dict["price"] = await get_price_from_title_and_quantity(item["title"], item["quantity"])
                     img_data_list.append(img_dict)
         
         context = {
@@ -233,6 +229,22 @@ async def shop_giclee_prints(request: Request):
     }
     return templates.TemplateResponse(request=request, name="gicle_prints.html", context=context)
 
+@app.post("/post_total_price")
+async def post_total_price(request: Request, total_price: TotalPrice):
+    logger.info(f"Post total price {total_price.totalPrice} by {request.client.host}")
+    try:
+        # Find the total price and check if it matches
+        img_quant_list = request.session.get("img_quantity_list")
+        cookie_price_total = sum(int(item["price"]) for item in img_quant_list)
+        if cookie_price_total == total_price.totalPrice:
+            return JSONResponse({"totalPrice": total_price})
+        else:
+            logger.warning(f"Total price {total_price} does not match")
+            raise HTTPException(status_code=400, detail="Total price does not match")
+    except Exception as e:
+        logger.error(f"Error in post_total_price: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 @app.post("/increase_quantity")
 async def increase_quantity(request: Request, title: Title):
     logger.info(f"Increase quantity for {title.title} by {request.client.host}")
@@ -243,6 +255,8 @@ async def increase_quantity(request: Request, title: Title):
                 if title == each["title"]:
                     # Increase quantity by one
                     each["quantity"] = str(int(each["quantity"]) + 1)
+                    each["price"] = await get_price_from_title_and_quantity(each["title"], each["quantity"])
+                    return JSONResponse({"price": each["price"]})
 
     except Exception as e:
         logger.error(f"Error in increase_quantity: {e}")
@@ -258,6 +272,11 @@ async def decrease_quantity(request: Request, title: Title):
             if title == each["title"]:
                 # Increase quantity by one
                 each["quantity"] = str(int(each["quantity"]) - 1)
+                each["price"] = await get_price_from_title_and_quantity(each["title"], each["quantity"])
+                if int(each["quantity"]) == 0:
+                    img_quant_list.remove(each)
+                    request.session["img_quantity_list"] = img_quant_list
+                return JSONResponse({"price": each["price"]})
 
     except Exception as e:
         logger.error(f"Error in decrease_quantity: {e}")
@@ -299,7 +318,7 @@ async def shop_checkout(request: Request):
                     img_dict["img_url"] = img_url
                     img_dict["img_title"] = title
                     img_dict["quantity"] = item["quantity"]
-                    img_dict["price"] = 225 * int(item["quantity"])
+                    img_dict["price"] = await get_price_from_title_and_quantity(item["title"], item["quantity"])
                     img_data_list.append(img_dict)
         total_quantity = sum(int(item["quantity"]) * 225 for item in img_quant_list)
         total_price = 225 * total_quantity
