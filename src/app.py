@@ -125,9 +125,7 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity):
         img_quant_dict = {}
         img_quant_dict["title"] = title_quantity.title
         img_quant_dict["quantity"] = title_quantity.quantity
-        img_quant_dict["price"] = await get_price_from_title_and_quantity(title_quantity.title, title_quantity.quantity)
-
-        print(img_quant_dict)    
+        img_quant_dict["price"] = await get_price_from_title_and_quantity(title_quantity.title, title_quantity.quantity)  
         img_quant_list = request.session.get("img_quantity_list")
 
         if not img_quant_list:
@@ -138,8 +136,6 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity):
         
         # Check if the title is already in the cart
         for item in img_quant_list:
-            print(item['title'])
-            print(title_quantity.title)
             if item["title"] == title_quantity.title:
                 # Update the quantity
                 item["quantity"] = str(int(item["quantity"]) + int(title_quantity.quantity))
@@ -251,9 +247,6 @@ async def post_total_price(request: Request, total_price: TotalPrice):
         # Find the total price and check if it matches
         img_quant_list = request.session.get("img_quantity_list")
         cookie_price_total = sum(int(item["price"]) for item in img_quant_list)
-        print(img_quant_list)
-        print(f"Cookie price total: {cookie_price_total}")
-        print(f"Total price: {total_price.totalPrice}")
         if cookie_price_total == total_price.totalPrice:
             return JSONResponse({"totalPrice": total_price.totalPrice})
         else:
