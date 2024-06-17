@@ -69,9 +69,9 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
     if exc.status_code == 400:
         logger.warning(f"Bad request: {exc.detail}")
         return templates.TemplateResponse("error_500.html", {"request": request}, status_code=400)
-    if exc.status_code == 404:
+    if exc.status_code == 405:
         logger.warning(f"Page not found: {exc.detail}")
-        return templates.TemplateResponse("error_500.html", {"request": request}, status_code=404)
+        return templates.TemplateResponse("error_405.html", {"request": request}, status_code=404)
     return HTMLResponse(content=str(exc.detail), status_code=exc.status_code)
 
 @app.get("/", response_class=HTMLResponse)
@@ -319,42 +319,43 @@ async def delete_item(request: Request, title: Title):
 
 @app.get("/checkout", response_class=HTMLResponse)
 async def shop_checkout(request: Request):
-    logger.info(f"Checkout page accessed by {request.client.host}")
-    try: 
-        await cleancart(request)
-        img_quant_list = request.session.get("img_quantity_list")
-        if not img_quant_list:
-            img_quant_list = []
+    # logger.info(f"Checkout page accessed by {request.client.host}")
+    # try: 
+    raise HTTPException(status_code=405, detail="Internal server error")
+        # await cleancart(request)
+        # img_quant_list = request.session.get("img_quantity_list")
+        # if not img_quant_list:
+        #     img_quant_list = []
 
-        hosted_images, titles = await hosted_image()
-        img_data_list = []
+        # hosted_images, titles = await hosted_image()
+        # img_data_list = []
 
-        for item in img_quant_list:
-            for title in titles:
-                if item["title"] in title:
-                    img_url = hosted_images[titles.index(title)]
-                    img_dict = {}
-                    img_dict["img_url"] = img_url
-                    img_dict["img_title"] = title
-                    img_dict["quantity"] = item["quantity"]
-                    img_dict["price"] = await get_price_from_title_and_quantity(item["title"], item["quantity"])
-                    img_data_list.append(img_dict)
-        total_quantity = sum(int(item["quantity"]) * 225 for item in img_quant_list)
-        total_price = 225 * total_quantity
+        # for item in img_quant_list:
+        #     for title in titles:
+        #         if item["title"] in title:
+        #             img_url = hosted_images[titles.index(title)]
+        #             img_dict = {}
+        #             img_dict["img_url"] = img_url
+        #             img_dict["img_title"] = title
+        #             img_dict["quantity"] = item["quantity"]
+        #             img_dict["price"] = await get_price_from_title_and_quantity(item["title"], item["quantity"])
+        #             img_data_list.append(img_dict)
+        # total_quantity = sum(int(item["quantity"]) for item in img_quant_list)
+        # total_price = sum(int(item["price"]) for item in img_quant_list) 
 
-        context = {
-            "img_data_list": img_data_list,
-            "shopping_cart_url": hosted_images[-3],
-            "hamburger_menu_url": hosted_images[-2],
-            "brig_logo_url": hosted_images[-1],
-            "total_price": total_price,
-            "total_quantity": total_quantity
-        }
+        # context = {
+        #     "img_data_list": img_data_list,
+        #     "shopping_cart_url": hosted_images[-3],
+        #     "hamburger_menu_url": hosted_images[-2],
+        #     "brig_logo_url": hosted_images[-1],
+        #     "total_price": total_price,
+        #     "total_quantity": total_quantity
+        # }
 
-        return templates.TemplateResponse(request=request, name="checkout.html", context=context)
-    except Exception as e:
-        logger.error(f"Error in shop_checkout: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        # return templates.TemplateResponse(request=request, name="checkout.html", context=context)
+    # except Exception as e:
+    #     logger.error(f"Error in shop_checkout: {e}")
+    #     raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/subscribe")
 async def subscribe(request: Request, email: Email):
