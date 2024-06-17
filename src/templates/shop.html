@@ -9,6 +9,7 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/general_styles.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles_page_white.css') }}">
     <script src="{{ url_for('static', path='/toggle_menu_shop.js') }}"></script>
+    <script src="{{ url_for('static', path='/general_scripts.js') }}"></script>
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
 </head>
 <body>
@@ -71,7 +72,7 @@
             <div class="title_container" id="title">
                 <h2>{{ img_title }}</h2>
             </div>
-            <h3>$225</h3>
+            <h3>${{ price }}</h3>
             <p>Print images are 18”W x 32”H with a ½ inch white border</p>
             <p>Paper is cut to 19”W x 33”H</p>
             <p>Prints are delivered in an acid-free clear sleeve and backing board</p>
@@ -82,7 +83,7 @@
             </div>
             <form method = "post" id="myForm">
                 <div class = "button-container">
-                    <a href="#" id="addToCartLink" onclick="togglePageLock('{{ img_title }}'); return false;">
+                    <a href="#" id="addToCartLink" onclick="togglePageLockShop('{{ img_title }}'); return false;">
                     <button class="add-to-cart-btn" id="addToCartLink">Add to Cart</button>
                 </a>   
                 </div>

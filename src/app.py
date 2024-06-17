@@ -11,12 +11,14 @@ import os
 from src.artapi.config import NOCODB_PATH, NOCODB_IMG_UPDATE_URL, XC_AUTH
 from src.artapi.logger import logger
 from src.artapi.middleware import add_middleware
-from src.artapi.models import Credentials, Title, TitleQuantity
+from src.artapi.models import (
+    Credentials, Title, TitleQuantity, ContactInfo, PaymentInfo, BillingInfo, Email, CheckoutInfo, TotalPrice
+)
 from src.artapi.utils import (
-    cleancart, hosted_image
+    cleancart, hosted_image, fetch_email_list, post_order_data, get_price_from_title_and_quantity, get_price_from_title, get_price_list
 )
 from src.artapi.noco import (
-    get_nocodb_data, BRIG_PASSWORD, BRIG_USERNAME, OPENAPI_URL,BEN_USERNAME, BEN_PASSWORD
+    get_nocodb_data, post_nocodb_email_data, BRIG_PASSWORD, BRIG_USERNAME, OPENAPI_URL,BEN_USERNAME, BEN_PASSWORD
 )
 from src.artapi.logger import get_logs
 import requests
@@ -24,7 +26,7 @@ import json
 import tempfile
 import os
 from typing import List
-import uvicorn
+import datetime
 
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
@@ -61,6 +63,15 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
     if exc.status_code == 500:
         logger.error(f"Internal server error: {exc.detail}")
         return templates.TemplateResponse("error_500.html", {"request": request}, status_code=500)
+    if exc.status_code == 401:
+        logger.warning(f"Unauthorized access: {exc.detail}")
+        return templates.TemplateResponse("error_500.html", {"request": request}, status_code=401)
+    if exc.status_code == 400:
+        logger.warning(f"Bad request: {exc.detail}")
+        return templates.TemplateResponse("error_500.html", {"request": request}, status_code=400)
+    if exc.status_code == 405:
+        logger.warning(f"Page not found: {exc.detail}")
+        return templates.TemplateResponse("error_405.html", {"request": request}, status_code=404)
     return HTMLResponse(content=str(exc.detail), status_code=exc.status_code)
 
 @app.get("/", response_class=HTMLResponse)
@@ -68,6 +79,7 @@ async def homepage(request: Request):
     logger.info(f"Homepage accessed by: {request.client.host}")
     try:
         hosted_images, titles = await hosted_image()
+        
         zipped_imgs_titles = zip(hosted_images[:-3], titles[:-3])
         context = {
             "shopping_cart_url": hosted_images[-3],
@@ -85,15 +97,18 @@ async def shop(request: Request, title: str):
     logger.info(f"Shop page accessed for title {title} by {request.client.host}")
     try:
         hosted_images, titles = await hosted_image()
+
         for each in titles:
             if title.lower().replace("+"," ") in each.lower():
                 img_url = hosted_images[titles.index(each)]
                 img_title = each
+                price = await get_price_from_title(title)
                 break
-    
+
         context = {
             "img_url": img_url,
             "img_title": img_title,
+            "price": price,
             "shopping_cart_url": hosted_images[-3],
             "hamburger_menu_url": hosted_images[-2],
             "brig_logo_url": hosted_images[-1],
@@ -106,13 +121,11 @@ async def shop(request: Request, title: str):
 @app.post("/shop_art")
 async def shop_art_url(request: Request, title_quantity: TitleQuantity):
     logger.info(f"Shop art URL for {title_quantity.title} by {request.client.host}")
-
     try:
         img_quant_dict = {}
         img_quant_dict["title"] = title_quantity.title
         img_quant_dict["quantity"] = title_quantity.quantity
-        # img_quant_dict["img_url"] = await get_data_uri_from_title(title_quantity.title)
-
+        img_quant_dict["price"] = await get_price_from_title_and_quantity(title_quantity.title, title_quantity.quantity)  
         img_quant_list = request.session.get("img_quantity_list")
 
         if not img_quant_list:
@@ -128,6 +141,8 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity):
                 item["quantity"] = str(int(item["quantity"]) + int(title_quantity.quantity))
                 request.session["img_quantity_list"] = img_quant_list
                 total_quantity = sum(int(item["quantity"]) for item in img_quant_list)
+                # Change the price too
+                item["price"] = await get_price_from_title_and_quantity(item["title"], item["quantity"])
                 logger.info(f"Updated quantity for {title_quantity.title}, new quantity: {total_quantity}")
                 return JSONResponse({"quantity": total_quantity})
             
@@ -136,7 +151,6 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity):
         request.session["img_quantity_list"] = img_quant_list
         total_quantity = sum(int(item["quantity"]) for item in img_quant_list)
         logger.info(f"Total cart quantity: {total_quantity}")
-        print(img_quant_list)
         return JSONResponse({"quantity": total_quantity})
 
     except Exception as e:
@@ -162,7 +176,7 @@ async def get_cart_quantity(request: Request):
 async def shop_art(request: Request):
     logger.info(f"Shop art page accessed by {request.client.host}")
     try:
-        cleancart(request)
+        await cleancart(request)
         img_quant_list = request.session.get("img_quantity_list")
         if not img_quant_list:
             img_quant_list = []
@@ -178,7 +192,7 @@ async def shop_art(request: Request):
                     img_dict["img_url"] = img_url
                     img_dict["img_title"] = title
                     img_dict["quantity"] = item["quantity"]
-                    img_dict["price"] = 225 * int(item["quantity"])
+                    img_dict["price"] = await get_price_from_title_and_quantity(item["title"], item["quantity"])
                     img_data_list.append(img_dict)
         
         context = {
@@ -197,11 +211,14 @@ async def shop_art_menu(request: Request):
     logger.info(f"Shop art menu page accessed by {request.client.host}")
     try:
         hosted_images, titles = await hosted_image()
-
         artwork_data = zip(titles[:-3], hosted_images[:-3])
+        
+        # Get price list
+        price_list = await get_price_list()
 
         context = {
             "artwork_data": artwork_data,
+            "price_list": price_list,
             "shopping_cart_url": hosted_images[-3],
             "hamburger_menu_url": hosted_images[-2],
             "brig_logo_url": hosted_images[-1],
@@ -223,6 +240,22 @@ async def shop_giclee_prints(request: Request):
     }
     return templates.TemplateResponse(request=request, name="gicle_prints.html", context=context)
 
+@app.post("/post_total_price")
+async def post_total_price(request: Request, total_price: TotalPrice):
+    logger.info(f"Post total price {total_price.totalPrice} by {request.client.host}")
+    try:
+        # Find the total price and check if it matches
+        img_quant_list = request.session.get("img_quantity_list")
+        cookie_price_total = sum(int(item["price"]) for item in img_quant_list)
+        if cookie_price_total == total_price.totalPrice:
+            return JSONResponse({"totalPrice": total_price.totalPrice})
+        else:
+            logger.warning(f"Total price {total_price} does not match")
+            raise HTTPException(status_code=400, detail="Total price does not match")
+    except Exception as e:
+        logger.error(f"Error in post_total_price: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 @app.post("/increase_quantity")
 async def increase_quantity(request: Request, title: Title):
     logger.info(f"Increase quantity for {title.title} by {request.client.host}")
@@ -233,6 +266,8 @@ async def increase_quantity(request: Request, title: Title):
                 if title == each["title"]:
                     # Increase quantity by one
                     each["quantity"] = str(int(each["quantity"]) + 1)
+                    each["price"] = await get_price_from_title_and_quantity(each["title"], each["quantity"])
+                    return JSONResponse({"price": each["price"]})
 
     except Exception as e:
         logger.error(f"Error in increase_quantity: {e}")
@@ -248,6 +283,11 @@ async def decrease_quantity(request: Request, title: Title):
             if title == each["title"]:
                 # Increase quantity by one
                 each["quantity"] = str(int(each["quantity"]) - 1)
+                each["price"] = await get_price_from_title_and_quantity(each["title"], each["quantity"])
+                if int(each["quantity"]) == 0:
+                    img_quant_list.remove(each)
+                    request.session["img_quantity_list"] = img_quant_list
+                return JSONResponse({"price": each["price"]})
 
     except Exception as e:
         logger.error(f"Error in decrease_quantity: {e}")
@@ -270,52 +310,63 @@ async def delete_item(request: Request, title: Title):
         logger.error(f"Error in delete_item: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-# @app.get("/checkout", response_class=HTMLResponse)
-# async def shop_checkout(request: Request):
-#     logger.info(f"Checkout page accessed by {request.client.host}")
-#     try: 
-#         img_quant_list = request.session.get("img_quantity_list")
-#         if not img_quant_list:
-#             img_quant_list = []
+@app.get("/checkout", response_class=HTMLResponse)
+async def shop_checkout(request: Request):
+    # logger.info(f"Checkout page accessed by {request.client.host}")
+    # try: 
+    raise HTTPException(status_code=405, detail="Internal server error")
+        # await cleancart(request)
+        # img_quant_list = request.session.get("img_quantity_list")
+        # if not img_quant_list:
+        #     img_quant_list = []
 
-#         hosted_images, titles = await hosted_image()
-#         img_data_list = []
+        # hosted_images, titles = await hosted_image()
+        # img_data_list = []
 
-#         for item in img_quant_list:
-#             for title in titles:
-#                 if item["title"] in title:
-#                     img_url = hosted_images[titles.index(title)]
-#                     img_dict = {}
-#                     img_dict["img_url"] = img_url
-#                     img_dict["img_title"] = title
-#                     img_dict["quantity"] = item["quantity"]
-#                     img_dict["price"] = 225 * int(item["quantity"])
-#                     img_data_list.append(img_dict)
-#         total_quantity = sum(int(item["quantity"]) * 225 for item in img_quant_list)
-#         total_price = 225 * total_quantity
+        # for item in img_quant_list:
+        #     for title in titles:
+        #         if item["title"] in title:
+        #             img_url = hosted_images[titles.index(title)]
+        #             img_dict = {}
+        #             img_dict["img_url"] = img_url
+        #             img_dict["img_title"] = title
+        #             img_dict["quantity"] = item["quantity"]
+        #             img_dict["price"] = await get_price_from_title_and_quantity(item["title"], item["quantity"])
+        #             img_data_list.append(img_dict)
+        # total_quantity = sum(int(item["quantity"]) for item in img_quant_list)
+        # total_price = sum(int(item["price"]) for item in img_quant_list) 
 
-#         context = {
-#             "img_data_list": img_data_list,
-#             "shopping_cart_url": hosted_images[-3],
-#             "hamburger_menu_url": hosted_images[-2],
-#             "brig_logo_url": hosted_images[-1],
-#             "total_price": total_price,
-#             "total_quantity": total_quantity
-#         }
+        # context = {
+        #     "img_data_list": img_data_list,
+        #     "shopping_cart_url": hosted_images[-3],
+        #     "hamburger_menu_url": hosted_images[-2],
+        #     "brig_logo_url": hosted_images[-1],
+        #     "total_price": total_price,
+        #     "total_quantity": total_quantity
+        # }
 
-#         return templates.TemplateResponse(request=request, name="checkout.html", context=context)
-#     except Exception as e:
-#         logger.error(f"Error in shop_checkout: {e}")
-#         raise HTTPException(status_code=500, detail="Internal server error")
+        # return templates.TemplateResponse(request=request, name="checkout.html", context=context)
+    # except Exception as e:
+    #     logger.error(f"Error in shop_checkout: {e}")
+    #     raise HTTPException(status_code=500, detail="Internal server error")
 
-# @app.post("/subscribe")
-# async def subscribe(request: Request):
-#     try:
-#         json_body = await request.json()
-#         logger.info(f"Received subscription request: {json_body}")
-#     except Exception as e:
-#         logger.error(f"Error in subscribe: {e}")
-#         raise HTTPException(status_code=500, detail="Internal server error")
+@app.post("/subscribe")
+async def subscribe(request: Request, email: Email):
+    logger.info(f"Subscribe request by {email.email} from {request.client.host}")
+    try:
+        if email.email:
+            # Insert into NoCodeDB
+            email_address = email.email
+            if email_address in fetch_email_list():
+                logger.warning(f"Email {email_address} already subscribed")
+                return {"message": "Email already subscribed"}
+            
+            post_nocodb_email_data({"email": email_address})
+            logger.info(f"Email subscribed and inserted into nocodb: {email_address}")
+            return {"message": "Email subscribed successfully"}           
+    except Exception as e:
+        logger.error(f"Error in subscribe: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/swap_image")
 async def swap_image(title: str = Form(...), new_title: str = Form(...), file: UploadFile = File(...)):
@@ -484,36 +535,110 @@ async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = Fi
                 os.remove(each)
         return return_list[0] if return_list else {"message": "No images added"}
 
-# @app.get("/hostedimage/{title}", response_class=HTMLResponse)
-# async def hosted_image(request: Request, title: str):
-#     logger.info(f"Hosted image request for {title} by {request.client.host}")
-#     file_path = os.path.join(temp_dir.name, f"{title}.png")
-#     if os.path.exists(file_path):
-#         return FileResponse(file_path, media_type="image/png")
-#     try:
-#         nocodb_data = get_nocodb_data()
-#         loaded_nocodb_data = json.loads(nocodb_data)
-#         for item in loaded_nocodb_data['list']:
-#             if item['img_label'] == title:
-#                 db_path = item['img'][0]['signedPath']
-#                 url_path = f"{HTTP}://{SITE_HOST}/{db_path}"
-#                 async with aiohttp.ClientSession() as session:
-#                     async with session.get(url_path) as response:
-#                         if response.status == 200:
-#                             image_data = await response.read()
-#                             scale_image(image_data, file_path)
-#                             return FileResponse(file_path, media_type="image/png")
-#                         else:
-#                             logger.error(f"Failed to fetch image for {title}, status code: {response.status}")
-#                             raise HTTPException(status_code=404, detail="Image not found")
-#         logger.warning(f"Image not found for {title}")
-#         raise HTTPException(status_code=404, detail="Image not found")
-#     except Exception as e:
-#         logger.error(f"Failed to fetch hosted image: {e}")
-#         raise HTTPException(status_code=500, detail="Internal server error")
+@app.post("/validate_contact_info")
+async def validate_contact_info(request: Request, contact_info: ContactInfo):
+    logger.info(f"Validate contact info for {contact_info.email} by {request.client.host}")
+    try:
+        if not contact_info.email or not contact_info.phone:
+            logger.warning("Email or phone number not provided")
+            raise HTTPException(status_code=400, detail="Email or phone number not provided")
+        
+    except Exception as e:
+        logger.error(f"Error in validate_contact_info: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
-# if __name__ == "__main__":
-    # if SCENE == "dev":
-    #    uvicorn.run(app="app:app", host=os.getenv("host"), port=int(os.getenv("port")), reload=True)
-    # If Mac:
-    # uvicorn.run(app="app:app", host=os.getenv("host"), port=444, reload=True)
+@app.post("/validate_payment_info")
+async def validate_payment_info(request: Request, payment_info: PaymentInfo):
+    logger.info(f"Validate payment info for {payment_info.cardName} by {request.client.host}")
+    try:
+        if not payment_info.cardName or not payment_info.cardNumber or not payment_info.expiryDate or not payment_info.cvv:
+            logger.warning("Payment information not provided")
+            raise HTTPException(status_code=400, detail="Payment information not provided")
+        
+        # Insert into NoCodeDB
+
+    except Exception as e:
+        logger.error(f"Error in validate_payment_info: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+    
+@app.post("/validate_shipping_info")
+async def validate_billing_info(request: Request, billing_info: BillingInfo):
+    logger.info(f"Validate billing info for {billing_info.fullname} by {request.client.host}")
+    try:
+        if not billing_info.fullname or not billing_info.address1 or not billing_info.city or not billing_info.state or not billing_info.zip:
+            logger.warning("Billing information not provided")
+            raise HTTPException(status_code=400, detail="Billing information not provided")
+        
+        # Insert into NoCodeDB
+
+    except Exception as e:
+        logger.error(f"Error in validate_billing_info: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+    
+@app.post("/purchase")
+async def checkout_info(request: Request, checkout_info: CheckoutInfo):
+    logger.info(f"Checkout info for {checkout_info.email} by {request.client.host}")
+    try:
+        # Insert shipping info and contact info into NoCodeDB
+        contact_info = {
+            "email": checkout_info.email,
+            "phone": checkout_info.phone,
+        }
+        billing_info = {
+            "fullname": checkout_info.fullname,
+            "address1": checkout_info.address1,
+            "address2": checkout_info.address2,
+            "city": checkout_info.city,
+            "state": checkout_info.state,
+            "zip": checkout_info.zip,
+        }
+        if checkout_info.shipFullname:
+            billing_info["fullname"] = checkout_info.shipFullname
+            billing_info["address1"] = checkout_info.shipAddress1
+            billing_info["address2"] = checkout_info.shipAddress2
+            billing_info["city"] = checkout_info.shipCity
+            billing_info["state"] = checkout_info.shipState
+            billing_info["zip"] = checkout_info.shipZip
+
+        # Insert into NoCodeDB
+        post_order_data(contact_info, billing_info, request.session.get("img_quantity_list"))
+
+        request.session["contact_info"] = contact_info
+        request.session["billing_info"] = billing_info
+
+    except Exception as e:
+        logger.error(f"Error in checkout_info: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+    
+@app.get("/confirmation")
+async def confirmation(request: Request):
+    logger.info(f"Confirmation page accessed by {request.client.host}")
+    try:
+        hosted_images, titles = await hosted_image()
+        img_quant_list = request.session.get("img_quantity_list")
+        if img_quant_list:
+            request.session["img_quantity_list"] = []
+
+        contact_info = request.session.get("contact_info")
+        billing_info = request.session.get("billing_info")
+
+        order_payload = {
+            "email": contact_info['email'],
+            "phone": contact_info['phone'],
+            "shipping_name": billing_info['fullname'],
+            "shipping_address": billing_info['address1'],
+            "shipping_city": billing_info['city'],
+            "shipping_state": billing_info['state'],
+            "shipping_zip": billing_info['zip'],
+        }
+
+        context = {
+            "shopping_cart_url": hosted_images[-3],
+            "hamburger_menu_url": hosted_images[-2],
+            "brig_logo_url": hosted_images[-1],
+            "order_payload": order_payload,
+        }
+        return templates.TemplateResponse(request=request, name="confirmation.html", context=context)
+    except Exception as e:
+        logger.error(f"Error in confirmation: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")

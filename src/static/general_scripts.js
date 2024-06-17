@@ -3,7 +3,7 @@ function toggleIcon() {
     icon.classList.toggle('open');
 }
 
-function emailListEnter() {
+async function emailListEnter() {
     // Get the email input value
     const emailInput = document.getElementById('emailInput');
     const email = emailInput.value;
@@ -31,28 +31,33 @@ function emailListEnter() {
     // Prepare the data to send to the backend
     const data = { email: email };
 
-    // Send the data to your Python backend using fetch
-    fetch('/subscribe', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => {
+    try {
+        // Send the data to your Python backend using fetch
+        const response = await fetch('/subscribe', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
+
+        // Wait for the JSON response
+        const jsonResponse = await response.json();
+
         // Clear the input box after successful submission
         emailInput.value = '';
+
         // Display a confirmation message next to the input box
-        displayCustomMessage(emailInput, 'Your email has been added to the email list', 'confirmation-msg');
-        return response.json();
-    })
-    .catch(error => {
+        displayCustomMessage(emailInput, jsonResponse.message, 'confirmation-msg');
+    } catch (error) {
         console.error('Error:', error);
-    });
+    }
 }
+
 
 // Function to display a custom message next to an input element
 function displayCustomMessage(element, message, className) {
@@ -81,7 +86,7 @@ function isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
 }
-function updateCartQuantity() {
+function updateCartQuantityGeneral() {
     fetch('/get_cart_quantity') // Assuming you have an endpoint to get cart quantity
         .then(response => response.json())
         .then(data => {
@@ -107,7 +112,9 @@ function toggleDropdown() {
     // Lock the page from scrolling when the dropdown is open
     if (dropdown.classList.contains('show')) {
         document.body.style.overflow = 'hidden';
-        glance_h1.style.display = 'none'
+        if (glance_h1) {
+            glance_h1.style.display = 'none'
+        }
     } else {
         document.body.style.overflow = 'auto';
         glance_h1.style.display = 'block'
@@ -132,14 +139,19 @@ function toggleMenu() {
         document.body.style.overflow = 'auto';
         if (dropdown.classList.contains('show')) {
             document.body.style.overflow = 'hidden';
-            glance_h1.style.display = 'none';
+            if (glance_h1) {
+                glance_h1.style.display = 'none';
+
+            }
             content.classList.add('hide');
             footer.classList.add('hide');
             
         }
         else {
             document.body.style.overflow = 'auto';
-            glance_h1.style.display = 'block';
+            if (glance_h1) {
+                glance_h1.style.display = 'block';
+            }
             content.classList.remove('hide');
             footer.classList.remove('hide');
         }
@@ -148,7 +160,9 @@ function toggleMenu() {
         navbar.style.display = 'flex';
         mobileMenu.style.display = 'none';
         document.body.style.overflow = 'auto';
-        glance_h1.style.display = 'block'
+        if (glance_h1){
+            glance_h1.style.display = 'block'  
+        }
         content.classList.remove('hide');
         footer.classList.remove('hide');
     }
@@ -158,7 +172,7 @@ function toggleMenu() {
 
 // Initial toggle when the page loads
 document.addEventListener('DOMContentLoaded', function() {
-    updateCartQuantity();
+    updateCartQuantityGeneral();
     toggleMenu();
 
     // Check on scroll
@@ -171,11 +185,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Load images when the page is loaded
 document.addEventListener('DOMContentLoaded', function() {
-
-    loadImagesInView();
-    window.addEventListener('load', function() {
-        checkFade();
-    });
 
     const artworkImages = document.querySelectorAll('img.artwork[style]');
 
@@ -225,18 +234,3 @@ function setButtonsState(disabled) {
     links.forEach(link => link.disabled = disabled);
     buttons.forEach(button => button.disabled = disabled);
 }
-
-
-
-// Load images when scrolling
-window.addEventListener('scroll', function() {
-    loadImagesInView();
-    checkFade();
-});
-
-// Load images when resizing the window
-window.addEventListener('resize', function() {
-    loadImagesInView();
-    checkFade();
-});
-// Initial check on page load

@@ -7,6 +7,73 @@ function toggleIcon() {
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+async function increaseQuantity(button) {
+    try {
+        // Disable the button to prevent rapid clicks
+        setButtonsState(true);
+
+        // Wait for the cart quantity to be fetched
+        const cartQuantity = await getCartQuantity();
+
+        // Get the necessary DOM elements
+        let quantityElement = button.parentElement.querySelector('.quantity-input');
+        let quantityPrice = button.parentElement.parentElement.parentElement.querySelector('.price');
+
+        // Parse the current quantity
+        let currentQuantity = parseInt(quantityElement.value);
+
+        // Check if the current cart quantity is at or exceeds the maximum limit
+        if (cartQuantity >= 1000) {
+            displayTotalQuantityError('The maximum quantity allowed is 1000.');
+            setButtonsState(false); // Re-enable the button
+            return;
+        }
+
+        // Calculate the new quantity
+        let newQuantity = currentQuantity + 1;
+
+        // Check if increasing the quantity will exceed the maximum limit
+        if (newQuantity > 1000) {
+            displayTotalQuantityError('The maximum quantity allowed is 1000.');
+            setButtonsState(false); // Re-enable the button
+            return;
+        }
+
+        let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
+
+        let requestOptions = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ title: img_title })
+        };
+
+        let response = fetch('/increase_quantity', requestOptions);
+        let responseData = await togglePageLock(response);
+        // Check if response data ok
+
+        if (responseData) {
+            // Update the UI with the new quantity only after the API call succeeds
+            quantityElement.value = newQuantity;
+            console.log(responseData);
+
+            quantityPrice.innerText = '$' + responseData.price;
+            await updateCartQuantity(cartQuantity + 1);
+            updateTotalPrice();
+            removeMaxQuantityErrorMessage();
+        }
+
+        // Re-enable the button
+        setButtonsState(false);
+    } catch (error) {
+        console.error('Error:', error);
+        // Re-enable the button in case of error
+        setButtonsState(false);
+    }
+}
+
 async function togglePageLock(responsePromise) {
     setButtonsState(true);
     document.body.style.opacity = '0.5';
@@ -15,20 +82,19 @@ async function togglePageLock(responsePromise) {
     document.body.appendChild(spinner);
 
     try {
-        const response = await responsePromise;
+        let response = await responsePromise;
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
         
-        return response
+        return response.json();
     } finally {
-        // await sleep(2000)
         // Unlock the buttons and the page
-        
         document.body.style.opacity = '1';
         spinner.remove();
     }
 }
+
 function setButtonsState(disabled) {
     const buttons = document.querySelectorAll('.increase-quantity, .decrease-quantity, .remove-item'); // Adjust the selector to match your button classes
     // Can you also disable any links on the page
@@ -54,85 +120,6 @@ async function getCartQuantity() {
         });
 }
 
-function emailListEnter() {
-    // Get the email input value
-    const emailInput = document.getElementById('emailInput');
-    const email = emailInput.value;
-
-    // Check if an existing error message exists and remove it
-    const existingErrorMessage = document.querySelector('.error-msg');
-    if (existingErrorMessage) {
-        existingErrorMessage.remove();
-    }
-
-    // Check if an existing confirmation message exists and remove it
-    const existingConfirmationMsg = document.querySelector('.confirmation-msg');
-    if (existingConfirmationMsg) {
-        existingConfirmationMsg.remove();
-    }
-
-    // Validate the email format (you can add more robust validation)
-    if (!isValidEmail(email)) {
-        emailInput.value = '';
-        // Display an error message next to the input box
-        displayCustomMessage(emailInput, 'Your email is not valid. Please try again', 'error-msg');
-        return;
-    }
-
-    // Prepare the data to send to the backend
-    const data = { email: email };
-
-    // Send the data to your Python backend using fetch
-    fetch('/subscribe', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        // Clear the input box after successful submission
-        emailInput.value = '';
-        // Display a confirmation message next to the input box
-        displayCustomMessage(emailInput, 'Your email has been added to the email list', 'confirmation-msg');
-        return response.json();
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
-}
-
-// Function to display a custom message next to an input element
-function displayCustomMessage(element, message, className) {
-    // Check if a message element of the specified class already exists
-    let customMessageElement = element.nextElementSibling;
-    if (!customMessageElement || !customMessageElement.classList.contains(className)) {
-        // If message element doesn't exist, create and append it
-        const customMessageElement = document.createElement('p');
-        customMessageElement.textContent = message;
-        customMessageElement.classList.add(className); // Add the specified CSS class
-
-        // Get the navbar div
-        const navbar = document.querySelector('.contact_form');;
-        navbar.appendChild(customMessageElement);
-
-    // Scroll to the new message element
-        customMessageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
-        // If message element already exists, update its content
-        customMessageElement.textContent = message;
-    }
-}
-
-// Basic email validation function
-function isValidEmail(email) {
-    // Basic email format validation using regex
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
 
 // Updates the UI on the page to reflect the cart quantity
 async function updateCartQuantity(cart_quantity) {
@@ -159,14 +146,40 @@ async function updateCartQuantity(cart_quantity) {
     return Promise.resolve(); // Ensure it returns a promise
 }
 
-function updateTotalPrice() {
+async function updateTotalPrice() {
     let totalPrice = 0;
     // Loop through each item in the cart
     document.querySelectorAll('.price').forEach(priceElement => {
         totalPrice += parseFloat(priceElement.innerText.replace('$', ''));
     });
-    // Update the total price element
-    document.getElementById('total-price').innerText = totalPrice.toFixed(2);
+
+    // Send the total price to the backend for verification
+    try {
+        console.log('Total price:', totalPrice)
+        const response = await fetch('/post_total_price', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            
+            body: JSON.stringify({ totalPrice: totalPrice })
+        })
+         .then(data => {
+            return data.json();
+        });
+        const responseData = response;
+        // Handle the response data
+        if (responseData.totalPrice !== undefined && responseData.totalPrice !== null) {
+                // Update the total price element
+            console.log(responseData.totalPrice);
+            document.getElementById('total-price').innerText = responseData.totalPrice.toFixed(2);
+    
+        } else {
+            console.log('Total price is not valid');
+        }
+    } catch (error) {
+        console.error('Error checking total price:', error);
+    } 
 }
 let errorMessageElement; 
 function removeErrorMessage() {
@@ -247,17 +260,19 @@ async function increaseQuantity(button) {
             body: JSON.stringify({title: img_title })
         };
 
-        const response = fetch('/increase_quantity', requestOptions);
-        const responseData = await togglePageLock(response);
-        // Check if response data ok
-        if (responseData) {
-            // Update the UI with the new quantity only after the API call succeeds
-            quantityElement.value = newQuantity;
-            quantityPrice.innerText = '$' + newQuantity * 225;
-            await updateCartQuantity(cartQuantity + 1);
-            updateTotalPrice();
-            removeMaxQuantityErrorMessage();
-        }
+        let response = fetch('/increase_quantity', requestOptions);
+        let responseData = await togglePageLock(response)
+            .then((response) => {
+                return response.json();
+            });
+        // Update the UI with the new quantity only after the API call succeeds
+        quantityElement.value = newQuantity;
+        quantityPrice.innerText = '$' + responseData.price;
+        
+        await updateCartQuantity(cartQuantity + 1);
+        updateTotalPrice();
+        removeMaxQuantityErrorMessage();
+        
 
         // Re-enable the button
         setButtonsState(false);
@@ -294,16 +309,18 @@ async function decreaseQuantity(button) {
                 body: JSON.stringify({ title: img_title})
             };
 
-            const response = fetch('/decrease_quantity', requestOptions);
-            const responseData = await togglePageLock(response);
-            if (responseData) {
-                // Update the UI with the new quantity only after the API call succeeds
-                quantityElement.value = newQuantity;
-                quantityPrice.innerText = '$' + newQuantity * 225;
-                await updateCartQuantity(cartQuantity - 1);
-                updateTotalPrice();
-                removeMaxQuantityErrorMessage();
-            }
+            let response = fetch('/decrease_quantity', requestOptions);
+            let responseData = await togglePageLock(response)
+                .then((response => {
+                    return response.json();
+                }));
+            
+
+            quantityElement.value = newQuantity;
+            quantityPrice.innerText = '$' + responseData.price;
+            await updateCartQuantity(cartQuantity - 1);
+            updateTotalPrice();
+            removeMaxQuantityErrorMessage();
         } else {
             await removeItem(button);
         }
@@ -340,16 +357,18 @@ async function removeItem(button) {
             body: JSON.stringify({title: img_title})
         };
 
-        const response = fetch('/delete_item', requestOptions);
-        const responseData = await togglePageLock(response);
-        if (responseData) {
-            const input_quantity = parseInt(quantityElement.value);
-            const updated_cart_quantity = cartQuantity - input_quantity;
-            await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item
-            updateTotalPrice(); // Update total price after updating cart quantity
-            removeMaxQuantityErrorMessage(); // Remove the error message here
+        let response = fetch('/delete_item', requestOptions);
+        let responseData = await togglePageLock(response)
+            .then((response) => {
+                return response.json();
+            });
+        
+        const input_quantity = parseInt(quantityElement.value);
+        const updated_cart_quantity = cartQuantity - input_quantity;
+        await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item
+        updateTotalPrice(); // Update total price after updating cart quantity
+        removeMaxQuantityErrorMessage(); // Remove the error message here
 
-        }
         setButtonsState(false); // Re-enable the buttons
     } catch (error) {
         console.error('Error:', error);
@@ -384,15 +403,19 @@ async function removeItemButton(button) {
             body: JSON.stringify({ title: img_title })
         };
 
-        const response = await fetch('/delete_item', requestOptions);
+        let response = fetch('/delete_item', requestOptions);
+        let responseData = await togglePageLock(response)
+            .then((response) => {
+                return response.json();
+            });
+        // update the total price
 
-        if (response.ok) {
-            const input_quantity = parseInt(quantityElement.value);
-            const updated_cart_quantity = cartQuantity - input_quantity;
-            await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item
-            updateTotalPrice(); // Update total price after updating cart quantity
-            removeMaxQuantityErrorMessage(); // Remove the error message here
-        }
+        const input_quantity = parseInt(quantityElement.value);
+        const updated_cart_quantity = cartQuantity - input_quantity;
+        await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item
+        updateTotalPrice(); // Update total price after updating cart quantity
+        removeMaxQuantityErrorMessage(); // Remove the error message here
+
         setButtonsState(false); // Re-enable the buttons
     } catch (error) {
         console.error('Error:', error);

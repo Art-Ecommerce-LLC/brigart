@@ -1,8 +1,37 @@
 import os
 import requests
 import json
-from src.artapi.config import NOCODB_KEY_URL, NOCODB_IMG_URL, NOCODB_ICON_URL, XC_AUTH
+from src.artapi.config import NOCODB_KEY_URL, NOCODB_IMG_URL, NOCODB_ICON_URL, XC_AUTH, NOCODB_EMAIL_URL, NOCODB_CONTACT_URL, NOCODB_ORDER_URL, NOCODB_CONTENT_URL
 
+def get_nocodb_email_data() -> str:
+    headers = {'xc-token': XC_AUTH}
+    response = requests.get(NOCODB_EMAIL_URL, headers=headers)
+    response.raise_for_status()
+    return response.text
+
+def post_nocodb_contact_data(data: dict) -> str:
+    headers = {'xc-token': XC_AUTH}
+    response = requests.post(NOCODB_CONTACT_URL, headers=headers, json=data)
+    response.raise_for_status()
+    return response.text
+
+def post_nocodb_order_data(data: dict) -> str:
+    headers = {'xc-token': XC_AUTH}
+    response = requests.post(NOCODB_ORDER_URL, headers=headers, json=data)
+    response.raise_for_status()
+    return response.text
+
+def post_nocodb_content_data(data: dict) -> str:
+    headers = {'xc-token': XC_AUTH}
+    response = requests.post(NOCODB_CONTENT_URL, headers=headers, json=data)
+    response.raise_for_status()
+    return response.text
+
+def post_nocodb_email_data(data: dict) -> str:
+    headers = {'xc-token': XC_AUTH}
+    response = requests.post(NOCODB_EMAIL_URL, headers=headers, json=data)
+    response.raise_for_status()
+    return response.text
 
 def get_nocodb_key_data() -> str:
     headers = {'xc-token': XC_AUTH}

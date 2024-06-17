@@ -1,14 +1,14 @@
-function toggleIcon() {
-    const icon = document.querySelector('#nav-icon3');
-    icon.classList.toggle('open');
-}
+
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Dropwdown the contact info section initially on page load
-    document.getElementById('contactInfoSection').classList.add('open');
+    // Drop down the contact info section initially on page load
+    const contactInfoSection = document.getElementById('contactInfoSection');
+    contactInfoSection.classList.add('open');
+    // uncheck the sameAsShipping checkbox
+    const sameAsShipping = document.getElementById('sameAsShipping');
+    sameAsShipping.checked = false;
+    
     // Add event listeners to the collapsible headers
-
-
     document.querySelectorAll('.collapsible-header').forEach(header => {
         header.addEventListener('click', () => {
             const section = header.parentElement;
@@ -18,42 +18,248 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    const continueButton = document.querySelector('#paymentInfoSection .continue-btn');
+    continueButton.addEventListener('click', maskCreditCardAndCVV);
+
+    // Make a request to get the cart quantity, if it is 0, then redirect response to /shop_art_menu
+    // getCartQuantity().then(cartQuantity => {
+    //     if (cartQuantity === 0) {
+    //         window.location.href = '/shop_art_menu';
+    //     }
+
+    // });
+
 });
-
-function toggleNextSection(currentSectionId, nextSectionId) {
-
-    
-    if (validateSection(currentSectionId)) {
-
-        const currentSection = document.getElementById(currentSectionId);
-        const currentSectionHeader = currentSection.querySelector('.collapsible-header');
-        currentSection.classList.remove('open');
-        updateArrow(currentSectionHeader);
-
-        const nextSection = document.getElementById(nextSectionId);
-        const nextSectionHeader = nextSection.querySelector('.collapsible-header');
-        
-        nextSection.classList.add('open');
-        nextSectionHeader.classList.remove('disabled');
-        nextSectionHeader.style.fontWeight = 'bold';
-        updateArrow(nextSectionHeader);
-        // Scroll to the next section smoothly
-        nextSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
-        alert('Please fill out all fields in this section.');
+function maskCreditCardAndCVV() {
+    // Mask the credit card number except for the last four digits
+    const cardNumberInput = document.getElementById('card-number');
+    const cardNumberValue = cardNumberInput.value.trim();
+    if (cardNumberValue.length > 4) {
+        const maskedCardNumber = '*'.repeat(cardNumberValue.length - 4) + cardNumberValue.slice(-4);
+        cardNumberInput.value = maskedCardNumber;
     }
 
+    // Mask the entire CVV
+    const cvvInput = document.getElementById('cvv');
+    const cvvValue = cvvInput.value.trim();
+    if (cvvValue.length > 0) {
+        cvvInput.value = '*'.repeat(cvvValue.length);
+    }
+}
+
+
+function copyShippingAddress() {
+    // Toggle the display of the shipping address form by the id of its div shippingAddressSection
+    const shippingAddressSection = document.getElementById('shippingAddressSection');
+    const billingAddressSection = document.getElementById('billingAddressSection');
+    shippingAddressSection.classList.toggle('show');
+
+    // Get the continue button in the shipping address section
+    const continueButton = billingAddressSection.querySelector('.continue-btn');
+    
+    // If the the sectioncontains show, then change the text of the button to "Copy Shipping Address"
+    if (shippingAddressSection.classList.contains('show')) {
+        continueButton.innerText = 'Purchase';
+    }
+    else {
+        continueButton.innerText = 'Continue';    
+    }
 
 }
 
-function validateSection(sectionId) {
+function toggleIcon() {
+    const icon = document.querySelector('#nav-icon3');
+    icon.classList.toggle('open');
+}
+
+function toggleInputsAndButtons(section, disable) {
+
+    const inputs = section.querySelectorAll('input');
+    const buttons = section.querySelectorAll('button.continue-btn'); // Target 
+
+    // Add the class disabled to the buttons and inputs to disable them
+    inputs.forEach(input => {
+        input.disabled = disable;
+    });
+
+    buttons.forEach(button => {
+        button.disabled = disable;
+    });
+}
+function toggleNextSection(currentSectionId, nextSectionId) {
+
+    validateSection(currentSectionId).then(isValid => {
+        if (isValid) {
+            removeFormErrorMessage();
+            // Check if the same-as-shipping checkbox is checked
+            const sameAsShipping = document.getElementById('sameAsShipping');
+
+            // If the next section is the shipping address section and the same-as-shipping checkbox is checked or the next section is the submit button
+            if (nextSectionId === 'shippingAddressSection' && sameAsShipping.checked || nextSectionId == 'SubmitButton') {
+                handlePurchase(currentSectionId);
+                return;
+            }
+            const currentSection = document.getElementById(currentSectionId);
+            const currentSectionHeader = currentSection.querySelector('.collapsible-header');
+            currentSection.classList.remove('open');
+
+            // Remove the continue button from the current section
+            const continueButton = currentSection.querySelector('.continue-btn');
+            if (continueButton) {
+                continueButton.remove();
+            }
+
+            updateArrow(currentSectionHeader);
+            toggleInputsAndButtons(currentSection, true);
+
+
+            const nextSection = document.getElementById(nextSectionId);
+            const nextSectionHeader = nextSection.querySelector('.collapsible-header');
+            
+            nextSection.classList.add('open');
+            nextSectionHeader.classList.remove('disabled');
+            nextSectionHeader.style.fontWeight = 'bold';
+            updateArrow(nextSectionHeader);
+            toggleInputsAndButtons(nextSection, false);
+            // Scroll to the next section smoothly
+        } else {
+            // Display custom error message as the second to last element in the collapsible-content div in the current section
+            displayErrorMessage(currentSectionId, 'Please enter a valid email and phone number.');
+        }
+    }).catch(error => {
+        console.error('Validation failed:', error);
+        displayErrorMessage(currentSectionId, 'An error occurred while validating. Please try again.');
+    });
+}
+function removeFormErrorMessage() {
+    const existingErrorMessage = document.querySelector('.error-message');
+    if (existingErrorMessage) {
+        existingErrorMessage.remove();
+    }
+}
+
+function displayErrorMessage(currentSectionId, message) {
+    // check if there is an existing error message
+    const existingErrorMessage = document.querySelector('.error-message');
+    if (existingErrorMessage) {
+        existingErrorMessage.remove();
+    }
+    // Check if message is not null or empty
+    if (message) {
+        const currentSection = document.getElementById(currentSectionId);
+        const content = currentSection.querySelector('.collapsible-content');
+        const errorMessage = document.createElement('p');
+        errorMessage.innerText = message;
+        errorMessage.classList.add('error-message');
+        content.insertBefore(errorMessage, content.lastElementChild);
+    }
+
+}
+
+async function validateSection(sectionId) {
     const section = document.getElementById(sectionId);
     const inputs = section.querySelectorAll('input');
-    for (let input of inputs) {
-        if (!input.value.trim()) {
+
+    if (sectionId === 'contactInfoSection') {
+        const email = document.getElementById('email').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        if (!email || !phone) {
             return false;
         }
+
+        // Send the email and phone in an async function that triggers the spinner and disables the buttons until the response is received
+        const contact_payload = {
+            email: email,
+            phone: phone
+        }
+        const responsePromise = fetch('/validate_contact_info', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(contact_payload)
+        });
+
+        // Use togglePageLock to manage the page lock and response handling
+        return togglePageLock(responsePromise).then(response => {
+            if (!response.ok) {
+                return false;
+            }
+            removeFormErrorMessage();
+            return true;
+        });
     }
+    if (sectionId === 'paymentInfoSection') {
+        const cardName = document.getElementById('card-name').value.trim();
+        const cardNumber = document.getElementById('card-number').value.trim();
+        const expiryDate = document.getElementById('expiry').value.trim();
+        const cvv = document.getElementById('cvv').value.trim();
+        if (!cardName || !cardNumber || !expiryDate || !cvv) {
+            return false;
+        }
+
+        // Send the card details in an async function that triggers the spinner and disables the buttons until the response is received
+        const payment_payload = {
+            cardName: cardName,
+            cardNumber: cardNumber,
+            expiryDate: expiryDate,
+            cvv: cvv
+        }
+
+        const responsePromise = fetch('/validate_payment_info', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payment_payload)
+        });
+
+        // Use togglePageLock to manage the page lock and response handling
+        return togglePageLock(responsePromise).then(response => {
+            if (!response.ok) {
+                return false;
+            }
+            removeFormErrorMessage();
+            return true;
+        });
+    }
+    if (sectionId === 'billingAddressSection') {
+        const fullname = document.getElementById('fullname').value.trim();
+        const address1 = document.getElementById('address1').value.trim();
+        const address2 = document.getElementById('address2').value.trim();
+        const city = document.getElementById('city').value.trim();
+        const state = document.getElementById('state').value.trim();
+        const zip = document.getElementById('zip').value.trim();
+        if (!fullname || !address1 || !city || !state || !zip) {
+            return false;
+        }
+
+        billing_payload = {
+            fullname: fullname,
+            address1: address1,
+            address2: address2,
+            city: city,
+            state: state,
+            zip: zip
+        }
+        const responsePromise = fetch('/validate_shipping_info', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(billing_payload)
+        });
+
+        // Use togglePageLock to manage the page lock and response handling
+        return togglePageLock(responsePromise).then(response => {
+            if (!response.ok) {
+                return false;
+            }
+            removeFormErrorMessage();
+            return true;
+        });
+    }
+
     return true;
 }
 
@@ -82,12 +288,12 @@ async function togglePageLock(responsePromise) {
     document.body.appendChild(spinner);
 
     try {
-        const response = await responsePromise;
+        let response = await responsePromise;
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
         
-        return response
+        return response;
     } finally {
         // await sleep(2000)
         // Unlock the buttons and the page
@@ -112,95 +318,124 @@ async function getCartQuantity() {
             return 0;
         });
 }
-async function updateCartQuantity(cart_quantity) {
-    if (cart_quantity !== 0) {
-        document.getElementById('cartQuantity').innerText = cart_quantity;
-        document.getElementById('mobileCartQuantity').innerText = cart_quantity;
-    } else {
-        document.getElementById('cartQuantity').innerText = '';
-        document.getElementById('mobileCartQuantity').innerText = '';
-        // Add a button right below h1 with id moreShop that leads to /shop_art_menu 
-        const moreShop = document.createElement('button');
-        moreShop.innerText = 'Continue Shopping';
-        moreShop.addEventListener('click', () => {
-            window.location.href = '/shop_art_menu';
-        });
-        moreShop.classList.add('more-shop-styles');
-        // put inside the shop-more div
-        document.querySelector('.shop-more').appendChild(moreShop);
-    }
-    return Promise.resolve(); // Ensure it returns a promise
-}
+
 //Create a second toggle for the mobile menu to be a dropdown menu when hamburger icon is clicked
-function handlePurchase(button) {
-    // Gather form data
-    const email = document.getElementById("email").value;
-    const phone = document.getElementById("phone").value;
-    const cardName = document.getElementById("card-name").value;
-    const cardNumber = document.getElementById("card-number").value;
-    const expiryDate = document.getElementById("expiry").value;
-    const cvv = document.getElementById("cvv").value;
-    const fullname = document.getElementById("fullname").value;
-    const address1 = document.getElementById("address1").value;
-    const address2 = document.getElementById("address2").value;
-    const city = document.getElementById("city").value;
-    const state = document.getElementById("state").value;
-    const zip = document.getElementById("zip").value;
+async function handlePurchase(sectionId) {
+    // Grab the continue-btn in the sectionID
+    const continueButton = document.getElementById(sectionId).querySelector('.continue-btn');
+    // Disable the buttons and inputs in the section
+    toggleInputsAndButtons(document.getElementById(sectionId), true);
 
-    // Now you have all the form data stored in variables
-    // You can use this data to process the purchase, send it to the server, etc.
-    // For example, you can make a fetch request to a backend endpoint to process the payment
+    // Change the text of the continue button to "Purchase"
+    continueButton.innerText = 'Purchase';
 
-    const formData = {
-        email : email,
-        phone : phone,
-        cardName : cardName,
-        cardNumber : cardNumber,
-        expiryDate : expiryDate,
-        cvv : cvv,
-        fullname : fullname,
-        address1 : address1,
-        address2 : address2,
-        city : city,
-        state : state,
-        zip : zip,
+    // If it gets clicked while its text is "Purchase", then submit a fetch request
+
+    // Get all disabled input text fields
+    const emailInput = document.getElementById('email');
+    const phoneInput = document.getElementById('phone');
+    const cardNameInput = document.getElementById('card-name');
+    const cardNumberInput = document.getElementById('card-number');
+    const expiryInput = document.getElementById('expiry');
+    const cvvInput = document.getElementById('cvv');
+    const fullnameInput = document.getElementById('fullname');
+    const address1Input = document.getElementById('address1');
+    const address2Input = document.getElementById('address2');
+    const cityInput = document.getElementById('city');
+    const stateInput = document.getElementById('state');
+    const zipInput = document.getElementById('zip');
+    const sameAsShipping = document.getElementById('sameAsShipping');
+
+    let checkout_payload = {
+        email: emailInput.value,
+        phone: phoneInput.value,
+        cardName: cardNameInput.value,
+        cardNumber: cardNumberInput.value,
+        expiryDate: expiryInput.value,
+        cvv: cvvInput.value,
+        fullname: fullnameInput.value,
+        address1: address1Input.value,
+        address2: address2Input.value,
+        city: cityInput.value,
+        state: stateInput.value,
+        zip: zipInput.value
     };
 
-    // Make a fetch request to send the form data to the backend
-    fetch('/process_payment', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
-        // Handle the response data
-        console.log(data);
-        // Redirect to a success page, display a success message, etc.
-        window.location.href = '/';
+    if (!sameAsShipping.checked) {
+        const shipFullname = document.getElementById('shipFullname');
+        const shipAddress1 = document.getElementById('shipAddress1');
+        const shipAddress2 = document.getElementById('shipAddress2');
+        const shipCity = document.getElementById('shipCity');
+        const shipState = document.getElementById('shipState');
+        const shipZip = document.getElementById('shipZip');
+        
+        checkout_payload = {
+            ...checkout_payload,
+            shipFullname: shipFullname.value,
+            shipAddress1: shipAddress1.value,
+            shipAddress2: shipAddress2.value,
+            shipCity: shipCity.value,
+            shipState: shipState.value,
+            shipZip: shipZip.value
+        };
+    }
 
-    })
-    .catch(error => {
-        console.error('Error processing payment:', error);
-        // Handle the error, display an error message, etc.
-    });
+    try {
+        const response = await fetch('/purchase', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(checkout_payload)
+        });
+
+        if (response.ok) {
+            // Redirect to the confirmation page
+            window.location.href = '/confirmation';
+        } else {
+            // Display an error message
+            displayErrorMessage(sectionId, 'An error occurred while processing your purchase. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        displayErrorMessage(sectionId, 'An error occurred while processing your purchase. Please try again.');
+    }
 }
 
-function updateTotalPrice() {
+async function updateTotalPrice() {
     let totalPrice = 0;
     // Loop through each item in the cart
     document.querySelectorAll('.price').forEach(priceElement => {
         totalPrice += parseFloat(priceElement.innerText.replace('$', ''));
     });
-    // Update the total price element
-    document.getElementById('total-price').innerText = totalPrice.toFixed(2);
+
+    // Send the total price to the backend for verification
+    try {
+        console.log('Total price:', totalPrice)
+        const response = await fetch('/post_total_price', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            
+            body: JSON.stringify({ totalPrice: totalPrice })
+        })
+         .then(data => {
+            return data.json();
+        });
+        const responseData = response;
+        // Handle the response data
+        if (responseData.totalPrice !== undefined && responseData.totalPrice !== null) {
+                // Update the total price element
+            console.log(responseData.totalPrice);
+            document.getElementById('total-price').innerText = responseData.totalPrice.toFixed(2);
+    
+        } else {
+            console.log('Total price is not valid');
+        }
+    } catch (error) {
+        console.error('Error checking total price:', error);
+    } 
 }
 
 let errorMessageElement; 
@@ -272,16 +507,19 @@ async function increaseQuantity(button) {
             body: JSON.stringify({title: img_title})
         };
 
-        const response = fetch('/increase_quantity', requestOptions);
-        const responseData = await togglePageLock(response);
-        if (responseData) {
-            // Update the UI with the new quantity only after the API call succeeds
-            quantityElement.value = newQuantity;
-            quantityPrice.innerText = '$' + newQuantity * 225;
-            await updateCartQuantity(cartQuantity + 1);
-            updateTotalPrice();
-            removeMaxQuantityErrorMessage();
-        }
+        let response = fetch('/increase_quantity', requestOptions);
+        let responseData = await togglePageLock(response)
+            .then((response) => {
+                return response.json();
+            });
+        // Update the UI with the new quantity only after the API call succeeds
+        quantityElement.value = newQuantity;
+        quantityPrice.innerText = '$' + responseData.price;
+        
+        await updateCartQuantity(cartQuantity + 1);
+        updateTotalPrice();
+        removeMaxQuantityErrorMessage();
+        
 
         // Re-enable the button
         setButtonsState(false);
@@ -317,16 +555,19 @@ async function decreaseQuantity(button) {
                 body: JSON.stringify({ title: img_title})
             };
 
-            const response = fetch('/decrease_quantity', requestOptions);
-            const responseData = await togglePageLock(response);
-            if (responseData) {
-                // Update the UI with the new quantity only after the API call succeeds
-                quantityElement.value = newQuantity;
-                quantityPrice.innerText = '$' + newQuantity * 225;
-                await updateCartQuantity(cartQuantity - 1);
-                updateTotalPrice();
-                removeMaxQuantityErrorMessage();
-            }
+            let response = fetch('/decrease_quantity', requestOptions);
+            let responseData = await togglePageLock(response)
+                .then((response => {
+                    return response.json();
+                }));
+            
+
+            quantityElement.value = newQuantity;
+            quantityPrice.innerText = '$' + responseData.price;
+            await updateCartQuantity(cartQuantity - 1);
+            updateTotalPrice();
+            removeMaxQuantityErrorMessage();
+            setButtonsState(false);
         } else {
             await removeItem(button);
         }
@@ -339,7 +580,6 @@ async function decreaseQuantity(button) {
         setButtonsState(false);
     }
 }
-
 
 async function removeItem(button) {
     try {
@@ -372,13 +612,12 @@ async function removeItem(button) {
         const response = fetch('/delete_item', requestOptions);
         const responseData = await togglePageLock(response);
 
-        if (responseData) {
-            const input_quantity = parseInt(quantityElement.value);
-            const updated_cart_quantity = cartQuantity - input_quantity;
-            await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item
-            updateTotalPrice(); // Update total price after updating cart quantity
-            removeMaxQuantityErrorMessage(); // Remove the error message here
-        }
+        const input_quantity = parseInt(quantityElement.value);
+        const updated_cart_quantity = cartQuantity - input_quantity;
+        await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item
+        updateTotalPrice(); // Update total price after updating cart quantity
+        removeMaxQuantityErrorMessage(); // Remove the error message here
+
         setButtonsState(false); // Re-enable the buttons
     } catch (error) {
         console.error('Error:', error);
@@ -416,13 +655,11 @@ async function removeItemButton(button) {
         const response = fetch('/delete_item', requestOptions);
         const responseData = await togglePageLock(response);
 
-        if (responseData) {
-            const input_quantity = parseInt(quantityElement.value);
-            const updated_cart_quantity = cartQuantity - input_quantity;
-            await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item
-            updateTotalPrice(); // Update total price after updating cart quantity
-            removeMaxQuantityErrorMessage(); // Remove the error message here
-        }
+        const input_quantity = parseInt(quantityElement.value);
+        const updated_cart_quantity = cartQuantity - input_quantity;
+        await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item
+        updateTotalPrice(); // Update total price after updating cart quantity
+        removeMaxQuantityErrorMessage(); // Remove the error message here
         setButtonsState(false); // Re-enable the buttons
     } catch (error) {
         console.error('Error:', error);
@@ -438,17 +675,18 @@ function removeMaxQuantityErrorMessage() {
     }
 }
 
-async function updateCartQuantity() {
-    try {
-        const response = await fetch('/get_cart_quantity');
-        const data = await response.json();
-        if (data.quantity !== 0) {
-            document.getElementById('cartQuantity').innerText = data.quantity;
-            document.getElementById('mobileCartQuantity').innerText = data.quantity;
+async function updateCartQuantity(cart_quantity) {
+        if (cart_quantity !== 0) {
+            document.getElementById('cartQuantity').innerText = cart_quantity;
+            document.getElementById('mobileCartQuantity').innerText = cart_quantity;
         } else {
             document.getElementById('cartQuantity').innerText = '';
             document.getElementById('mobileCartQuantity').innerText = '';
             // Only create and add the "Continue Shopping" button once
+            // add style to content to hide it
+            document.querySelector('.left-section').classList.add('hide');
+            document.querySelector('.right-section').classList.add('hide');
+            document.querySelector('.content').classList.add('show');
             if (!document.querySelector('.shop-more button')) {
                 const moreShop = document.createElement('button');
                 // Add claslist element hid eto checkout-container
@@ -460,12 +698,8 @@ async function updateCartQuantity() {
                 moreShop.classList.add('more-shop-styles');
                 document.querySelector('.shop-more').appendChild(moreShop);
             }
-        }
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-
+        return Promise.resolve();
+}}
 function toggleDropdown() {
     const dropdown = document.querySelector('.mobile-dropdown');
     const content = document.querySelector('.content');
