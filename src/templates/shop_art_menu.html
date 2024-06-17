@@ -75,7 +75,8 @@
                 <div style="background-image: url('{{ temp_var }}');" oncontextmenu="return false" draggable = "false" class="artwork"></div>
             </div>
             <span class="artwork-name" >{{ title }}</span>
-            <span class="artwork-price" >$225.00</span>
+            <!-- Artwork price is the index of the data on the price_list -->
+            <span class="artwork-price" >${{ price_list[loop.index0] }}</span>
         </a>
         {% endfor %}
     </div>

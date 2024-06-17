@@ -288,12 +288,12 @@ async function togglePageLock(responsePromise) {
     document.body.appendChild(spinner);
 
     try {
-        const response = await responsePromise;
+        let response = await responsePromise;
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
         
-        return response
+        return response;
     } finally {
         // await sleep(2000)
         // Unlock the buttons and the page
@@ -402,14 +402,40 @@ async function handlePurchase(sectionId) {
     }
 }
 
-function updateTotalPrice() {
+async function updateTotalPrice() {
     let totalPrice = 0;
     // Loop through each item in the cart
     document.querySelectorAll('.price').forEach(priceElement => {
         totalPrice += parseFloat(priceElement.innerText.replace('$', ''));
     });
-    // Update the total price element
-    document.getElementById('total-price').innerText = totalPrice.toFixed(2);
+
+    // Send the total price to the backend for verification
+    try {
+        console.log('Total price:', totalPrice)
+        const response = await fetch('/post_total_price', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            
+            body: JSON.stringify({ totalPrice: totalPrice })
+        })
+         .then(data => {
+            return data.json();
+        });
+        const responseData = response;
+        // Handle the response data
+        if (responseData.totalPrice !== undefined && responseData.totalPrice !== null) {
+                // Update the total price element
+            console.log(responseData.totalPrice);
+            document.getElementById('total-price').innerText = responseData.totalPrice.toFixed(2);
+    
+        } else {
+            console.log('Total price is not valid');
+        }
+    } catch (error) {
+        console.error('Error checking total price:', error);
+    } 
 }
 
 let errorMessageElement; 
@@ -586,13 +612,12 @@ async function removeItem(button) {
         const response = fetch('/delete_item', requestOptions);
         const responseData = await togglePageLock(response);
 
-        if (responseData) {
-            const input_quantity = parseInt(quantityElement.value);
-            const updated_cart_quantity = cartQuantity - input_quantity;
-            await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item
-            updateTotalPrice(); // Update total price after updating cart quantity
-            removeMaxQuantityErrorMessage(); // Remove the error message here
-        }
+        const input_quantity = parseInt(quantityElement.value);
+        const updated_cart_quantity = cartQuantity - input_quantity;
+        await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item
+        updateTotalPrice(); // Update total price after updating cart quantity
+        removeMaxQuantityErrorMessage(); // Remove the error message here
+
         setButtonsState(false); // Re-enable the buttons
     } catch (error) {
         console.error('Error:', error);
@@ -630,13 +655,11 @@ async function removeItemButton(button) {
         const response = fetch('/delete_item', requestOptions);
         const responseData = await togglePageLock(response);
 
-        if (responseData) {
-            const input_quantity = parseInt(quantityElement.value);
-            const updated_cart_quantity = cartQuantity - input_quantity;
-            await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item
-            updateTotalPrice(); // Update total price after updating cart quantity
-            removeMaxQuantityErrorMessage(); // Remove the error message here
-        }
+        const input_quantity = parseInt(quantityElement.value);
+        const updated_cart_quantity = cartQuantity - input_quantity;
+        await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item
+        updateTotalPrice(); // Update total price after updating cart quantity
+        removeMaxQuantityErrorMessage(); // Remove the error message here
         setButtonsState(false); // Re-enable the buttons
     } catch (error) {
         console.error('Error:', error);
@@ -652,13 +675,10 @@ function removeMaxQuantityErrorMessage() {
     }
 }
 
-async function updateCartQuantity() {
-    try {
-        const response = await fetch('/get_cart_quantity');
-        const data = await response.json();
-        if (data.quantity !== 0) {
-            document.getElementById('cartQuantity').innerText = data.quantity;
-            document.getElementById('mobileCartQuantity').innerText = data.quantity;
+async function updateCartQuantity(cart_quantity) {
+        if (cart_quantity !== 0) {
+            document.getElementById('cartQuantity').innerText = cart_quantity;
+            document.getElementById('mobileCartQuantity').innerText = cart_quantity;
         } else {
             document.getElementById('cartQuantity').innerText = '';
             document.getElementById('mobileCartQuantity').innerText = '';
@@ -678,12 +698,8 @@ async function updateCartQuantity() {
                 moreShop.classList.add('more-shop-styles');
                 document.querySelector('.shop-more').appendChild(moreShop);
             }
-        }
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-
+        return Promise.resolve();
+}}
 function toggleDropdown() {
     const dropdown = document.querySelector('.mobile-dropdown');
     const content = document.querySelector('.content');

@@ -59,10 +59,23 @@ def validate_inputs(order_info: OrderInfo) -> dict:
         logger.warning("Invalid phone number format")
     return errors
 
-def cleancart(request: Request) -> None:
+async def cleancart(request: Request) -> None:
     logger.info("Cleaning cart")
     try:
         img_quant_list = request.session.get("img_quantity_list", [])
+
+        # Check that each title in img_quant_list has
+        # an accurate price and quantity in the cookies
+
+        for item in img_quant_list:
+            price_check = await get_price_from_title_and_quantity(item['title'], item['quantity'])
+            if item['price'] != price_check:
+                # update price
+                item['price'] = price_check
+                request.session['img_quantity_list'] = img_quant_list
+                logger.info(f"Price updated for {item['title']}")
+
+
         titles = [item['title'].lower() for item in img_quant_list]
         for title in titles:
             if titles.count(title) > 1:
@@ -308,4 +321,14 @@ async def get_price_from_title(title: str) -> str:
                 return item['price']
     except Exception as e:
         logger.error(f"Failed to fetch price for {title}: {e}")
+        raise
+
+async def get_price_list() -> list:
+    """ Function to get price list """
+    try:
+        nocodb_data = json.loads(get_nocodb_data())
+        price_list = [item['price'] for item in nocodb_data['list']]
+        return price_list
+    except Exception as e:
+        logger.error(f"Failed to fetch price list: {e}")
         raise

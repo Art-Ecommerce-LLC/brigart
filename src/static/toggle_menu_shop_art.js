@@ -87,7 +87,7 @@ async function togglePageLock(responsePromise) {
             throw new Error('Network response was not ok');
         }
         
-        return data;
+        return response.json();
     } finally {
         // Unlock the buttons and the page
         document.body.style.opacity = '1';
@@ -155,23 +155,24 @@ async function updateTotalPrice() {
 
     // Send the total price to the backend for verification
     try {
-        console.log('Total price:', toString(totalPrice))
+        console.log('Total price:', totalPrice)
         const response = await fetch('/post_total_price', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             
-            body: JSON.stringify({ totalPrice: toString(totalPrice) })
+            body: JSON.stringify({ totalPrice: totalPrice })
         })
          .then(data => {
             return data.json();
         });
         const responseData = response;
         // Handle the response data
-        if (responseData.isValid) {
+        if (responseData.totalPrice !== undefined && responseData.totalPrice !== null) {
                 // Update the total price element
-            document.getElementById('total-price').innerText = data.totalPrice.toFixed(2);
+            console.log(responseData.totalPrice);
+            document.getElementById('total-price').innerText = responseData.totalPrice.toFixed(2);
     
         } else {
             console.log('Total price is not valid');

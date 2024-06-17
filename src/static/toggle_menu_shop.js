@@ -61,7 +61,6 @@ function decrementQuantity() {
     if (quantity > 1) {
         quantity--;
         document.getElementById('quantity-input').value = quantity;
-        document.getElementById('price-text').innerText = '$' + (quantity * 225);
     }
 }
 
