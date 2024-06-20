@@ -1,6 +1,7 @@
 # app/models.py
 from pydantic import BaseModel, EmailStr, Field, constr
-from typing import List, Union
+from typing import List, Union, Dict
+from dataclasses import dataclass
 
 class Url(BaseModel):
     url: str
@@ -81,3 +82,71 @@ class CheckoutInfo(BaseModel):
 
 class TotalPrice(BaseModel):
     totalPrice: Union[int, str]
+
+@dataclass()
+class ShopObject:
+    img: str
+    title: str
+    price: Union[int, str]
+    logo : str
+
+# Dataclass to turn list of strings into a list of objects
+@dataclass(frozen=True)
+class IconObject:
+    icon_paths: List[str]
+    titles: List[str]
+    data_uris: List[str] = None
+
+@dataclass(frozen=True)
+class ArtObject:
+    art_paths: List[str]
+    titles: List[str]
+    prices: List[Union[int, str]]
+    data_uris: List[str] = None
+@dataclass(frozen=True)
+class KeyObject:
+    envvars: List[str]
+    envvals: List[str]
+
+@dataclass(frozen=True)
+class EmailObject:
+    emails: List[str]
+
+@dataclass(frozen=True)
+class CookieObject:
+    sessionids: List[str]
+    # cookiesJson: List[str]
+    cookiesJson:List[dict[str, List[dict[str, Union[str, int]]]]]
+    Id : List[int]
+
+@dataclass(frozen=True)
+class OrderObject:
+    order_numbers: List[str]
+    emails : List[str]
+    phones : List[str]
+
+@dataclass(frozen=True)
+class ContactObject:
+    fullname: List[str]
+    address1: List[str]
+    address2: List[str]
+    city: List[str]
+    state: List[str]
+    zip: List[str]
+    order_number : List[str]
+
+@dataclass(frozen=True)
+class ContentObject:
+    order_number: List[str]
+    order_content: List[str]
+
+@dataclass
+class TableMap:
+    img_table: str
+    icon_table: str
+    key_table: str
+    email_table: str
+    content_table: str
+    contact_table: str
+    order_table: str
+    cookies_table: str

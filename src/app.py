@@ -8,25 +8,22 @@ from fastapi.responses import (
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import os
-from src.artapi.config import NOCODB_PATH, NOCODB_IMG_UPDATE_URL, XC_AUTH
+from src.artapi.config import NOCODB_PATH
 from src.artapi.logger import logger
 from src.artapi.middleware import add_middleware
 from src.artapi.models import (
-    Credentials, Title, TitleQuantity, ContactInfo, PaymentInfo, BillingInfo, Email, CheckoutInfo, TotalPrice
+    Credentials, Title, TitleQuantity, ContactInfo, PaymentInfo, BillingInfo, Email,
+    CheckoutInfo, TotalPrice
 )
-from src.artapi.utils import (
-    cleancart, hosted_image, fetch_email_list, post_order_data, get_price_from_title_and_quantity, get_price_from_title, get_price_list
-)
-from src.artapi.noco import (
-    get_nocodb_data, post_nocodb_email_data, BRIG_PASSWORD, BRIG_USERNAME, OPENAPI_URL,BEN_USERNAME, BEN_PASSWORD
-)
+from src.artapi.noco import Noco
 from src.artapi.logger import get_logs
 import requests
 import json
 import tempfile
 import os
 from typing import List
-import datetime
+import uuid
+from src.artapi.noco_config import OPENAPI_URL, BRIG_USERNAME, BRIG_PASSWORD, BEN_USERNAME, BEN_PASSWORD
 
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
@@ -74,19 +71,27 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
         return templates.TemplateResponse("error_405.html", {"request": request}, status_code=404)
     return HTMLResponse(content=str(exc.detail), status_code=exc.status_code)
 
+@app.get("/test_noco", response_class=HTMLResponse)
+async def test_noco(request: Request):
+    logger.info(f"Test NoCoDB accessed by {request.client.host}")
+    try:
+        # Get the image lists
+        json = Noco.get_cookie_data_no_cache_no_object()
+        test = Noco.get_cookie_data().cookiesJson
+        return JSONResponse(test)
+    except Exception as e:
+        logger.error(f"Error in test_noco: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 @app.get("/", response_class=HTMLResponse)
 async def homepage(request: Request):
     logger.info(f"Homepage accessed by: {request.client.host}")
     try:
-        hosted_images, titles = await hosted_image()
-        
-        zipped_imgs_titles = zip(hosted_images[:-3], titles[:-3])
         context = {
-            "shopping_cart_url": hosted_images[-3],
-            "hamburger_menu_url": hosted_images[-2],
-            "brig_logo_url": hosted_images[-1],
-            "temp_vars": zipped_imgs_titles,
-        }
+            "art_uris": Noco.get_artwork_data().data_uris,
+            "art_titles": Noco.get_artwork_data().titles,
+            "brig_logo": Noco.get_icon_uri_from_title("brig_logo")
+        }   
         return templates.TemplateResponse(request=request, name="index.html", context=context)
     except Exception as e:
         logger.error(f"Error in homepage: {e}")
@@ -96,59 +101,88 @@ async def homepage(request: Request):
 async def shop(request: Request, title: str):
     logger.info(f"Shop page accessed for title {title} by {request.client.host}")
     try:
-        hosted_images, titles = await hosted_image()
-
-        for each in titles:
-            if title.lower().replace("+"," ") in each.lower():
-                img_url = hosted_images[titles.index(each)]
-                img_title = each
-                price = await get_price_from_title(title)
-                break
-
+        
         context = {
-            "img_url": img_url,
-            "img_title": img_title,
-            "price": price,
-            "shopping_cart_url": hosted_images[-3],
-            "hamburger_menu_url": hosted_images[-2],
-            "brig_logo_url": hosted_images[-1],
+            "img_uri": Noco.get_art_uri_from_title(title.replace("+", " ")),
+            "img_title": title.replace("+", " "),
+            "price": Noco.get_art_price_from_title(title.replace("+", " ")),
+            "brig_logo" : Noco.get_icon_uri_from_title("brig_logo")
         }
         return templates.TemplateResponse(request=request, name="shop.html", context=context)
     except Exception as e:
         logger.error(f"Error in shop: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
+@app.get("/get_cart_quantity")
+async def get_cart_quantity(request: Request):
+    logger.info(f"Get cart quantity by {request.client.host}")
+    try:
+        Noco.refresh_cookie_cache()
+        if request.session.get("session_id") is None:
+            return JSONResponse({"quantity": 0})
+        
+        img_quantity_list = Noco.get_cookie_from_session_id(request.session.get("session_id"))
+        total_quantity = sum(int(item['quantity']) for item in img_quantity_list)
+        logger.info(f"Total cart quantity: {total_quantity}")
+        return JSONResponse({"quantity": total_quantity})
+    except Exception as e:
+        logger.error(f"Error in get_cart_quantity: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 @app.post("/shop_art")
 async def shop_art_url(request: Request, title_quantity: TitleQuantity):
     logger.info(f"Shop art URL for {title_quantity.title} by {request.client.host}")
     try:
+        Noco.refresh_cookie_cache()
+        cookie_data = {}
         img_quant_dict = {}
         img_quant_dict["title"] = title_quantity.title
         img_quant_dict["quantity"] = title_quantity.quantity
-        img_quant_dict["price"] = await get_price_from_title_and_quantity(title_quantity.title, title_quantity.quantity)  
-        img_quant_list = request.session.get("img_quantity_list")
-
-        if not img_quant_list:
+        img_quant_dict["price"] = Noco.get_art_price_from_title_and_quantity(title_quantity.title, title_quantity.quantity)
+        if not request.session.get("session_id"):
+            session_id = str(uuid.uuid4())
+            request.session["session_id"] = session_id
             img_quant_list = []
             img_quant_list.append(img_quant_dict)
-            request.session["img_quantity_list"] = img_quant_list
+            cookie_data["img_quantity_list"] = img_quant_list
+            Noco.post_cookie_session_id_and_cookies(session_id, cookie_data)
             return JSONResponse({"quantity": title_quantity.quantity})
         
+        session_id = request.session.get("session_id")
+        
         # Check if the title is already in the cart
-        for item in img_quant_list:
-            if item["title"] == title_quantity.title:
-                # Update the quantity
-                item["quantity"] = str(int(item["quantity"]) + int(title_quantity.quantity))
-                request.session["img_quantity_list"] = img_quant_list
-                total_quantity = sum(int(item["quantity"]) for item in img_quant_list)
-                # Change the price too
-                item["price"] = await get_price_from_title_and_quantity(item["title"], item["quantity"])
-                logger.info(f"Updated quantity for {title_quantity.title}, new quantity: {total_quantity}")
-                return JSONResponse({"quantity": total_quantity})
-            
-        # If title is not in the cart, add it
+        img_quant_list = Noco.get_cookie_from_session_id(session_id)
+        try:
+            for item in img_quant_list:
+                if item["title"] == title_quantity.title:
+                    item["quantity"] = item["quantity"] + title_quantity.quantity
+                    total_quantity = sum(item["quantity"] for item in img_quant_list)
+                    item["price"] = Noco.get_art_price_from_title_and_quantity(item["title"], item["quantity"])
+                    cookiesJson = {
+                        "img_quantity_list": img_quant_list
+                    }
+                    data = {
+                        "Id": int(Noco.get_cookie_Id_from_session_id(session_id)),
+                        "sessionid": session_id,
+                        "cookiesJson": cookiesJson,
+                    }
+                    Noco.patch_cookies_data(data)
+                    logger.info(f"Updated quantity for {title_quantity.title}, new quantity: {total_quantity}")
+                    return JSONResponse({"quantity": total_quantity})
+        except ValueError:
+            logger.info("Cookie could not be found for the session id")
+            pass
+        
         img_quant_list.append(img_quant_dict)
-        request.session["img_quantity_list"] = img_quant_list
+        cookiesJson = {
+            "img_quantity_list": img_quant_list
+        }
+        data = {
+            "Id": int(Noco.get_cookie_Id_from_session_id(session_id)),
+            "sessionid": session_id,
+            "cookiesJson": cookiesJson,
+        }
+        Noco.patch_cookies_data(data)
         total_quantity = sum(int(item["quantity"]) for item in img_quant_list)
         logger.info(f"Total cart quantity: {total_quantity}")
         return JSONResponse({"quantity": total_quantity})
@@ -157,49 +191,34 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity):
         logger.error(f"Error in shop_art_url: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-@app.get("/get_cart_quantity")
-async def get_cart_quantity(request: Request):
-    logger.info(f"Get cart quantity by {request.client.host}")
-    try:
-        img_quantity_list = request.session.get("img_quantity_list")
-        if not img_quantity_list:
-            return JSONResponse({"quantity": 0})
-
-        total_quantity = sum(int(item['quantity']) for item in img_quantity_list)
-        logger.info(f"Total cart quantity: {total_quantity}")
-        return JSONResponse({"quantity": total_quantity})
-    except Exception as e:
-        logger.error(f"Error in get_cart_quantity: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/shop_art", response_class=HTMLResponse)
 async def shop_art(request: Request):
     logger.info(f"Shop art page accessed by {request.client.host}")
     try:
-        await cleancart(request)
-        img_quant_list = request.session.get("img_quantity_list")
-        if not img_quant_list:
-            img_quant_list = []
+        Noco.refresh_cookie_cache()
+        img_quant_list = Noco.get_cookie_from_session_id(request.session.get("session_id"))
+        if img_quant_list == []:
+            return RedirectResponse(url="/shop_art_menu")
 
-        hosted_images, titles = await hosted_image()
+        art_uris = Noco.get_artwork_data().data_uris
+        titles = Noco.get_artwork_data().titles
+        # Check if the title is in the cart if so, get the image url
         img_data_list = []
-
         for item in img_quant_list:
             for title in titles:
-                if item["title"] in title:
-                    img_url = hosted_images[titles.index(title)]
+                if item['title'] in title:
+                    img_url = art_uris[titles.index(title)]
                     img_dict = {}
                     img_dict["img_url"] = img_url
                     img_dict["img_title"] = title
-                    img_dict["quantity"] = item["quantity"]
-                    img_dict["price"] = await get_price_from_title_and_quantity(item["title"], item["quantity"])
+                    img_dict["quantity"] = item['quantity']
+                    img_dict["price"] = Noco.get_art_price_from_title_and_quantity(item['title'], item['quantity'])
                     img_data_list.append(img_dict)
-        
+                    
         context = {
             "img_data_list": img_data_list,
-            "shopping_cart_url": hosted_images[-3],
-            "hamburger_menu_url": hosted_images[-2],
-            "brig_logo_url": hosted_images[-1],
+            "brig_logo_url": Noco.get_icon_uri_from_title("brig_logo"),
         }
         return templates.TemplateResponse(request=request, name="shop_art.html", context=context)
     except Exception as e:
@@ -210,18 +229,11 @@ async def shop_art(request: Request):
 async def shop_art_menu(request: Request):
     logger.info(f"Shop art menu page accessed by {request.client.host}")
     try:
-        hosted_images, titles = await hosted_image()
-        artwork_data = zip(titles[:-3], hosted_images[:-3])
-        
-        # Get price list
-        price_list = await get_price_list()
-
         context = {
-            "artwork_data": artwork_data,
-            "price_list": price_list,
-            "shopping_cart_url": hosted_images[-3],
-            "hamburger_menu_url": hosted_images[-2],
-            "brig_logo_url": hosted_images[-1],
+            "art_uris":Noco.get_artwork_data().data_uris,
+            "titles": Noco.get_artwork_data().titles,
+            "price_list": Noco.get_artwork_data().prices,
+            "brig_logo": Noco.get_icon_uri_from_title("brig_logo"),
         }
         return templates.TemplateResponse(request=request, name="shop_art_menu.html", context=context)
     except Exception as e:
@@ -231,21 +243,22 @@ async def shop_art_menu(request: Request):
 @app.get("/giclee_prints", response_class=HTMLResponse)
 async def shop_giclee_prints(request: Request):
     logger.info(f"Giclee prints page accessed by {request.client.host}")
-    hosted_images, titles = await hosted_image()
-
-    context = {
-        "shopping_cart_url": hosted_images[-3],
-        "hamburger_menu_url": hosted_images[-2],
-        "brig_logo_url": hosted_images[-1],
-    }
-    return templates.TemplateResponse(request=request, name="gicle_prints.html", context=context)
-
+    try:
+        context = {
+            "giclee_prints": Noco.get_artwork_data().data_uris,
+            "brig_logo_url": Noco.get_icon_uri_from_title("brig_logo"),
+        }
+        return templates.TemplateResponse(request=request, name="gicle_prints.html", context=context)
+    except Exception as e:
+        logger.error(f"Error in shop_giclee_prints: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 @app.post("/post_total_price")
 async def post_total_price(request: Request, total_price: TotalPrice):
     logger.info(f"Post total price {total_price.totalPrice} by {request.client.host}")
     try:
         # Find the total price and check if it matches
-        img_quant_list = request.session.get("img_quantity_list")
+        Noco.refresh_cookie_cache()
+        img_quant_list = Noco.get_cookie_from_session_id(request.session.get("session_id"))
         cookie_price_total = sum(int(item["price"]) for item in img_quant_list)
         if cookie_price_total == total_price.totalPrice:
             return JSONResponse({"totalPrice": total_price.totalPrice})
@@ -260,35 +273,70 @@ async def post_total_price(request: Request, total_price: TotalPrice):
 async def increase_quantity(request: Request, title: Title):
     logger.info(f"Increase quantity for {title.title} by {request.client.host}")
     try:
-            title = title.title
-            img_quant_list = request.session.get("img_quantity_list")
-            for each in img_quant_list:
-                if title == each["title"]:
-                    # Increase quantity by one
-                    each["quantity"] = str(int(each["quantity"]) + 1)
-                    each["price"] = await get_price_from_title_and_quantity(each["title"], each["quantity"])
-                    return JSONResponse({"price": each["price"]})
+        session_id = request.session.get("session_id")
+        if not session_id:
+            raise HTTPException(status_code=400, detail="Session ID not found")
+
+        img_quant_list = Noco.get_cookie_from_session_id(session_id)
+        matched_price = None
+
+        # Check if the title is already in the cart
+        for each in img_quant_list:
+            if title.title == each["title"]:
+                each["quantity"] += 1  # Increment quantity
+                each["price"] = Noco.get_art_price_from_title_and_quantity(each["title"], each["quantity"])
+                matched_price = each["price"]
+                break
+        else:
+            raise HTTPException(status_code=404, detail="Title not found in cart")
+
+        patch_data = {
+            "Id": int(Noco.get_cookie_Id_from_session_id(session_id)),
+            "sessionid": session_id,
+            "cookiesJson": {
+                "img_quantity_list": img_quant_list
+            }
+        }
+
+        Noco.patch_cookies_data(patch_data)
+        return JSONResponse({"price": matched_price})
 
     except Exception as e:
-        logger.error(f"Error in increase_quantity: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.error(f"Failed to increase quantity for {title.title} by {request.client.host}: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @app.post("/decrease_quantity")
 async def decrease_quantity(request: Request, title: Title):
     logger.info(f"Decrease quantity for {title.title} by {request.client.host}")
     try:
-        title = title.title
-        img_quant_list = request.session.get("img_quantity_list")
-        for each in img_quant_list:
-            if title == each["title"]:
-                # Increase quantity by one
-                each["quantity"] = str(int(each["quantity"]) - 1)
-                each["price"] = await get_price_from_title_and_quantity(each["title"], each["quantity"])
-                if int(each["quantity"]) == 0:
-                    img_quant_list.remove(each)
-                    request.session["img_quantity_list"] = img_quant_list
-                return JSONResponse({"price": each["price"]})
+        session_id = request.session.get("session_id")
+        if not session_id:
+            raise HTTPException(status_code=400, detail="Session ID not found")
 
+        img_quant_list = Noco.get_cookie_from_session_id(session_id)
+        matched_price = None
+
+        # Check if the title is already in the cart
+        for each in img_quant_list:
+            if title.title == each["title"]:
+                each["quantity"] -= 1  # Decrement quantity
+                each["price"] = Noco.get_art_price_from_title_and_quantity(each["title"], each["quantity"])
+                matched_price = each["price"]
+                break
+        else:
+            raise HTTPException(status_code=404, detail="Title not found in cart")
+
+        patch_data = {
+            "Id": int(Noco.get_cookie_Id_from_session_id(session_id)),
+            "sessionid": session_id,
+            "cookiesJson": {
+                "img_quantity_list": img_quant_list
+            }
+        }
+
+        Noco.patch_cookies_data(patch_data)
+        return JSONResponse({"price": matched_price})
+    
     except Exception as e:
         logger.error(f"Error in decrease_quantity: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -297,58 +345,70 @@ async def decrease_quantity(request: Request, title: Title):
 async def delete_item(request: Request, title: Title):
     logger.info(f"Delete item {title.title} by {request.client.host}")
     try:
-        title = title.title
-        img_quant_list = request.session.get("img_quantity_list")
+        session_id = request.session.get("session_id")
+        if not session_id:
+            raise HTTPException(status_code=400, detail="Session ID not found")
+
+        img_quant_list = Noco.get_cookie_from_session_id(session_id)
+        matched_price = None
+
+        # Check if the title is already in the cart
         for each in img_quant_list:
-            if title == each["title"]:
+            if title.title == each["title"]:
                 img_quant_list.remove(each)
-                request.session["img_quantity_list"] = img_quant_list
-                logger.info(f"Item {title} removed from cart")
-                return JSONResponse({"message": "Item removed from cart"})
-        
+                matched_price = each["price"]
+                break
+        else:
+            raise HTTPException(status_code=404, detail="Title not found in cart")
+
+        patch_data = {
+            "Id": int(Noco.get_cookie_Id_from_session_id(session_id)),
+            "sessionid": session_id,
+            "cookiesJson": {
+                "img_quantity_list": img_quant_list
+            }
+        }
+
+        Noco.patch_cookies_data(patch_data)
+        return JSONResponse({"price": matched_price})
     except Exception as e:
         logger.error(f"Error in delete_item: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/checkout", response_class=HTMLResponse)
 async def shop_checkout(request: Request):
-    # logger.info(f"Checkout page accessed by {request.client.host}")
-    # try: 
-    raise HTTPException(status_code=405, detail="Internal server error")
-        # await cleancart(request)
-        # img_quant_list = request.session.get("img_quantity_list")
-        # if not img_quant_list:
-        #     img_quant_list = []
+    # raise HTTPException(status_code=404, detail="Page not found")
+    logger.info(f"Checkout page accessed by {request.client.host}")
+    try: 
+        img_quant_list = Noco.get_cookie_from_session_id(request.session.get("session_id"))
+        art_uris = Noco.get_artwork_data().data_uris
+        titles = Noco.get_artwork_data().titles
 
-        # hosted_images, titles = await hosted_image()
-        # img_data_list = []
+        # Check if the title is in the cart if so, get the image url
+        for item in img_quant_list:
+            for title in titles:
+                if item["title"] in title:
+                    img_uri = art_uris[titles.index(title)]
+                    img_dict = {}
+                    img_dict["img_url"] = img_uri
+                    img_dict["img_title"] = title
+                    img_dict["quantity"] = item["quantity"]
+                    img_dict["price"] = Noco.get_art_price_from_title_and_quantity(item["title"], item["quantity"])
+                    item = img_dict
+        total_quantity = sum(int(item["quantity"]) for item in img_quant_list)
+        total_price = sum(int(item["price"]) for item in img_quant_list) 
+        
+        context = {
+            "img_data_list": img_quant_list,
+            "brig_logo_url": Noco.get_icon_uri_from_title("brig_logo"),
+            "total_price": total_price,
+            "total_quantity": total_quantity
+        }
 
-        # for item in img_quant_list:
-        #     for title in titles:
-        #         if item["title"] in title:
-        #             img_url = hosted_images[titles.index(title)]
-        #             img_dict = {}
-        #             img_dict["img_url"] = img_url
-        #             img_dict["img_title"] = title
-        #             img_dict["quantity"] = item["quantity"]
-        #             img_dict["price"] = await get_price_from_title_and_quantity(item["title"], item["quantity"])
-        #             img_data_list.append(img_dict)
-        # total_quantity = sum(int(item["quantity"]) for item in img_quant_list)
-        # total_price = sum(int(item["price"]) for item in img_quant_list) 
-
-        # context = {
-        #     "img_data_list": img_data_list,
-        #     "shopping_cart_url": hosted_images[-3],
-        #     "hamburger_menu_url": hosted_images[-2],
-        #     "brig_logo_url": hosted_images[-1],
-        #     "total_price": total_price,
-        #     "total_quantity": total_quantity
-        # }
-
-        # return templates.TemplateResponse(request=request, name="checkout.html", context=context)
-    # except Exception as e:
-    #     logger.error(f"Error in shop_checkout: {e}")
-    #     raise HTTPException(status_code=500, detail="Internal server error")
+        return templates.TemplateResponse(request=request, name="checkout.html", context=context)
+    except Exception as e:
+        logger.error(f"Error in shop_checkout: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/subscribe")
 async def subscribe(request: Request, email: Email):

@@ -128,10 +128,8 @@
     border: medium;
     caret-color: black;
     vertical-align: top;
-    width: 10%;
-    max-width: 75px;
-    min-width: 65px;
-    margin: 0px;
+    width:30%;
+    cursor : default;
 }
 input[readonly]:focus {
     outline: none;
@@ -171,7 +169,9 @@ input[readonly]:focus {
     justify-content: center;
     align-items: center;
     margin: 20px 0;
+    width: 100%;    
 }
+
 .checkout-container.hide{
     display:none;
 }
@@ -187,7 +187,7 @@ input[readonly]:focus {
     cursor: pointer;
     font-size: 20px;
     transition: background-color 0.3s;
-    max-width: 350px;
+    /* max-width: 350px; */
 }
 
 .checkout-container button:hover {
@@ -232,12 +232,11 @@ input[readonly]:focus {
     background-color: white;
     margin-top: 100px;
     color: black;
-    border: none;
+    border: 2px solid black;
     border-radius: 5px;
     cursor: pointer;
     padding: 30px 40px 30px 40px;
     font-size: 20px;
-    min-width: 320px;
     width:100%;
     transition: background-color 0.3s;
     text-decoration: none; /* Remove underline from anchor tag */
@@ -247,17 +246,15 @@ input[readonly]:focus {
     justify-content: center;
     align-items: center;
     width:100%;
+}   
+
+.shop-more-wrapper {
+    width: 100%;
 }
-
-
 .more-shop-styles:hover {
     background-color: black;
-    border: 1px solid white;
+    border: 2px solid white;
     color: white;
-}
-
-.continue-shopping-btn:hover {
-    background-color: #0056b3;
 }
 /* Media Queries */
 @media (max-width: 960px) {

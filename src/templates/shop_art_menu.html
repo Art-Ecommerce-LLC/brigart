@@ -13,7 +13,7 @@
 <body>
 <div class="header">
     <div class="brigLogo">
-        <img src="{{ brig_logo_url }}" oncontextmenu="return false;" draggable="false">
+        <img src="{{ brig_logo }}" oncontextmenu="return false;" draggable="false">
     </div>
     <div class="navbar">
         <a class= "home" href="/">HOME</a>
@@ -69,12 +69,12 @@
 </div>
 <form method="post" id="myForm">
     <div class="content">
-        {% for title, temp_var in artwork_data %}
-        <a class = "underline-link" href="#" onclick="submitForm('{{ title }}','GET'); return false;">
+        {% for art_uri in art_uris %}
+        <a class = "underline-link" href="#" onclick="submitForm('{{ titles[loop.index0] }}','GET'); return false;">
             <div class = "artwork-wrapper">
-                <div style="background-image: url('{{ temp_var }}');" oncontextmenu="return false" draggable = "false" class="artwork"></div>
+                <div style="background-image: url('{{ art_uri }}');" oncontextmenu="return false" draggable = "false" class="artwork"></div>
             </div>
-            <span class="artwork-name" >{{ title }}</span>
+            <span class="artwork-name" >{{ titles[loop.index0] }}</span>
             <!-- Artwork price is the index of the data on the price_list -->
             <span class="artwork-price" >${{ price_list[loop.index0] }}</span>
         </a>
