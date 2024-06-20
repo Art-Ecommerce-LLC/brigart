@@ -10,9 +10,6 @@ from src.artapi.models import (
 from src.artapi.logger import logger
 from PIL import Image
 from io import BytesIO
-from typing import Union
-import ast
-
 
 class Noco:
     """
@@ -98,19 +95,6 @@ class Noco:
         """
         response = requests.patch(Noco.get_nocodb_path(table), headers=Noco.get_auth_headers(), json=data)
         response.raise_for_status()
-
-    @staticmethod
-    def data_has_changed(old_data: dict, new_data: dict) -> bool:
-        """
-        Function to check if the data has changed
-        
-        Args:
-            old_data (dict): The old data
-            new_data (dict): The new data
-        Returns:
-            bool: True if data has changed, False otherwise
-        """
-        return old_data != new_data
 
     @staticmethod
     def convert_paths_to_data_uris(paths: list) -> list:
@@ -212,7 +196,6 @@ class Noco:
         return key_data
 
     @staticmethod
-    @lru_cache(maxsize=128)
     def get_email_data() -> EmailObject:
         """
         Function to get the email data from NocoDB
@@ -405,6 +388,18 @@ class Noco:
         }
         Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, data)
     
+    @staticmethod
+    def post_email(email: str):
+        """
+        Function to post the email
+        
+        Args:
+            email (str): The email
+        """
+        data = {
+            "email": email
+        }
+        Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.email_table, data)
 
     @staticmethod
     def patch_cookies_data(data: dict):
@@ -430,6 +425,7 @@ class Noco:
         cookie_data = Noco.get_cookie_data()
         index = cookie_data.sessionids.index(session_id)
         return cookie_data.Id[index]
+    
     
     @staticmethod
     def refresh_cookie_cache():

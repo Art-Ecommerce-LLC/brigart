@@ -128,7 +128,7 @@
     border: medium;
     caret-color: black;
     vertical-align: top;
-    width:30%;
+    width:10vw;
     cursor : default;
 }
 input[readonly]:focus {
