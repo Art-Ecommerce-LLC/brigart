@@ -160,28 +160,25 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity):
         
         session_id = request.session.get("session_id")
         img_quant_list = Noco.get_cookie_from_session_id(session_id)
-        try:
-            for item in img_quant_list:
-                if item["title"] == title_quantity.title:
-                    item["quantity"] = item["quantity"] + title_quantity.quantity
-                    total_quantity = sum(item["quantity"] for item in img_quant_list)
-                    item["price"] = Noco.get_art_price_from_title_and_quantity(item["title"], item["quantity"])
-                    cookiesJson = {
-                        "img_quantity_list": img_quant_list
-                    }
-                    data = {
-                        "Id": int(Noco.get_cookie_Id_from_session_id(session_id)),
-                        "sessionid": session_id,
-                        "cookiesJson": cookiesJson,
-                    }
-                    Noco.patch_cookies_data(data)
-                    logger.info(f"Updated quantity for {title_quantity.title}, new quantity: {total_quantity}")
-                    return JSONResponse({"quantity": total_quantity})
-        
 
-        except ValueError:
-            logger.warn("Cookie could not be found for the session id")
-            pass
+        for item in img_quant_list:
+            if item["title"] == title_quantity.title:
+                item["quantity"] = item["quantity"] + title_quantity.quantity
+                total_quantity = sum(item["quantity"] for item in img_quant_list)
+                item["price"] = Noco.get_art_price_from_title_and_quantity(item["title"], item["quantity"])
+                cookiesJson = {
+                    "img_quantity_list": img_quant_list
+                }
+                data = {
+                    "Id": int(Noco.get_cookie_Id_from_session_id(session_id)),
+                    "sessionid": session_id,
+                    "cookiesJson": cookiesJson,
+                }
+                Noco.patch_cookies_data(data)
+                logger.info(f"Updated quantity for {title_quantity.title}, new quantity: {total_quantity}")
+                return JSONResponse({"quantity": total_quantity})
+            
+
         img_quant_list.append(img_quant_dict)
         cookiesJson = {
             "img_quantity_list": img_quant_list
