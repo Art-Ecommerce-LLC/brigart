@@ -19,6 +19,7 @@ NOCODB_CONTACT_TABLE = os.getenv("nocodb_contact_table")
 NOCODB_ORDER_TABLE = os.getenv("nocodb_order_table")
 NOCODB_CONTENT_TABLE = os.getenv("nocodb_content_table")
 NOCODB_COOKIES_TABLE = os.getenv("nocodb_cookies_table")
+NOCODB_PAYMENTINTENT_TABLE = os.getenv("nocodb_paymentintent_table")
 STRIPE_SECRET_KEY = os.getenv("stripe_secret_key")
 
 
@@ -31,7 +32,8 @@ NOCODB_TABLE_MAP = TableMap(
     content_table=NOCODB_CONTENT_TABLE,
     contact_table=NOCODB_CONTACT_TABLE,
     order_table=NOCODB_ORDER_TABLE,
-    cookies_table=NOCODB_COOKIES_TABLE
+    cookies_table=NOCODB_COOKIES_TABLE,
+    paymentintent_table=NOCODB_PAYMENTINTENT_TABLE
 )
 
 

@@ -155,3 +155,10 @@ class TableMap:
     contact_table: str
     order_table: str
     cookies_table: str
+    paymentintent_table: str
+
+@dataclass
+class PaymentIntentObject:
+    Ids : List[int]
+    sessionids: str
+    payment_intents: Dict[str, Any]

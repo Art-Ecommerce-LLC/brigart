@@ -5,7 +5,7 @@ from src.artapi.config import (
     NOCODB_XC_TOKEN, NOCODB_PATH, NOCODB_TABLE_MAP
 )
 from src.artapi.models import (
-    ArtObject, IconObject, KeyObject, EmailObject, CookieObject, OrderObject, ContactObject, ContentObject
+    ArtObject, IconObject, KeyObject, EmailObject, CookieObject, OrderObject, ContactObject, ContentObject, PaymentIntentObject
 )
 from src.artapi.logger import logger
 from PIL import Image
@@ -30,7 +30,6 @@ class Noco:
         "content": None
     }
 
-    @staticmethod
     def get_auth_headers() -> dict:
         """
         Function to return the headers for the request
@@ -42,7 +41,6 @@ class Noco:
             'xc-token': NOCODB_XC_TOKEN
         }
 
-    @staticmethod
     def get_nocodb_path(table: str) -> str:
         """
         Function to return the path of a table in NocoDB
@@ -56,7 +54,6 @@ class Noco:
         """
         return f"{NOCODB_PATH}/api/v2/tables/{table}/records"
 
-    @staticmethod
     def get_storage_upload_path() -> str:
         """
         Function to get the upload path
@@ -66,7 +63,6 @@ class Noco:
         """
         return f"{NOCODB_PATH}/api/v2/storage/upload"
     
-    @staticmethod
     def get_nocodb_table_data(table: str) -> dict:
         """
         Function to get the data from a table in NocoDB
@@ -84,7 +80,6 @@ class Noco:
         response.raise_for_status()
         return response.json()
     
-    @staticmethod
     def post_nocodb_table_data(table: str, data: dict) -> None:
         """
         Function to post data to a table in NocoDB
@@ -96,7 +91,6 @@ class Noco:
         response = requests.post(Noco.get_nocodb_path(table), headers=Noco.get_auth_headers(), json=data)
         response.raise_for_status()
 
-    @staticmethod
     def patch_nocodb_table_data(table: str, data: dict) -> None:
         """
         Function to patch data in a table in NocoDB
@@ -108,7 +102,6 @@ class Noco:
         response = requests.patch(Noco.get_nocodb_path(table), headers=Noco.get_auth_headers(), json=data)
         response.raise_for_status()
 
-    @staticmethod
     def convert_paths_to_data_uris(paths: list) -> list:
         """
         Function to convert image paths to data URIs
@@ -128,7 +121,6 @@ class Noco:
 
         return data_uris
 
-    @staticmethod
     def convert_to_data_uri(image_data: bytes) -> str:
         """
         Function to convert image data to a data URI and reduce its resolution
@@ -152,7 +144,6 @@ class Noco:
         base64_data = base64.b64encode(resized_img_data).decode('utf-8')
         return f"data:image/jpeg;base64,{base64_data}"
 
-    @staticmethod
     @lru_cache(maxsize=128)
     def get_artwork_data() -> ArtObject:
         """
@@ -172,8 +163,61 @@ class Noco:
             Ids=[item['Id'] for item in data['list']]
         )
         return artwork_data
+    
+    def get_payment_intent_data() -> PaymentIntentObject:
+        """
+        Function to get the payment intent data from NocoDB
 
-    @staticmethod
+        Returns:
+            PaymentIntentObject: The payment intent data
+        """
+        data = Noco.get_nocodb_table_data(NOCODB_TABLE_MAP.paymentintent_table)
+        payment_intent_data = PaymentIntentObject(
+            Ids=[item['Id'] for item in data['list']],
+            sessionids=[item['sessionid'] for item in data['list']],
+            payment_intents=[item['payment_intent'] for item in data['list']]
+        )
+        return payment_intent_data
+    
+    def get_last_paymentintent_Id() -> int:
+        """
+        Function to get the last payment intent ID
+        
+        Returns:
+            int: The last payment intent ID
+        """
+        paymentintent_data = Noco.get_payment_intent_data()
+        return paymentintent_data.Ids[-1]
+    
+    def patch_payment_intent_data(session_id: str, payment_intent: dict) -> None:
+        """
+        Function to patch the payment intent data
+        
+        Args:
+            session_id (str): The session ID
+            payment_intent (dict): The payment intent
+        """
+        data = {
+            "Id": Noco.get_paymentintent_Id_from_sessionid(session_id),
+            "sessionid": session_id,
+            "payment_intent": payment_intent
+        }
+        Noco.patch_nocodb_table_data(NOCODB_TABLE_MAP.paymentintent_table, data)
+
+    def get_paymentintent_Id_from_sessionid(session_id: str) -> int:
+        """
+        Function to get the payment intent ID from the session ID
+        
+        Args:
+            session_id (str): The session ID
+
+        Returns:
+            int: The payment intent ID
+        """
+        paymentintent_data = Noco.get_payment_intent_data()
+        index = paymentintent_data.sessionids.index(session_id)
+        return paymentintent_data.Ids[index]
+
     @lru_cache(maxsize=128)
     def get_icon_data() -> IconObject:
         """
@@ -192,7 +236,6 @@ class Noco:
         )
         return icon_data
 
-    @staticmethod
     @lru_cache(maxsize=128)
     def get_key_data() -> KeyObject:
         """
@@ -208,7 +251,6 @@ class Noco:
         )
         return key_data
 
-    @staticmethod
     def get_email_data() -> EmailObject:
         """
         Function to get the email data from NocoDB
@@ -222,7 +264,6 @@ class Noco:
         )
         return email_data
 
-    @staticmethod
     @lru_cache(maxsize=128)
     def get_cookie_data() -> CookieObject:
         """
@@ -239,7 +280,6 @@ class Noco:
         )
         return cookie_data
     
-    @staticmethod
     def get_cookie_data_no_cache_no_object() -> list:
         """
         Function to get the cookie data from NocoDB without cache
@@ -250,7 +290,6 @@ class Noco:
         data = Noco.get_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table)
         return data
 
-    @staticmethod
     @lru_cache(maxsize=128)
     def get_order_data() -> OrderObject:
         """
@@ -267,7 +306,6 @@ class Noco:
         )
         return order_data
 
-    @staticmethod
     @lru_cache(maxsize=128)
     def get_contact_data() -> ContactObject:
         """
@@ -288,7 +326,6 @@ class Noco:
         )
         return contact_data
     
-    @staticmethod
     @lru_cache(maxsize=128)
     def get_content_data() -> ContentObject:
         """
@@ -304,7 +341,6 @@ class Noco:
         )
         return content_data
     
-    @staticmethod
     def get_icon_uri_from_title(title: str) -> str:
         """
         Function to get the icon URI from the title
@@ -319,7 +355,6 @@ class Noco:
         index = icon_data.titles.index(title)
         return icon_data.data_uris[index]
     
-    @staticmethod
     def get_art_uri_from_title(title: str) -> str:
         """
         Function to get the artwork URI from the title
@@ -338,7 +373,6 @@ class Noco:
             logger.error(f"Artwork with title {title} not found")
             return ""
     
-    @staticmethod
     def get_art_price_from_title(title: str) -> str:
         """
         Function to get the price of the artwork from the title
@@ -356,7 +390,6 @@ class Noco:
         except ValueError:
             return ""
     
-    @staticmethod
     def get_art_price_from_title_and_quantity(title: str, quantity: int) -> str:
         """
         Function to get the price of an item from the title and quantity
@@ -395,10 +428,16 @@ class Noco:
         Returns:
             list: The cookie
         """
-        cookie_data = Noco.get_cookie_data()
-        index = cookie_data.sessionids.index(session_id)
-        img_quant_list = cookie_data.cookiesJson[index]['img_quantity_list']
-        return img_quant_list
+        try:
+            cookie_data = Noco.get_cookie_data()
+            index = cookie_data.sessionids.index(session_id)
+            img_quant_list = cookie_data.cookiesJson[index]['img_quantity_list']
+            return img_quant_list
+        except ValueError:
+            logger.error(f"Session ID {session_id} not found")
+            return []
+        # If the session ID is not found, return an empty list
+
     
     def get_order_cookie_from_session_id(session_id: str) -> dict:
         """
@@ -430,7 +469,6 @@ class Noco:
         contact_cookie = cookie_data.cookiesJson[index]['contact_info']
         return contact_cookie
     
-    @staticmethod
     def patch_order_cookie(session_id: str, cookiesJson: dict, Id: int) -> None:
         """
         Function to post the order cookie
@@ -463,7 +501,7 @@ class Noco:
             Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, data)
         except Exception as e:
             logger.error(f"Error in posting cookies: {e}")
-    @staticmethod
+    
     def post_email(email: str):
         """
         Function to post the email
@@ -476,7 +514,6 @@ class Noco:
         }
         Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.email_table, data)
 
-    @staticmethod
     def patch_cookies_data(data: dict):
         """
         Function to patch the cookies data
@@ -486,7 +523,6 @@ class Noco:
         """
         Noco.patch_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, data)
 
-    @staticmethod
     def get_cookie_Id_from_session_id(session_id: str) -> str:
         """
         Function to get the ID of the session ID
@@ -497,19 +533,21 @@ class Noco:
         Returns:
             str: The ID of the session ID
         """
-        cookie_data = Noco.get_cookie_data()
-        index = cookie_data.sessionids.index(session_id)
-        return cookie_data.Id[index]
+        try:
+            cookie_data = Noco.get_cookie_data()
+            index = cookie_data.sessionids.index(session_id)
+            return cookie_data.Id[index]
+        except ValueError:
+            logger.info(f"Session ID {session_id} not found")
+            return ""
     
     
-    @staticmethod
     def refresh_cookie_cache():
         """
         Function to refresh the cookie cache
         """
         Noco.get_cookie_data.cache_clear()
 
-    @staticmethod
     def get_artwork_Id_from_title(title: str) -> Union[int,None]:
         """
         Function to get the ID of the artwork from the title
@@ -524,7 +562,6 @@ class Noco:
         index = artwork_data.titles.index(title)
         return artwork_data.Ids[index]
     
-    @staticmethod
     def upload_image(file_to_upload: dict, path :str ) -> dict:
         """
         Function to upload an image
@@ -544,7 +581,6 @@ class Noco:
         return response.json()
     
 
-    @staticmethod
     def get_last_art_Id() -> int:
         """
         Function to get the last artwork ID
@@ -555,7 +591,6 @@ class Noco:
         artwork_data = Noco.get_artwork_data()
         return artwork_data.Ids[-1]
     
-    @staticmethod
     def post_image(data: dict) -> None:
         """
         Function to post an image
@@ -565,7 +600,6 @@ class Noco:
         """
         Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.img_table, data)
 
-    @staticmethod
     def patch_image(data: dict) -> None:
         """
         Function to patch an image
@@ -575,7 +609,6 @@ class Noco:
         """
         Noco.patch_nocodb_table_data(NOCODB_TABLE_MAP.img_table, data)  
 
-    @staticmethod
     def post_order_data(data: dict) -> None:
         """
         Function to post order data
@@ -585,7 +618,6 @@ class Noco:
         """
         Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.order_table, data)
 
-    @staticmethod
     def generate_unique_order_number():
         """
         Function to generate a unique number to index the order details in the database.
@@ -593,7 +625,6 @@ class Noco:
         """
         return str(uuid.uuid4())
 
-    @staticmethod
     def post_contact_data(data: dict) -> None:
         """
         Function to post contact data
@@ -603,7 +634,6 @@ class Noco:
         """
         Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.contact_table, data)
 
-    @staticmethod
     def get_order_cookie_data(order_number: str) -> dict:
         """
         Function to get the cookie data for an order
@@ -693,10 +723,50 @@ class Noco:
         total_price = sum([int(each['price']) for each in img_quantity_list])
         return total_price
     
+    def get_last_cookie_Id() -> int:
+        """
+        Function to get the last cookie ID
+        
+        Returns:
+            int: The last cookie ID
+        """
+        cookie_data = Noco.get_cookie_data()
+        return cookie_data.Id[-1]
+
+    
+    def post_payment_intent_data(sessionid:str , data: dict) -> None:
+        """
+        Function to post payment intent data
+        
+        Args:
+            data (dict): The payment intent data
+        """
+        paymentintent_payload = {
+            "sessionid": sessionid,
+            "payment_intent": data
+        }
+
+        Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.paymentintent_table, paymentintent_payload)
+
+    def get_payment_intent_data_from_sessionid(sessionid: str) -> dict:
+        """
+        Function to get the payment intent data from the session ID
+        
+        Args:
+            sessionid (str): The session ID
+
+        Returns:
+            dict: The payment intent data
+        """
+        paymentintent_data = Noco.get_payment_intent_data()
+        index = paymentintent_data.sessionids.index(sessionid)
+        return paymentintent_data.payment_intents[index]
+    
     def refresh_content_cache():
         """
         Function to refresh the cookie cache
         """
         Noco.get_content_data.cache_clear()
+
 
     

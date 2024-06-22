@@ -625,10 +625,29 @@ function displayTotalQuantityError(message) {
     // Insert the error message before the total price element
     totalElement.parentNode.insertBefore(errorMessageElement, totalElement);
 
+
+
 }
+
+async function modifyPaymentIntent(order_contents){
+    const response = await fetch('/modify-payment-intent', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ order_contents: order_contents })
+    });
+    const data = await response.json();
+    console.log(data);
+
+}
+
 async function increaseQuantity(button) {
     try {
-        // Disable the button to prevent rapid clicks
+        // Get the order contents
+
+
+
         setButtonsState(true);
 
         // Wait for the cart quantity to be fetched
@@ -682,7 +701,16 @@ async function increaseQuantity(button) {
         updateTotalPrice();
         removeMaxQuantityErrorMessage();
         
+        let items = await getOrderContents()
+            .then((data) => {
+                return data;
+                })
+            .catch((error) => {
+                console.error("Error:", error);
+            }
+            );
 
+        modifyPaymentIntent(items);
         // Re-enable the button
         setButtonsState(false);
     } catch (error) {
@@ -729,6 +757,16 @@ async function decreaseQuantity(button) {
             await updateCartQuantity(cartQuantity - 1);
             updateTotalPrice();
             removeMaxQuantityErrorMessage();
+            let items = await getOrderContents()
+            .then((data) => {
+                return data;
+                })
+            .catch((error) => {
+                console.error("Error:", error);
+            }
+            );
+
+            modifyPaymentIntent(items);
             setButtonsState(false);
         } else {
             await removeItem(button);
@@ -779,7 +817,16 @@ async function removeItem(button) {
         await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item
         updateTotalPrice(); // Update total price after updating cart quantity
         removeMaxQuantityErrorMessage(); // Remove the error message here
+        let items = await getOrderContents()
+            .then((data) => {
+                return data;
+                })
+            .catch((error) => {
+                console.error("Error:", error);
+            }
+            );
 
+        modifyPaymentIntent(items);
         setButtonsState(false); // Re-enable the buttons
     } catch (error) {
         console.error('Error:', error);
