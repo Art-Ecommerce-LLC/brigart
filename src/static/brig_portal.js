@@ -60,10 +60,11 @@ async function submitForm() {
 async function submitAddForm() {
     const form = document.getElementById('add-image-form');
     const titleInputs = document.querySelectorAll('input[name^="title_"]');
+    const priceInputs = document.querySelectorAll('input[name^="price_"]');
     const fileInputs = document.getElementById('add-file-upload').files;
     const messageDiv = document.getElementById('message');
 
-    if (titleInputs.length !== fileInputs.length) {
+    if (titleInputs.length !== fileInputs.length || priceInputs.length !== fileInputs.length) {
         messageDiv.textContent = 'Number of titles should match the number of files.';
         messageDiv.style.display = 'block';
         messageDiv.style.color = 'red';
@@ -71,8 +72,10 @@ async function submitAddForm() {
     }
 
     const formData = new FormData();
+    
     titleInputs.forEach((input, index) => {
         formData.append(`titles`, input.value);
+        formData.append(`prices`, priceInputs[index].value);
     });
 
     for (const file of fileInputs) {
@@ -109,15 +112,25 @@ function createTitleInputs(files) {
         const divWrapper = document.createElement('div'); // Create a div wrapper for each input
 
         const titleLabel = document.createElement('label');
+        const priceLabel = document.createElement('label');
         titleLabel.textContent = `Title for ${file.name}:`; // Display filename in the label
+        priceLabel.textContent = `Price for ${file.name}:`; // Display filename in the label
 
         const titleInput = document.createElement('input');
+        const priceInput = document.createElement('input');
+
         titleInput.type = 'text';
         titleInput.name = `title_${index + 1}`;
         titleInput.required = true;
 
+        priceInput.type = 'number';
+        priceInput.name = `price_${index + 1}`;
+        priceInput.required = true;
+
         divWrapper.appendChild(titleLabel);
         divWrapper.appendChild(titleInput);
+        divWrapper.appendChild(priceLabel);
+        divWrapper.appendChild(priceInput);
 
         container.appendChild(divWrapper);
     });

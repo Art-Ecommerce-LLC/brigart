@@ -10,6 +10,8 @@ from src.artapi.models import (
 from src.artapi.logger import logger
 from PIL import Image
 from io import BytesIO
+from typing import Union
+import uuid
 
 class Noco:
     """
@@ -54,6 +56,16 @@ class Noco:
         """
         return f"{NOCODB_PATH}/api/v2/tables/{table}/records"
 
+    @staticmethod
+    def get_storage_upload_path() -> str:
+        """
+        Function to get the upload path
+        
+        Returns:
+            str: The upload path
+        """
+        return f"{NOCODB_PATH}/api/v2/storage/upload"
+    
     @staticmethod
     def get_nocodb_table_data(table: str) -> dict:
         """
@@ -156,7 +168,8 @@ class Noco:
             art_paths=art_paths,
             titles=[item['img_label'] for item in data['list']],
             prices=[item['price'] for item in data['list']],
-            data_uris=data_uris
+            data_uris=data_uris,
+            Ids=[item['Id'] for item in data['list']]
         )
         return artwork_data
 
@@ -220,9 +233,9 @@ class Noco:
         """
         data = Noco.get_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table)
         cookie_data = CookieObject(
+            Id=[item['Id'] for item in data['list']],
             sessionids=[item['sessionid'] for item in data['list']],
             cookiesJson=[item['cookiesJson'] for item in data['list']],
-            Id=[item['Id'] for item in data['list']]
         )
         return cookie_data
     
@@ -322,6 +335,7 @@ class Noco:
             index = artwork_data.titles.index(title)
             return artwork_data.data_uris[index]
         except ValueError:
+            logger.error(f"Artwork with title {title} not found")
             return ""
     
     @staticmethod
@@ -357,7 +371,20 @@ class Noco:
         price = Noco.get_art_price_from_title(title)
         return str(int(price) * quantity)
     
-    @staticmethod
+    def get_full_cookie_from_session_id(session_id: str) -> dict:
+        """
+        Function to get the full cookie from the session ID
+        
+        Args:
+            session_id (str): The session ID
+
+        Returns:
+            dict: The full cookie
+        """
+        cookie_data = Noco.get_cookie_data()
+        index = cookie_data.sessionids.index(session_id)
+        return cookie_data.cookiesJson[index]
+
     def get_cookie_from_session_id(session_id: str) -> list:
         """
         Function to get the cookie from the session ID
@@ -372,8 +399,54 @@ class Noco:
         index = cookie_data.sessionids.index(session_id)
         img_quant_list = cookie_data.cookiesJson[index]['img_quantity_list']
         return img_quant_list
+    
+    def get_order_cookie_from_session_id(session_id: str) -> dict:
+        """
+        Function to get the order cookie from the session ID
+        
+        Args:
+            session_id (str): The session ID
 
+        Returns:
+            dict: The order cookie
+        """
+        cookie_data = Noco.get_cookie_data()
+        index = cookie_data.sessionids.index(session_id)
+        order_cookie = cookie_data.cookiesJson[index]['billing_info']
+        return order_cookie
+    
+    def get_contact_cookie_from_session_id(session_id: str) -> dict:
+        """
+        Function to get the contact cookie from the session ID
+        
+        Args:
+            session_id (str): The session ID
+
+        Returns:
+            dict: The contact cookie
+        """
+        cookie_data = Noco.get_cookie_data()
+        index = cookie_data.sessionids.index(session_id)
+        contact_cookie = cookie_data.cookiesJson[index]['contact_info']
+        return contact_cookie
+    
     @staticmethod
+    def patch_order_cookie(session_id: str, cookiesJson: dict, Id: int) -> None:
+        """
+        Function to post the order cookie
+        
+        Args:
+            session_id (str): The session ID
+            order_cookie (dict): The order cookie
+        """
+
+        data = {
+            "Id": Noco.get_cookie_Id_from_session_id(session_id),
+            "sessionid": session_id,
+            "cookiesJson": cookiesJson
+        }
+        Noco.patch_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, data)
+
     def post_cookie_session_id_and_cookies(session_id: str, cookies: dict):
         """
         Function to post the session ID and cookies
@@ -386,8 +459,10 @@ class Noco:
             "sessionid": session_id,
             "cookiesJson": cookies
         }
-        Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, data)
-    
+        try:
+            Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, data)
+        except Exception as e:
+            logger.error(f"Error in posting cookies: {e}")
     @staticmethod
     def post_email(email: str):
         """
@@ -433,3 +508,195 @@ class Noco:
         Function to refresh the cookie cache
         """
         Noco.get_cookie_data.cache_clear()
+
+    @staticmethod
+    def get_artwork_Id_from_title(title: str) -> Union[int,None]:
+        """
+        Function to get the ID of the artwork from the title
+        
+        Args:
+            title (str): The title of the artwork
+
+        Returns:
+            int: The Id of the artwork
+        """
+        artwork_data = Noco.get_artwork_data()
+        index = artwork_data.titles.index(title)
+        return artwork_data.Ids[index]
+    
+    @staticmethod
+    def upload_image(file_to_upload: dict, path :str ) -> dict:
+        """
+        Function to upload an image
+        
+        Args:
+            file_to_upload (dict): The file to upload
+            path (str): The path to upload the file to
+
+        Returns:
+            dict: The response JSON
+        """
+        params = {
+            "path": path
+        }
+        response = requests.post(Noco.get_storage_upload_path(), headers=Noco.get_auth_headers(), files=file_to_upload, params=params)
+        response.raise_for_status()
+        return response.json()
+    
+
+    @staticmethod
+    def get_last_art_Id() -> int:
+        """
+        Function to get the last artwork ID
+        
+        Returns:
+            int: The last artwork ID
+        """
+        artwork_data = Noco.get_artwork_data()
+        return artwork_data.Ids[-1]
+    
+    @staticmethod
+    def post_image(data: dict) -> None:
+        """
+        Function to post an image
+        
+        Args:
+            data (dict): The data to post
+        """
+        Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.img_table, data)
+
+    @staticmethod
+    def patch_image(data: dict) -> None:
+        """
+        Function to patch an image
+        
+        Args:
+            data (dict): The data to patch
+        """
+        Noco.patch_nocodb_table_data(NOCODB_TABLE_MAP.img_table, data)  
+
+    @staticmethod
+    def post_order_data(data: dict) -> None:
+        """
+        Function to post order data
+        
+        Args:
+            data (dict): The order data
+        """
+        Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.order_table, data)
+
+    @staticmethod
+    def generate_unique_order_number():
+        """
+        Function to generate a unique number to index the order details in the database.
+        Uses UUID4 to ensure the uniqueness of the order number.
+        """
+        return str(uuid.uuid4())
+
+    @staticmethod
+    def post_contact_data(data: dict) -> None:
+        """
+        Function to post contact data
+        
+        Args:
+            data (dict): The contact data
+        """
+        Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.contact_table, data)
+
+    @staticmethod
+    def get_order_cookie_data(order_number: str) -> dict:
+        """
+        Function to get the cookie data for an order
+        
+        Args:
+            order_number (str): The order number
+
+        Returns:
+            dict: The cookie data
+        """
+        cookie_data = Noco.get_contact_data()
+        index = cookie_data.order_number.index(order_number)
+        return {
+            "fullname": cookie_data.fullname[index],
+            "address1": cookie_data.address1[index],
+            "address2": cookie_data.address2[index],
+            "city": cookie_data.city[index],
+            "state": cookie_data.state[index],
+            "zip": cookie_data.zip[index],
+            "order_number": cookie_data.order_number[index]
+        }
+    
+    def refresh_artwork_cache():
+        """
+        Function to refresh the artwork cache
+        """
+        Noco.get_artwork_data.cache_clear()
+    
+    def empty_cart(session_id: str):
+        """
+        Function to empty the cart
+        
+        Args:
+            session_id (str): The session ID
+        """
+        current_nocodb_data = Noco.get_full_cookie_from_session_id(session_id)
+        current_nocodb_data['img_quantity_list'] = []
+
+        data = {
+            "Id": Noco.get_cookie_Id_from_session_id(session_id),
+            "sessionid": session_id,
+            "cookiesJson": current_nocodb_data
+        }
+        Noco.patch_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, data)
+
+    def post_order_contents(order_payload : dict) -> None:
+        """
+        Function to post order contents
+        
+        Args:
+            order_payload (dict): The order payload
+        """
+        Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.content_table, order_payload)
+
+    def get_order_contents_from_order_number(order_number: str) -> dict:
+        """
+        Function to get the order contents from the order number
+        
+        Args:
+            order_number (str): The order number
+
+        Returns:
+            dict: The order contents
+        """
+        content_data = Noco.get_content_data()
+        index = content_data.order_number.index(order_number)
+        return content_data.order_content[index]
+    
+    def get_total_price_from_order_contents(order_contents: dict) -> int:
+        """
+        Function to get the total price from the order contents
+        
+        Args:
+            order_contents (dict): The order contents
+
+        Returns:
+            int: The total price
+        """
+        # For each title in img_quantity_list, get the quantity and title
+        img_quantity_list = order_contents['img_quantity_list']
+        for each in img_quantity_list:
+            title = each['title']
+            quantity = each['quantity']
+            price = Noco.get_art_price_from_title_and_quantity(title, quantity)
+            each['price'] = price
+
+        total_price = sum([int(each['price']) for each in img_quantity_list])
+        return total_price
+    
+    def refresh_content_cache():
+        """
+        Function to refresh the cookie cache
+        """
+        Noco.get_content_data.cache_clear()
+
+    

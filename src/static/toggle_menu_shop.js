@@ -1,3 +1,4 @@
+
 function toggleIcon() {
     const icon = document.querySelector('#nav-icon3');
     icon.classList.toggle('open');
@@ -178,11 +179,7 @@ function removeErrorMessage() {
         errorMessageElement = null; // Reset the global variable
     }
 }
-// Function to handle the checkout redirection
-function checkoutRedirect() {
-    window.location.href = '/shop_art';
-}
-// Disply a total qunatity error message if the submit post form returns an error
+
 
 async function submitPostForm(quantity, title) {
 

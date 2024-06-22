@@ -1,6 +1,6 @@
 # app/models.py
 from pydantic import BaseModel, EmailStr, Field, constr
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Any
 from dataclasses import dataclass
 
 class Url(BaseModel):
@@ -15,8 +15,10 @@ class UrlQuantity(BaseModel):
 class TitleQuantity(BaseModel):
     quantity: Union[int, str]
     title: str
-    
 
+class OrderContents(BaseModel):
+    order_contents: Dict[str, Any]
+    
 class OrderInfo(BaseModel):
     email: EmailStr = Field(...)
     phone: str = Field(..., min_length=10, max_length=15)
@@ -102,7 +104,9 @@ class ArtObject:
     art_paths: List[str]
     titles: List[str]
     prices: List[Union[int, str]]
+    Ids: List[int]
     data_uris: List[str] = None
+
 @dataclass(frozen=True)
 class KeyObject:
     envvars: List[str]
@@ -114,16 +118,17 @@ class EmailObject:
 
 @dataclass(frozen=True)
 class CookieObject:
+    Id : List[int]
     sessionids: List[str]
     # cookiesJson: List[str]
-    cookiesJson:List[dict[str, List[dict[str, Union[str, int]]]]]
-    Id : List[int]
+    cookiesJson: Dict[str, Any]
 
 @dataclass(frozen=True)
 class OrderObject:
     order_numbers: List[str]
     emails : List[str]
     phones : List[str]
+
 
 @dataclass(frozen=True)
 class ContactObject:
@@ -138,7 +143,7 @@ class ContactObject:
 @dataclass(frozen=True)
 class ContentObject:
     order_number: List[str]
-    order_content: List[str]
+    order_content: Dict[str, Any]
 
 @dataclass
 class TableMap:

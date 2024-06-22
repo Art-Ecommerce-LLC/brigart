@@ -469,8 +469,25 @@ function toggleMenu() {
     }
 }
 
+async function get_session_id() {
+    return fetch('/get_session_id')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            return data.session_id;
+        })
+        .catch(error => {
+            console.error('Error fetching session id:', error);
+            return '';
+        });
+}
+
 // Initial toggle when the page loads
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     getCartQuantity().then(cartQuantity => {
         updateCartQuantity(cartQuantity);
         toggleMenu();
@@ -478,7 +495,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateTotalPrice();
         let isMessageDisplayed = false;
         // Add event listener to the checkout button
-        document.querySelector('.checkout-btn').addEventListener('click', function() {
+        document.querySelector('.checkout-btn').addEventListener('click', async function() {
             // Redirect to the /checkout endpoint
             let totalPrice = parseFloat(document.getElementById('total-price').innerText.replace('$', ''));
             if (totalPrice === 0 && !isMessageDisplayed) {
@@ -496,8 +513,11 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (totalPrice === 0 && isMessageDisplayed) {
                 return; // Don't do anything if the message is already displayed
             } else {
-                window.location.href = '/checkout';
+                await get_session_id().then(session_id => {
+                    window.location.href = `/checkout/${session_id}`;
+                });
             }
+
         });
         // Add event listener to the image click event
         const cartImage = document.querySelector('.cart-image');

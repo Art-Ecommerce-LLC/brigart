@@ -7,11 +7,15 @@
     <title>Art Showcase</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles_checkout.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/general_styles.css') }}">
+
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles_page_white.css') }}">
+    <script src="https://js.stripe.com/v3/"></script>
     <script src="{{ url_for('static', path='/toggle_menu_checkout.js') }}"></script>
+    <script src="{{ url_for('static', path='/checkout.js') }}"></script>
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
 </head>
 <body>
+<div class="spinner hidden"></div>
 <div class="header">
     <div class="brigLogo">
         <img src="{{ brig_logo_url }}" oncontextmenu="return false;" draggable="false">
@@ -20,7 +24,7 @@
         <a class= "home" href="/">HOME</a>
         <a class= "giclee" href="/giclee_prints">GICLÉE PRINTS</a>
         <a class= "shop" href="/shop_art_menu">SHOP ART</a>
-        <a class= "cart_a" href="/shop_art">
+        <a class= "cart_a" onclick = "checkoutRedirect()">
             <div class="icon-cart" style="clear: left; float: left">
                 <div class="icon-wrapper">
                     <div class="cart-line-1" style="background-color: black;"></div>
@@ -44,7 +48,7 @@
             </label>
         </div>
         <div class = "shopping_cart_icon">
-            <a href="/shop_art">
+            <a onclick = "checkoutRedirect()">
                 <div class="icon-cart" style="clear: left; float: left">
                     <div class="icon-wrapper">
                         <div class="cart-line-1" style="background-color: black;"></div>
@@ -75,76 +79,41 @@
                 <input type="email" id="email" name="email" placeholder="Enter Email"><br>
                 <label for="phone">Phone Number:</label>
                 <input type="text" id="phone" name="phone" placeholder="Enter Phone Number"><br>
-                <button class="continue-btn" onclick="toggleNextSection('contactInfoSection', 'paymentInfoSection')">Continue</button>
+                <button class="continue-btn" onclick="toggleNextSection('contactInfoSection', 'shippingInfoSection')">Continue</button>
             </div>
         </div>
-    
-        <div class="collapsible-section" id="paymentInfoSection">
-            <h1 class="collapsible-header disabled">Payment Information <span class="arrow">&#9660;</span></h1>
-            <div class="collapsible-content" >
-                <label for="card-name">Card Name:</label>
-                <input type="text" id="card-name" name="card-name" placeholder="Enter Card Name"><br>
-                <label for="card-number">Card Number:</label>
-                <input type="text" id="card-number" name="card-number" placeholder="Enter Card Number">
-                <label for="expiry">Expiration Date:</label>
-                <input type="text" id="expiry" name="expiry" placeholder="MM/YY"><br>
-                <label for="cvv">CVV:</label>
-                <input type="text" id="cvv" name="cvv" placeholder="CVV"><br>
-                <button class="continue-btn" onclick="toggleNextSection('paymentInfoSection', 'billingAddressSection')">Continue</button>
-            </div>
-        </div>
-    
-        <div class="collapsible-section" id="billingAddressSection">
-            <h1 class="collapsible-header disabled">Billing Information<span class="arrow">&#9660;</span></h1>
-            <div class="collapsible-content" >
-                <label for="fullname">Full Name:</label>
-                <input type="text" id="fullname" name="fullname" placeholder="Enter Full Name"><br>
-                <label for="address1">Street Address 1:</label>
-                <input type="text" id="address1" name="address1" placeholder="Enter Street Address 1"><br>
-                <label for="address2">Street Address 2:</label>
-                <input type="text" id="address2" name="address2" placeholder="Enter Street Address 2"><br>
-                <label for="city">City:</label>
-                <input type="text" id="city" name="city" placeholder="Enter City"><br>
-                <label for="state">State:</label>
-                <input type="text" id="state" name="state" placeholder="Enter State"><br>
-                <label for="zip">ZIP Code:</label>
-                <input type="text" id="zip" name="zip" placeholder="Enter ZIP Code"><br>
-                <!-- Add checkbox for billing address being the same as shipping address -->
-                 <label class="address-checkbox">
-                    <input class="same-as-shipping" type="checkbox" id="sameAsShipping" name="sameAsShipping" value="sameAsShipping" onclick="copyShippingAddress()">
-                 </label>
-                Same as Shipping Address
-                <br>              
-                <button class="continue-btn" onclick="toggleNextSection('billingAddressSection', 'shippingAddressSection')" >Continue</button>
-            </div>
-        
-        </div>
-        <div class="collapsible-section" id="shippingAddressSection">
+        <div class="collapsible-section" id="shippingInfoSection">
             <h1 class="collapsible-header disabled">Shipping Information<span class="arrow">&#9660;</span></h1>
-            <div class="collapsible-content" >
-                <label for="shipFullname">Full Name:</label>
-                <input type="text" id="shipFullname" name="shipFullname" placeholder="Enter Full Name"><br>
-                <label for="shipAddress1">Street Address 1:</label>
-                <input type="text" id="shipAddress1" name="shipAddress1" placeholder="Enter Street Address 1"><br>
-                <label for="shipAddress2">Street Address 2:</label>
-                <input type="text" id="shipAddress2" name="shipAddress2" placeholder="Enter Street Address 2"><br>
-                <label for="shipCity">City:</label>
-                <input type="text" id="shipCity" name="shipCity" placeholder="Enter City"><br>
-                <label for="shipState">State:</label>
-                <input type="text" id="shipState" name="shipState" placeholder="Enter State"><br>
-                <label for="shipZip">ZIP Code:</label>
-                <input type="text" id="shipZip" name="shipZip" placeholder="Enter ZIP Code"><br>
-                <!-- <button class="continue-btn" onclick="handlePurchase(this)" >Complete Purchase</button> -->
-                <button class="continue-btn" onclick="toggleNextSection('shippingAddressSection', 'SubmitButton')" >Purchase</button>
+            <div class="collapsible-content">
+                <form id="shipping-form">
+                    <div id="shipping-element">
+                      <!-- Your shipping form elements here -->
+                    </div>
+                </form>
+                <button class="continue-btn" onclick="toggleNextSection('shippingInfoSection', 'paymentInfoSection')">Continue</button>
             </div>
         </div>
-        <p>Shop coming soon! Contact Brig for info</p>
+        <div class="collapsible-section" id="paymentInfoSection">
+            <h1 class="collapsible-header disabled">Payment Information<span class="arrow">&#9660;</span></h1>
+            <div class="collapsible-content">
+                <form id="payment-form">
+                    <div id="payment-element">
+                        <!--Stripe.js injects the Payment Element-->
+                    </div>
+                    <button id="submit" class="continue-btn" onclick="toggleNextSection('paymentInfoSection', 'Submit')">
+                        <div class="spinner hidden"></div>
+                        <span id="button-text"  id="spinner">Pay now</span>
+                    </button>
+                    <div id="payment-message" class="hidden"></div>
+                </form>
+            </div>
+        </div>
     </div>
     <div class="right-section" id="rightSection">
         <h1>Order Summary</h1>
         {% for img_data in img_data_list %}
          <div class="info_container">
-            <div class="image_container" style="background-image: url('{{ img_data.img_url }}')" draggable="false" oncontextmenu="return false">
+            <div class="image_container" style="background-image: url('{{ img_data.img_uri }}')" draggable="false" oncontextmenu="return false">
             </div>
             <div class="title_container">
                 <p>{{ img_data.img_title }}</p>
@@ -174,3 +143,43 @@
 </footer>
 </body>
 </html>
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Accept a payment</title>
+  <meta name="description" content="A demo of a payment on Stripe" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://js.stripe.com/v3/"></script>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/checkout.css') }}">
+  <script src="{{ url_for('static', path='/checkout.js') }}"></script>
+  <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
+</head>
+<body>
+   
+  <div class="container">
+    <div class ="order-summary">
+        <h1>Order Summary</h1>
+        {% for img_data in img_data_list %}
+        <div class = "info_container">
+            <div class = "image_container" style = "background-image: url('{{ img_data.img_uri }}')" draggable="false" oncontextmenu="return false">
+        </div>
+        {% endfor %}
+    </div>
+
+    <form id="shipping-form">
+      <div id="shipping-element">
+      </div>
+    </form>
+    <form id="payment-form">
+      <div id="payment-element">
+      </div>
+      <button id="submit">
+        <div class="spinner hidden" id="spinner"></div>
+        <span id="button-text">Pay now</span>
+      </button>
+      <div id="payment-message" class="hidden"></div>
+    </form>
+  </div>
+</body>
+</html> -->

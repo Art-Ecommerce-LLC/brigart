@@ -7,6 +7,7 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles_giclee_art.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/general_styles.css') }}">
     <script src="{{ url_for('static', path='/toggle_menu_giclee.js') }}"></script>
+    <script src="{{ url_for('static', path='/general_scripts.js') }}"></script>
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
 </head>
 <body>
@@ -18,7 +19,7 @@
         <a class= "home" href="/">HOME</a>
         <a class= "giclee" href="/giclee_prints">GICLÉE PRINTS</a>
         <a class= "shop" href="/shop_art_menu">SHOP ART</a>
-        <a class= "cart_a" href="/shop_art">
+        <a class= "cart_a" onclick = "checkoutRedirect()">
             <div class="icon-cart" style="clear: left; float: left">
                 <div class="icon-wrapper">
                     <div class="cart-line-1" style="background-color: white;"></div>
@@ -41,7 +42,7 @@
                   </div>
             </label>
         </div>
-        <a href="/shop_art">
+        <a onclick = "checkoutRedirect()">
             <div class="icon-cart" style="clear: left; float: left">
                 <div class="icon-wrapper">
                     <div class="cart-line-1" style="background-color: white;"></div>

@@ -1,14 +1,17 @@
 
+const stripe = Stripe("pk_test_51PUCroP7gcDRwQa36l19NuC5DMT7t5wJVn0HEY73nAKbRO7BmozSO2XTSMW6qLPIB7Y6hrJrag5jnnbMY6QgPvoz00la6BYXMS");
+
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Drop down the contact info section initially on page load
     const contactInfoSection = document.getElementById('contactInfoSection');
     contactInfoSection.classList.add('open');
-    // uncheck the sameAsShipping checkbox
+
     const sameAsShipping = document.getElementById('sameAsShipping');
     sameAsShipping.checked = false;
-    
-    // Add event listeners to the collapsible headers
+
+    // Initialize sections
+    initializeSections();
+
     document.querySelectorAll('.collapsible-header').forEach(header => {
         header.addEventListener('click', () => {
             const section = header.parentElement;
@@ -18,18 +21,176 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-    const continueButton = document.querySelector('#paymentInfoSection .continue-btn');
+
+    const continueButton = document.querySelector('#shippingInfoSection .continue-btn');
     continueButton.addEventListener('click', maskCreditCardAndCVV);
-
-    // Make a request to get the cart quantity, if it is 0, then redirect response to /shop_art_menu
-    // getCartQuantity().then(cartQuantity => {
-    //     if (cartQuantity === 0) {
-    //         window.location.href = '/shop_art_menu';
-    //     }
-
-    // });
-
 });
+
+function initializeSections() {
+    const sections = document.querySelectorAll('.collapsible-section');
+    sections.forEach(section => {
+        if (!section.classList.contains('open')) {
+            section.classList.add('collapsed');
+        }
+    });
+}
+
+
+// The items the customer wants to buy
+async function getOrderContents() {
+  let response = await fetch("/get_order_contents", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    });
+    return await response.json();
+}
+
+initialize();
+checkStatus();
+
+document
+  .querySelector("#payment-form")
+  .addEventListener("submit", handleSubmit);
+
+
+// Fetches a payment intent and captures the client secret
+async function initialize() {
+    let items = await getOrderContents()
+      .then((data) => {
+          return data;
+          })
+      .catch((error) => {
+          console.error("Error:", error);
+      }
+      );
+    console.log(items);
+    const response = await fetch("/create-payment-intent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({order_contents : items}),
+    });
+    const { clientSecret } = await response.json();
+  
+    const appearance = {
+      theme: 'stripe',
+    };
+    const elements = stripe.elements({ appearance, clientSecret });
+  
+    const paymentElementOptions = {
+      layout: "tabs",
+    };
+  
+    const paymentElement = elements.create("payment", paymentElementOptions);
+    paymentElement.mount("#payment-element");
+  
+    // Create an address element
+    const addressElementOptions = {
+      mode: 'shipping', // Ensure it's set to 'shipping'
+    };
+    const addressElement = elements.create("address", addressElementOptions);
+    addressElement.mount("#shipping-element"); // Corrected the ID to match your HTML
+  }
+
+async function getSessionId() {
+    const response = await fetch("/get_session_id", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        });
+        return await response.json();
+    }
+
+
+
+async function handleSubmit(e) {
+    e.preventDefault();
+    setLoading(true);
+  
+    const sessionId = await getSessionId()
+      .then((data) => {
+          return data.session_id;
+          })
+      .catch((error) => {
+          console.error("Error:", error);
+      }
+      );
+  
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        // Make sure to change this to your payment completion page
+        return_url: `http://localhost:8000/confirmation/${sessionId}`,
+      },
+    });
+  
+    // This point will only be reached if there is an immediate error when
+    // confirming the payment. Otherwise, your customer will be redirected to
+    // your `return_url`. For some payment methods like iDEAL, your customer will
+    // be redirected to an intermediate site first to authorize the payment, then
+    // redirected to the `return_url`.
+    if (error.type === "card_error" || error.type === "validation_error") {
+      showMessage(error.message);
+    } else {
+      showMessage("An unexpected error occurred.");
+    }
+  
+    setLoading(false);
+  }
+  
+  
+function showMessage(messageText) {
+    const messageContainer = document.querySelector("#payment-message");
+  
+    messageContainer.classList.remove("hidden");
+    messageContainer.textContent = messageText;
+  
+    setTimeout(function () {
+      messageContainer.classList.add("hidden");
+      messageContainer.textContent = "";
+    }, 4000);
+  }
+// Fetches the payment intent status after payment submission
+async function checkStatus() {
+    const clientSecret = new URLSearchParams(window.location.search).get(
+      "payment_intent_client_secret"
+    );  
+  
+    if (!clientSecret) {
+      return;
+    }
+  
+    const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
+  
+    switch (paymentIntent.status) {
+      case "succeeded":
+        showMessage("Payment succeeded!");
+        break;
+      case "processing":
+        showMessage("Your payment is processing.");
+        break;
+      case "requires_payment_method":
+        showMessage("Your payment was not successful, please try again.");
+        break;
+      default:
+        showMessage("Something went wrong.");
+        break;
+    }
+  }
+  
+  
+  // Show a spinner on payment submission
+function setLoading(isLoading) {
+    if (isLoading) {
+      // Disable the button and show a spinner
+      document.querySelector("#submit").disabled = true;
+      document.querySelector("#spinner").classList.remove("hidden");
+      document.querySelector("#button-text").classList.add("hidden");
+    } else {
+      document.querySelector("#submit").disabled = false;
+      document.querySelector("#spinner").classList.add("hidden");
+      document.querySelector("#button-text").classList.remove("hidden");
+    }
+  }
+
 function maskCreditCardAndCVV() {
     // Mask the credit card number except for the last four digits
     const cardNumberInput = document.getElementById('card-number');
@@ -48,24 +209,6 @@ function maskCreditCardAndCVV() {
 }
 
 
-function copyShippingAddress() {
-    // Toggle the display of the shipping address form by the id of its div shippingAddressSection
-    const shippingAddressSection = document.getElementById('shippingAddressSection');
-    const billingAddressSection = document.getElementById('billingAddressSection');
-    shippingAddressSection.classList.toggle('show');
-
-    // Get the continue button in the shipping address section
-    const continueButton = billingAddressSection.querySelector('.continue-btn');
-    
-    // If the the sectioncontains show, then change the text of the button to "Copy Shipping Address"
-    if (shippingAddressSection.classList.contains('show')) {
-        continueButton.innerText = 'Purchase';
-    }
-    else {
-        continueButton.innerText = 'Continue';    
-    }
-
-}
 
 function toggleIcon() {
     const icon = document.querySelector('#nav-icon3');
@@ -95,7 +238,7 @@ function toggleNextSection(currentSectionId, nextSectionId) {
             const sameAsShipping = document.getElementById('sameAsShipping');
 
             // If the next section is the shipping address section and the same-as-shipping checkbox is checked or the next section is the submit button
-            if (nextSectionId === 'shippingAddressSection' && sameAsShipping.checked || nextSectionId == 'SubmitButton') {
+            if (currentSectionId === 'paymentInfoSection') {
                 handlePurchase(currentSectionId);
                 return;
             }
@@ -319,6 +462,23 @@ async function getCartQuantity() {
         });
 }
 
+async function getSessionId() {
+    return fetch('/get_session_id')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            return data.session_id;
+        })
+        .catch(error => {
+            console.error('Error fetching session ID:', error);
+            return null;
+        });
+}
+
 //Create a second toggle for the mobile menu to be a dropdown menu when hamburger icon is clicked
 async function handlePurchase(sectionId) {
     // Grab the continue-btn in the sectionID
@@ -391,7 +551,9 @@ async function handlePurchase(sectionId) {
 
         if (response.ok) {
             // Redirect to the confirmation page
-            window.location.href = '/confirmation';
+
+            const sessionid = await getSessionId();
+            window.location.href = `/confirmation/${sessionid}`;
         } else {
             // Display an error message
             displayErrorMessage(sectionId, 'An error occurred while processing your purchase. Please try again.');

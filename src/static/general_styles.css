@@ -29,6 +29,10 @@
     width: var(--shopping-cart-icon-width);
 }
 
+.icon-cart {
+    cursor: pointer;
+}
+
 .hamburger-icon{
     display: flex;
     justify-content: center;
@@ -284,7 +288,9 @@ body {
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
-
+.spinner.hidden {
+    display: none;
+}
 @keyframes spin {
     to {
         transform: rotate(360deg);

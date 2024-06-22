@@ -22,7 +22,7 @@
         <a class= "shop" href="/shop_art_menu">SHOP ART</a>
         <div class="shopping_cart_icon">
             <div class = "center_cart">            
-                <a href="/shop_art">
+                <a onclick = "checkoutRedirect()">
                     <div class="icon-cart" style="clear: left; float: left">
                         <div class="icon-wrapper">
                             <div class="cart-line-1" style="background-color: black;"></div>
@@ -48,7 +48,7 @@
             </label>
         </div>
         <div class = "shopping_cart_icon">
-            <a href="/shop_art">
+            <a onclick = "checkoutRedirect()">
                 <div class="icon-cart" style="clear: left; float: left">
                     <div class="icon-wrapper">
                         <div class="cart-line-1" style="background-color: black;"></div>
@@ -76,7 +76,7 @@
                 <h2>Order Details</h2>
                 <p><strong>Order Number:</strong> {{ order_payload.order_number }}</p>
                 <p><strong>Order Date:</strong> {{ order_payload.order_date }}</p>
-                <p><strong>Total Amount:</strong> ${{ order_payload.total_amount }}</p>
+                <p><strong>Total Amount:</strong> ${{ order_payload.total_price }}</p>
             </div>
             <div class="shipping-details">
                 <h2>Shipping Details</h2>
@@ -89,9 +89,9 @@
             <div class="order-items">
                 <h2>Order Items</h2>
                 <ul>
-                    {% for item in order_items %}
+                    {% for item in order_payload.order_contents %}
                         <li>
-                            <p><strong>Product:</strong> {{ item.name }}</p>
+                            <p><strong>Product:</strong> {{ item.title }}</p>
                             <p><strong>Quantity:</strong> {{ item.quantity }}</p>
                             <p><strong>Price:</strong> ${{ item.price }}</p>
                         </li>

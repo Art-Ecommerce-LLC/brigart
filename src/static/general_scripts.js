@@ -2,6 +2,30 @@ function toggleIcon() {
     const icon = document.querySelector('#nav-icon3');
     icon.classList.toggle('open');
 }
+// Function to handle the checkout redirection
+async function checkoutRedirect() {
+    const session_id = await get_session_id();
+    window.location.href = `/shop_art/${session_id}`;
+}
+
+async function paymentRedirect() {
+    const session_id = await get_session_id();
+    window.location.href = `/checkout/${session_id}`;
+}
+// Disply a total qunatity error message if the submit post form returns an error
+
+async function get_session_id() {
+    try {
+        const response = await fetch('/get_session_id');
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        return data.session_id;
+    } catch (error) {
+        console.error('Error fetching session id:', error);
+    }
+}
 
 async function emailListEnter() {
     // Get the email input value

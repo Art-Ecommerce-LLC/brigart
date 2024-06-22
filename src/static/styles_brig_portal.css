@@ -68,7 +68,8 @@ body {
 }
 
 .portal-form input[type="text"],
-.portal-form input[type="file"] {
+.portal-form input[type="file"],
+.portal-form input[type="number"]{
     width: 100%;
     padding: 10px;
     margin-bottom: 20px;
