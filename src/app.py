@@ -73,10 +73,10 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
         return templates.TemplateResponse("error_500.html", {"request": request}, status_code=400)
     if exc.status_code == 405:
         logger.warning(f"Page not found: {exc.detail}")
-        return templates.TemplateResponse("error_405.html", {"request": request}, status_code=405)
+        return templates.TemplateResponse("error_500.html", {"request": request}, status_code=405)
     if exc.status_code == 404:
         logger.warning(f"Page not found: {exc.detail}")
-        return templates.TemplateResponse("error_404.html", {"request": request}, status_code=404)
+        return templates.TemplateResponse("error_500.html", {"request": request}, status_code=404)
     
 
     return HTMLResponse(content=str(exc.detail), status_code=exc.status_code)
