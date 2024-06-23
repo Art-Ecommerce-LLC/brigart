@@ -76,7 +76,7 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
         return templates.TemplateResponse("error_500.html", {"request": request}, status_code=405)
     if exc.status_code == 404:
         logger.warning(f"Page not found: {exc.detail}")
-        return templates.TemplateResponse("error_500.html", {"request": request}, status_code=404)
+        return templates.TemplateResponse("error_405.html", {"request": request}, status_code=404)
     
 
     return HTMLResponse(content=str(exc.detail), status_code=exc.status_code)
@@ -244,7 +244,7 @@ async def shop_art(request: Request, sessionid: str):
         titles = Noco.get_artwork_data().titles
         # Check if the title is in the cart if so, get the image url
         img_data_list = []
-        for item in img_quant_list:
+        for item in img_quant_list: 
             for title in titles:
                 if item['title'] in title:
                     img_url = art_uris[titles.index(title)]
