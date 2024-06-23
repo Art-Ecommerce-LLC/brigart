@@ -79,11 +79,20 @@
             </div>
             <div class="quantity-container">
                 <div class = "quantity-controls">
-                    <button class="decrease-quantity" onclick="decreaseQuantity(this)">-</button>
-                    <input id= "price-quantity" class = "quantity-input" font-size = "16px" value = "{{ img_data.quantity }}" type="text" readonly>
-                    <button class="increase-quantity" onclick="increaseQuantity(this)">+</button>
+                    <div class="decrease-quantity-btn-wrapper">
+                        <button class="decrease-quantity" onclick="decreaseQuantity(this)">-</button>
+                    </div>
+                    <div class="quantity-input-wrapper">
+                        <input id= "price-quantity" class = "quantity-input" font-size = "16px" value = "{{ img_data.quantity }}" type="text" readonly>
+                    </div>
+                    <div class="increase-quantity-btn-wrapper">
+                        <button class="increase-quantity" onclick="increaseQuantity(this)">+</button>
+                    </div>
                 </div>
-                <p class="price" id="price-text">${{ img_data.price }}</p>
+                <div class="price-container">
+                    <p class="price" id="price-text">${{ img_data.price }}</p>
+                </div>
+
                 <div class="price-remove-container">
                     <button class="remove-item" onclick="removeItemButton(this)">X</button>
                 </div>
@@ -91,7 +100,9 @@
         </div>
         {% endfor %}
         <div class = "checkout-container">
-            <p class="total">Total: $<span id="total-price">{{ total_price }}</span></p>
+            <div class="price-container">
+                <p class="total">Total: $<span id="total-price">{{ total_price }}</span></p>
+            </div>
             <button class="checkout-btn">CHECKOUT</button>
         </div>
     </div>

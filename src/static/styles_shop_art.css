@@ -95,10 +95,7 @@
     margin-right: 0px;
     margin-bottom:150px;
     margin-left:auto;
-}
-.price-remove-container {
-    display: inline-block;
-
+    font-size:  16px;
 }
 
 .quantity-container button {
@@ -115,7 +112,7 @@
     font-size: 15px;
 }
 .quantity-input {
-    color: inherit;
+
     font-size: 16px;
     text-align: center;
     text-decoration: solid;
@@ -126,17 +123,20 @@
     line-height: 22px;
     padding: 0px;
     border: medium;
-    caret-color: black;
+    color: white;
     vertical-align: top;
     width:10vw;
     cursor : default;
+    border: 2px solid white;
+    height: 100%;
 }
 input[readonly]:focus {
     outline: none;
 }
+
+
 .quantity-container button:hover {
     background-color: white;
-    color: black;
     transition : background-color 0.3s;
 }
 
@@ -176,6 +176,28 @@ input[readonly]:focus {
     display:none;
 }
 
+.quantity-input-wrapper {
+    color: white;
+    border: 2px solid white;
+}
+
+
+.decrease-quantity-btn-wrapper {
+    border: 2px solid white;
+}
+.increase-quantity-btn-wrapper {
+    border: 2px solid white;
+}
+.price-remove-container {
+    border: 2px solid white;
+    height: 100%;
+    font-size: 16px;
+}
+.price-container {
+    height: 100%;
+    border: 2px solid white;
+    font-size: 16px;
+}
 .checkout-container button {
     padding: 10px 20px;
     background-color: white;

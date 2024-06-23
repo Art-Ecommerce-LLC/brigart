@@ -8,7 +8,7 @@ from fastapi.responses import (
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import os
-from src.artapi.config import NOCODB_PATH, STRIPE_SECRET_KEY
+from src.artapi.config import STRIPE_SECRET_KEY
 from src.artapi.logger import logger
 from src.artapi.middleware import add_middleware
 from src.artapi.models import (
@@ -17,8 +17,6 @@ from src.artapi.models import (
 )
 from src.artapi.noco import Noco
 from src.artapi.logger import get_logs
-import requests
-import json
 import tempfile
 import os
 from typing import List
@@ -26,7 +24,7 @@ import uuid
 from src.artapi.noco_config import OPENAPI_URL, BRIG_USERNAME, BRIG_PASSWORD, BEN_USERNAME, BEN_PASSWORD
 import datetime
 import stripe
-from typing import Dict, Any
+
 
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
@@ -421,39 +419,37 @@ async def delete_item(request: Request, title: Title):
 async def shop_checkout(request: Request, sessionid: str):
     # raise HTTPException(status_code=404, detail="Page not found")
     logger.info(f"Checkout page accessed by {request.client.host}")
-    raise HTTPException(status_code=404, detail="Page not found")
+    try: 
+        img_quant_list = Noco.get_cookie_from_session_id(sessionid)
+        art_uris = Noco.get_artwork_data().data_uris
+        titles = Noco.get_artwork_data().titles
 
-    # try: 
-    #     img_quant_list = Noco.get_cookie_from_session_id(sessionid)
-    #     art_uris = Noco.get_artwork_data().data_uris
-    #     titles = Noco.get_artwork_data().titles
-
-    #     # Check if the title is in the cart if so, get the image url
-    #     img_data_list = []
-    #     for item in img_quant_list:
-    #         for title in titles:
-    #             if item["title"] in title:
-    #                 img_uri = art_uris[titles.index(title)]
-    #                 img_dict = {}
-    #                 img_dict["img_uri"] = img_uri
-    #                 img_dict["img_title"] = title
-    #                 img_dict["quantity"] = item["quantity"]
-    #                 img_dict["price"] = Noco.get_art_price_from_title_and_quantity(item["title"], item["quantity"])
-    #                 img_data_list.append(img_dict)
-    #     total_quantity = sum(int(item["quantity"]) for item in img_quant_list)
-    #     total_price = sum(int(item["price"]) for item in img_quant_list) 
+        # Check if the title is in the cart if so, get the image url
+        img_data_list = []
+        for item in img_quant_list:
+            for title in titles:
+                if item["title"] in title:
+                    img_uri = art_uris[titles.index(title)]
+                    img_dict = {}
+                    img_dict["img_uri"] = img_uri
+                    img_dict["img_title"] = title
+                    img_dict["quantity"] = item["quantity"]
+                    img_dict["price"] = Noco.get_art_price_from_title_and_quantity(item["title"], item["quantity"])
+                    img_data_list.append(img_dict)
+        total_quantity = sum(int(item["quantity"]) for item in img_quant_list)
+        total_price = sum(int(item["price"]) for item in img_quant_list) 
         
-    #     context = {
-    #         "img_data_list": img_data_list,
-    #         "brig_logo_url": Noco.get_icon_uri_from_title("brig_logo"),
-    #         "total_price": total_price,
-    #         "total_quantity": total_quantity
-    #     }
+        context = {
+            "img_data_list": img_data_list,
+            "brig_logo_url": Noco.get_icon_uri_from_title("brig_logo"),
+            "total_price": total_price,
+            "total_quantity": total_quantity
+        }
 
-    #     return templates.TemplateResponse(request=request, name="checkout.html", context=context)
-    # except Exception as e:
-    #     logger.error(f"Error in shop_checkout: {e}")
-    #     raise HTTPException(status_code=500, detail="Internal server error")
+        return templates.TemplateResponse(request=request, name="checkout.html", context=context)
+    except Exception as e:
+        logger.error(f"Error in shop_checkout: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/subscribe")
 async def subscribe(request: Request, email: Email):
