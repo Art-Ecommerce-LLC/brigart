@@ -1,210 +1,4 @@
 
-const stripe = Stripe("pk_test_51PUCroP7gcDRwQa36l19NuC5DMT7t5wJVn0HEY73nAKbRO7BmozSO2XTSMW6qLPIB7Y6hrJrag5jnnbMY6QgPvoz00la6BYXMS");
-
-
-document.addEventListener('DOMContentLoaded', function() {
-
-    // Initialize sections
-    initializeSections();
-
-    document.querySelectorAll('.collapsible-header').forEach(header => {
-        header.addEventListener('click', () => {
-            const section = header.parentElement;
-            if (!header.classList.contains('disabled') || section.classList.contains('open')) {
-                section.classList.toggle('open');
-                updateArrow(header);
-            }
-        });
-    });
-
-    const continueButton = document.querySelector('#shippingInfoSection .continue-btn');
-    continueButton.addEventListener('click', maskCreditCardAndCVV);
-});
-
-function initializeSections() {
-    const sections = document.querySelectorAll('.collapsible-section');
-    sections.forEach(section => {
-        if (!section.classList.contains('open')) {
-            section.classList.add('collapsed');
-        }
-    });
-}
-
-
-// The items the customer wants to buy
-async function getOrderContents() {
-  let response = await fetch("/get_order_contents", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    });
-    return await response.json();
-}
-
-initialize();
-checkStatus();
-
-document
-  .querySelector("#payment-form")
-  .addEventListener("submit", handleSubmit);
-
-
-// Fetches a payment intent and captures the client secret
-async function initialize() {
-    let items = await getOrderContents()
-      .then((data) => {
-          return data;
-          })
-      .catch((error) => {
-          console.error("Error:", error);
-      }
-      );
-    console.log(items);
-    const response = await fetch("/create-payment-intent", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({order_contents : items}),
-    });
-    const { clientSecret } = await response.json();
-  
-    const appearance = {
-      theme: 'stripe',
-    };
-    const elements = stripe.elements({ appearance, clientSecret });
-  
-    const paymentElementOptions = {
-      layout: "tabs",
-    };
-  
-    const paymentElement = elements.create("payment", paymentElementOptions);
-    paymentElement.mount("#payment-element");
-  
-    // Create an address element
-    const addressElementOptions = {
-      mode: 'shipping', // Ensure it's set to 'shipping'
-    };
-    const addressElement = elements.create("address", addressElementOptions);
-    addressElement.mount("#shipping-element"); // Corrected the ID to match your HTML
-  }
-
-async function getSessionId() {
-    const response = await fetch("/get_session_id", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        });
-        return await response.json();
-    }
-
-
-
-async function handleSubmit(e) {
-    e.preventDefault();
-    setLoading(true);
-  
-    const sessionId = await getSessionId()
-      .then((data) => {
-          return data.session_id;
-          })
-      .catch((error) => {
-          console.error("Error:", error);
-      }
-      );
-  
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        // Make sure to change this to your payment completion page
-        return_url: `http://localhost:8000/confirmation/${sessionId}`,
-      },
-    });
-  
-    // This point will only be reached if there is an immediate error when
-    // confirming the payment. Otherwise, your customer will be redirected to
-    // your `return_url`. For some payment methods like iDEAL, your customer will
-    // be redirected to an intermediate site first to authorize the payment, then
-    // redirected to the `return_url`.
-    if (error.type === "card_error" || error.type === "validation_error") {
-      showMessage(error.message);
-    } else {
-      showMessage("An unexpected error occurred.");
-    }
-  
-    setLoading(false);
-  }
-  
-  
-function showMessage(messageText) {
-    const messageContainer = document.querySelector("#payment-message");
-  
-    messageContainer.classList.remove("hidden");
-    messageContainer.textContent = messageText;
-  
-    setTimeout(function () {
-      messageContainer.classList.add("hidden");
-      messageContainer.textContent = "";
-    }, 4000);
-  }
-// Fetches the payment intent status after payment submission
-async function checkStatus() {
-    const clientSecret = new URLSearchParams(window.location.search).get(
-      "payment_intent_client_secret"
-    );  
-  
-    if (!clientSecret) {
-      return;
-    }
-  
-    const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
-  
-    switch (paymentIntent.status) {
-      case "succeeded":
-        showMessage("Payment succeeded!");
-        break;
-      case "processing":
-        showMessage("Your payment is processing.");
-        break;
-      case "requires_payment_method":
-        showMessage("Your payment was not successful, please try again.");
-        break;
-      default:
-        showMessage("Something went wrong.");
-        break;
-    }
-  }
-  
-  
-  // Show a spinner on payment submission
-function setLoading(isLoading) {
-    if (isLoading) {
-      // Disable the button and show a spinner
-      document.querySelector("#submit").disabled = true;
-      document.querySelector("#spinner").classList.remove("hidden");
-      document.querySelector("#button-text").classList.add("hidden");
-    } else {
-      document.querySelector("#submit").disabled = false;
-      document.querySelector("#spinner").classList.add("hidden");
-      document.querySelector("#button-text").classList.remove("hidden");
-    }
-  }
-
-function maskCreditCardAndCVV() {
-    // Mask the credit card number except for the last four digits
-    const cardNumberInput = document.getElementById('card-number');
-    const cardNumberValue = cardNumberInput.value.trim();
-    if (cardNumberValue.length > 4) {
-        const maskedCardNumber = '*'.repeat(cardNumberValue.length - 4) + cardNumberValue.slice(-4);
-        cardNumberInput.value = maskedCardNumber;
-    }
-
-    // Mask the entire CVV
-    const cvvInput = document.getElementById('cvv');
-    const cvvValue = cvvInput.value.trim();
-    if (cvvValue.length > 0) {
-        cvvInput.value = '*'.repeat(cvvValue.length);
-    }
-}
-
-
-
 function toggleIcon() {
     const icon = document.querySelector('#nav-icon3');
     icon.classList.toggle('open');
@@ -224,47 +18,7 @@ function toggleInputsAndButtons(section, disable) {
         button.disabled = disable;
     });
 }
-function toggleNextSection(currentSectionId, nextSectionId) {
 
-    validateSection(currentSectionId).then(isValid => {
-        if (isValid) {
-            removeFormErrorMessage();
-            if (currentSectionId === 'paymentInfoSection') {
-                handlePurchase(currentSectionId);
-                return;
-            }
-            const currentSection = document.getElementById(currentSectionId);
-            const currentSectionHeader = currentSection.querySelector('.collapsible-header');
-            currentSection.classList.remove('open');
-
-            // Remove the continue button from the current section
-            const continueButton = currentSection.querySelector('.continue-btn');
-            if (continueButton) {
-                continueButton.remove();
-            }
-
-            updateArrow(currentSectionHeader);
-            toggleInputsAndButtons(currentSection, true);
-
-
-            const nextSection = document.getElementById(nextSectionId);
-            const nextSectionHeader = nextSection.querySelector('.collapsible-header');
-            
-            nextSection.classList.add('open');
-            nextSectionHeader.classList.remove('disabled');
-            nextSectionHeader.style.fontWeight = 'bold';
-            updateArrow(nextSectionHeader);
-            toggleInputsAndButtons(nextSection, false);
-            // Scroll to the next section smoothly
-        } else {
-            // Display custom error message as the second to last element in the collapsible-content div in the current section
-            displayErrorMessage(currentSectionId, 'Please enter a valid email and phone number.');
-        }
-    }).catch(error => {
-        console.error('Validation failed:', error);
-        displayErrorMessage(currentSectionId, 'An error occurred while validating. Please try again.');
-    });
-}
 function removeFormErrorMessage() {
     const existingErrorMessage = document.querySelector('.error-message');
     if (existingErrorMessage) {
@@ -290,112 +44,6 @@ function displayErrorMessage(currentSectionId, message) {
 
 }
 
-async function validateSection(sectionId) {
-    const section = document.getElementById(sectionId);
-    const inputs = section.querySelectorAll('input');
-
-    if (sectionId === 'contactInfoSection') {
-        const email = document.getElementById('email').value.trim();
-        const phone = document.getElementById('phone').value.trim();
-        if (!email || !phone) {
-            return false;
-        }
-
-        // Send the email and phone in an async function that triggers the spinner and disables the buttons until the response is received
-        const contact_payload = {
-            email: email,
-            phone: phone
-        }
-        const responsePromise = fetch('/validate_contact_info', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(contact_payload)
-        });
-
-        // Use togglePageLock to manage the page lock and response handling
-        return togglePageLock(responsePromise).then(response => {
-            if (!response.ok) {
-                return false;
-            }
-            removeFormErrorMessage();
-            return true;
-        });
-    }
-    if (sectionId === 'paymentInfoSection') {
-        const cardName = document.getElementById('card-name').value.trim();
-        const cardNumber = document.getElementById('card-number').value.trim();
-        const expiryDate = document.getElementById('expiry').value.trim();
-        const cvv = document.getElementById('cvv').value.trim();
-        if (!cardName || !cardNumber || !expiryDate || !cvv) {
-            return false;
-        }
-
-        // Send the card details in an async function that triggers the spinner and disables the buttons until the response is received
-        const payment_payload = {
-            cardName: cardName,
-            cardNumber: cardNumber,
-            expiryDate: expiryDate,
-            cvv: cvv
-        }
-
-        const responsePromise = fetch('/validate_payment_info', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payment_payload)
-        });
-
-        // Use togglePageLock to manage the page lock and response handling
-        return togglePageLock(responsePromise).then(response => {
-            if (!response.ok) {
-                return false;
-            }
-            removeFormErrorMessage();
-            return true;
-        });
-    }
-    if (sectionId === 'billingAddressSection') {
-        const fullname = document.getElementById('fullname').value.trim();
-        const address1 = document.getElementById('address1').value.trim();
-        const address2 = document.getElementById('address2').value.trim();
-        const city = document.getElementById('city').value.trim();
-        const state = document.getElementById('state').value.trim();
-        const zip = document.getElementById('zip').value.trim();
-        if (!fullname || !address1 || !city || !state || !zip) {
-            return false;
-        }
-
-        billing_payload = {
-            fullname: fullname,
-            address1: address1,
-            address2: address2,
-            city: city,
-            state: state,
-            zip: zip
-        }
-        const responsePromise = fetch('/validate_shipping_info', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(billing_payload)
-        });
-
-        // Use togglePageLock to manage the page lock and response handling
-        return togglePageLock(responsePromise).then(response => {
-            if (!response.ok) {
-                return false;
-            }
-            removeFormErrorMessage();
-            return true;
-        });
-    }
-
-    return true;
-}
 
 function updateArrow(header) {
     const arrow = header.querySelector('.arrow');
@@ -470,91 +118,6 @@ async function getSessionId() {
         });
 }
 
-//Create a second toggle for the mobile menu to be a dropdown menu when hamburger icon is clicked
-async function handlePurchase(sectionId) {
-    // Grab the continue-btn in the sectionID
-    const continueButton = document.getElementById(sectionId).querySelector('.continue-btn');
-    // Disable the buttons and inputs in the section
-    toggleInputsAndButtons(document.getElementById(sectionId), true);
-
-    // Change the text of the continue button to "Purchase"
-    continueButton.innerText = 'Purchase';
-
-    // If it gets clicked while its text is "Purchase", then submit a fetch request
-
-    // Get all disabled input text fields
-    const emailInput = document.getElementById('email');
-    const phoneInput = document.getElementById('phone');
-    const cardNameInput = document.getElementById('card-name');
-    const cardNumberInput = document.getElementById('card-number');
-    const expiryInput = document.getElementById('expiry');
-    const cvvInput = document.getElementById('cvv');
-    const fullnameInput = document.getElementById('fullname');
-    const address1Input = document.getElementById('address1');
-    const address2Input = document.getElementById('address2');
-    const cityInput = document.getElementById('city');
-    const stateInput = document.getElementById('state');
-    const zipInput = document.getElementById('zip');
-    const sameAsShipping = document.getElementById('sameAsShipping');
-
-    let checkout_payload = {
-        email: emailInput.value,
-        phone: phoneInput.value,
-        cardName: cardNameInput.value,
-        cardNumber: cardNumberInput.value,
-        expiryDate: expiryInput.value,
-        cvv: cvvInput.value,
-        fullname: fullnameInput.value,
-        address1: address1Input.value,
-        address2: address2Input.value,
-        city: cityInput.value,
-        state: stateInput.value,
-        zip: zipInput.value
-    };
-
-    if (!sameAsShipping.checked) {
-        const shipFullname = document.getElementById('shipFullname');
-        const shipAddress1 = document.getElementById('shipAddress1');
-        const shipAddress2 = document.getElementById('shipAddress2');
-        const shipCity = document.getElementById('shipCity');
-        const shipState = document.getElementById('shipState');
-        const shipZip = document.getElementById('shipZip');
-        
-        checkout_payload = {
-            ...checkout_payload,
-            shipFullname: shipFullname.value,
-            shipAddress1: shipAddress1.value,
-            shipAddress2: shipAddress2.value,
-            shipCity: shipCity.value,
-            shipState: shipState.value,
-            shipZip: shipZip.value
-        };
-    }
-
-    try {
-        const response = await fetch('/purchase', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(checkout_payload)
-        });
-
-        if (response.ok) {
-            // Redirect to the confirmation page
-
-            const sessionid = await getSessionId();
-            window.location.href = `/confirmation/${sessionid}`;
-        } else {
-            // Display an error message
-            displayErrorMessage(sectionId, 'An error occurred while processing your purchase. Please try again.');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        displayErrorMessage(sectionId, 'An error occurred while processing your purchase. Please try again.');
-    }
-}
-
 async function updateTotalPrice() {
     let totalPrice = 0;
     // Loop through each item in the cart
@@ -564,7 +127,6 @@ async function updateTotalPrice() {
 
     // Send the total price to the backend for verification
     try {
-        console.log('Total price:', totalPrice)
         const response = await fetch('/post_total_price', {
             method: 'POST',
             headers: {
@@ -580,7 +142,6 @@ async function updateTotalPrice() {
         // Handle the response data
         if (responseData.totalPrice !== undefined && responseData.totalPrice !== null) {
                 // Update the total price element
-            console.log(responseData.totalPrice);
             document.getElementById('total-price').innerText = responseData.totalPrice.toFixed(2);
     
         } else {
@@ -621,16 +182,19 @@ function displayTotalQuantityError(message) {
 }
 
 async function modifyPaymentIntent(order_contents){
+
+    // get email input value
+    let emailInput = document.getElementById('email');
+    let email = emailInput.value;
+    console.log(email);
     const response = await fetch('/modify-payment-intent', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ order_contents: order_contents })
+        body: JSON.stringify({ order_contents: order_contents, email: email})
     });
     const data = await response.json();
-    console.log(data);
-
 }
 
 async function increaseQuantity(button) {
@@ -939,6 +503,8 @@ function toggleMenu() {
         document.body.style.overflow = 'auto';
         content.classList.remove('hide');
         footer.classList.remove('hide');
+        dropdown.classList.remove('show');
+        dropdown.classList.add('hide');
     }
 }
 

@@ -79,17 +79,17 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
 
     return HTMLResponse(content=str(exc.detail), status_code=exc.status_code)
 
-@app.get("/test_noco", response_class=HTMLResponse)
-async def test_noco(request: Request):
-    logger.info(f"Test NoCoDB accessed by {request.client.host}")
-    try:
-        # Get the image lists
-        json = Noco.get_cookie_data_no_cache_no_object()
-        test = Noco.get_cookie_data().cookiesJson
-        return JSONResponse(test)
-    except Exception as e:
-        logger.error(f"Error in test_noco: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+# @app.get("/test_noco", response_class=HTMLResponse)
+# async def test_noco(request: Request):
+#     logger.info(f"Test NoCoDB accessed by {request.client.host}")
+#     try:
+#         # Get the image lists
+#         json = Noco.get_cookie_data_no_cache_no_object()
+#         test = Noco.get_cookie_data().cookiesJson
+#         return JSONResponse(test)
+#     except Exception as e:
+#         logger.error(f"Error in test_noco: {e}")
+#         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/", response_class=HTMLResponse)
 async def homepage(request: Request):
@@ -757,16 +757,20 @@ async def confirmation(request: Request, sessionid: str):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/get_order_contents")
-async def get_order_contents(request: Request):
+async def get_order_contents(request: Request, email: Email):
     try:
-        Noco.refresh_cookie_cache()
+        # Post email to order_contents in NoCodeDB
+        if email.email:
+            Noco.patch_email_to_cookie(request.session.get("session_id"), email.email)
+
         if not request.session.get('session_id'):
             logger.warning("Session ID not found")
             raise HTTPException(status_code=400, detail="Session ID not found")
         session_id = request.session.get('session_id')
         order_contents = Noco.get_cookie_from_session_id(session_id)
         order_payload = {
-            "img_quantity_list": order_contents
+            "img_quantity_list": order_contents,
+            "email": Noco.get_email_from_cookie(session_id)
         }
         return JSONResponse(order_payload)
     except Exception as e:
@@ -774,7 +778,7 @@ async def get_order_contents(request: Request):
         return JSONResponse(error=str(e)), 403
 
 @app.post("/modify-payment-intent")
-async def modify_payment(request: Request, order_contents: OrderContents):
+async def modify_payment(request: Request, order_contents: OrderContents, email: Email):
     try:
         payment_intent = Noco.get_payment_intent_data_from_sessionid(request.session.get("session_id"))
         intent = stripe.PaymentIntent.modify(
@@ -800,12 +804,18 @@ async def create_payment(request: Request, order_contents: OrderContents):
             automatic_payment_methods={
                     'enabled': True,
                 },
+            receipt_email= Noco.get_email_from_cookie(request.session.get("session_id")),
+            metadata={
+                'integration_check': 'accept_a_payment',
+                'session_id': request.session.get("session_id")
+            }
             )
             Noco.post_payment_intent_data(request.session.get("session_id"), intent)
             return JSONResponse({
                 'clientSecret': intent['client_secret']
             })
         else:
+            intent = Noco.get_payment_intent_data_from_sessionid(request.session.get("session_id"))
             intent = stripe.PaymentIntent.modify(
                 intent["id"],
                 metadata= intent["metadata"],
@@ -822,10 +832,21 @@ async def create_payment(request: Request, order_contents: OrderContents):
 @app.post("/get_host_path_and_session_id")
 async def get_host_path_and_session_id(request: Request):
     try:
+        host_path = request.client.host
+
         return JSONResponse({
-            "host_path": "http://localhost:8000",
+            "host_path": host_path,
             "session_id": request.session.get("session_id")
         })
     except Exception as e:
         logger.error(f"Error in get_host_path_and_session_id: {e}")
         return JSONResponse(error=str(e)), 403
+    
+
+@app.get("/.well-known/apple-developer-merchantid-domain-association")
+async def apple_pay(request: Request):
+    return RedirectResponse(url="/static/.well-known/apple-developer-merchantid-domain-association")
+
+@app.get("/favicon.ico")
+async def favicon(request: Request):
+    return RedirectResponse(url="/static/favicon.ico")

@@ -19,6 +19,7 @@ class TitleQuantity(BaseModel):
 class OrderContents(BaseModel):
     order_contents: Dict[str, Any]
     
+    
 class OrderInfo(BaseModel):
     email: EmailStr = Field(...)
     phone: str = Field(..., min_length=10, max_length=15)

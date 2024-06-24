@@ -1,163 +1,166 @@
-// This is your test publishable API key.
+document.addEventListener("DOMContentLoaded", () => {
+  const stripe = Stripe("pk_test_51PUCroP7gcDRwQa36l19NuC5DMT7t5wJVn0HEY73nAKbRO7BmozSO2XTSMW6qLPIB7Y6hrJrag5jnnbMY6QgPvoz00la6BYXMS");
 
+  document.querySelector('#contact-form').addEventListener("submit", (e) => {
+    e.preventDefault();
+    const emailInput = document.getElementById('email');
+    console.log(emailInput.value);
 
+    initialize(emailInput.value);
+    checkStatus();
 
-const stripe = Stripe("pk_test_51PUCroP7gcDRwQa36l19NuC5DMT7t5wJVn0HEY73nAKbRO7BmozSO2XTSMW6qLPIB7Y6hrJrag5jnnbMY6QgPvoz00la6BYXMS");
+    document
+      .querySelector("#payment-form")
+      .addEventListener("submit", handleSubmit);
+  });
 
-// The items the customer wants to buy
-async function getOrderContents() {
-  let response = await fetch("/get_order_contents", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+  async function getOrderContents(emailInput) {
+    let response = await fetch("/get_order_contents", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: emailInput }),
     });
     return await response.json();
-}
+  }
 
-initialize();
-checkStatus();
+  let elements;
 
-document
-  .querySelector("#payment-form")
-  .addEventListener("submit", handleSubmit);
-
-
-// Fetches a payment intent and captures the client secret
-async function initialize() {
-    let items = await getOrderContents()
+  async function initialize(emailInput) {
+    let items = await getOrderContents(emailInput)
       .then((data) => {
-          return data;
-          })
+        return data;
+      })
       .catch((error) => {
-          console.error("Error:", error);
-      }
-      );
-    console.log(items);
+        console.error("Error:", error);
+      });
+    
     const response = await fetch("/create-payment-intent", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({order_contents : items}),
+      body: JSON.stringify({ order_contents: items}),
     });
     const { clientSecret } = await response.json();
-  
+
     const appearance = {
       theme: 'stripe',
     };
-    const elements = stripe.elements({ appearance, clientSecret });
-  
+    elements = stripe.elements({ appearance, clientSecret });
+
     const paymentElementOptions = {
       layout: "tabs",
     };
-  
+
     const paymentElement = elements.create("payment", paymentElementOptions);
     paymentElement.mount("#payment-element");
-  
-    // Create an address element
+
     const addressElementOptions = {
       mode: 'shipping', // Ensure it's set to 'shipping'
       fields: {
-        phone: 'always', // Example of additional field
+        phone: 'always',
       },
     };
     const addressElement = elements.create("address", addressElementOptions);
-    addressElement.mount("#shipping-element"); // Corrected the ID to match your HTML
+    addressElement.mount("#shipping-element");
+    addressElement.on('change', (event) => {
+      if (event.complete) {
+        const address = event.value.address;
+        const phone = event.value.phone;
+        console.log(address);
+        console.log(phone);
+      }
+    });
   }
 
-async function getSessionId() {
+  async function getSessionId() {
     const response = await fetch("/get_session_id", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        });
-        return await response.json();
-    }
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+    return await response.json();
+  }
 
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setLoading(true);
 
-async function handleSubmit(e) {
-  e.preventDefault();
-  setLoading(true);
-
-  const sessionId = await getSessionId()
-    .then((data) => {
+    const sessionId = await getSessionId()
+      .then((data) => {
         return data.session_id;
-        })
-    .catch((error) => {
+      })
+      .catch((error) => {
         console.error("Error:", error);
+      });
+
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        // Make sure to change this to your payment completion page
+        return_url: `http://localhost:8000/confirmation/${sessionId}`,
+      },
+    });
+
+    if (error.type === "card_error" || error.type === "validation_error") {
+      showMessage(error.message);
+    } else {
+      showMessage("An unexpected error occurred.");
     }
+
+    setLoading(false);
+  }
+
+  async function checkStatus() {
+    const clientSecret = new URLSearchParams(window.location.search).get(
+      "payment_intent_client_secret"
     );
 
-  const { error } = await stripe.confirmPayment({
-    elements,
-    confirmParams: {
-      // Make sure to change this to your payment completion page
-      return_url: `http://localhost:8000/confirmation/${sessionId}`,
-    },
-  });
+    if (!clientSecret) {
+      return;
+    }
 
-  // This point will only be reached if there is an immediate error when
-  // confirming the payment. Otherwise, your customer will be redirected to
-  // your `return_url`. For some payment methods like iDEAL, your customer will
-  // be redirected to an intermediate site first to authorize the payment, then
-  // redirected to the `return_url`.
-  if (error.type === "card_error" || error.type === "validation_error") {
-    showMessage(error.message);
-  } else {
-    showMessage("An unexpected error occurred.");
+    const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
+
+    switch (paymentIntent.status) {
+      case "succeeded":
+        showMessage("Payment succeeded!");
+        break;
+      case "processing":
+        showMessage("Your payment is processing.");
+        break;
+      case "requires_payment_method":
+        showMessage("Your payment was not successful, please try again.");
+        break;
+      default:
+        showMessage("Something went wrong.");
+        break;
+    }
   }
 
-  setLoading(false);
-}
+  function showMessage(messageText) {
+    const messageContainer = document.querySelector("#payment-message");
+    const shippingMessageContainer = document.querySelector("#shipping-message");
 
-// Fetches the payment intent status after payment submission
-async function checkStatus() {
-  const clientSecret = new URLSearchParams(window.location.search).get(
-    "payment_intent_client_secret"
-  );
+    shippingMessageContainer.classList.remove("hidden");
+    shippingMessageContainer.textContent = messageText;
+    messageContainer.classList.remove("hidden");
+    messageContainer.textContent = messageText;
 
-  if (!clientSecret) {
-    return;
+    setTimeout(function () {
+      messageContainer.classList.add("hidden");
+      messageContainer.textContent = "";
+      shippingMessageContainer.classList.add("hidden");
+      shippingMessageContainer.textContent = "";
+    }, 4000);
   }
 
-  const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
-
-  switch (paymentIntent.status) {
-    case "succeeded":
-      showMessage("Payment succeeded!");
-      break;
-    case "processing":
-      showMessage("Your payment is processing.");
-      break;
-    case "requires_payment_method":
-      showMessage("Your payment was not successful, please try again.");
-      break;
-    default:
-      showMessage("Something went wrong.");
-      break;
+  function setLoading(isLoading) {
+    if (isLoading) {
+      document.querySelector("#submit").disabled = true;
+      document.querySelector("#spinner").classList.remove("hidden");
+      document.querySelector("#button-text").classList.add("hidden");
+    } else {
+      document.querySelector("#submit").disabled = false;
+      document.querySelector("#spinner").classList.add("hidden");
+      document.querySelector("#button-text").classList.remove("hidden");
+    }
   }
-}
-
-// ------- UI helpers -------
-
-function showMessage(messageText) {
-  const messageContainer = document.querySelector("#payment-message");
-
-  messageContainer.classList.remove("hidden");
-  messageContainer.textContent = messageText;
-
-  setTimeout(function () {
-    messageContainer.classList.add("hidden");
-    messageContainer.textContent = "";
-  }, 4000);
-}
-
-// Show a spinner on payment submission
-function setLoading(isLoading) {
-  if (isLoading) {
-    // Disable the button and show a spinner
-    document.querySelector("#submit").disabled = true;
-    document.querySelector("#spinner").classList.remove("hidden");
-    document.querySelector("#button-text").classList.add("hidden");
-  } else {
-    document.querySelector("#submit").disabled = false;
-    document.querySelector("#spinner").classList.add("hidden");
-    document.querySelector("#button-text").classList.remove("hidden");
-  }
-}
+});

@@ -40,7 +40,7 @@ class Noco:
         return {
             'xc-token': NOCODB_XC_TOKEN
         }
-
+    
     def get_nocodb_path(table: str) -> str:
         """
         Function to return the path of a table in NocoDB
@@ -236,7 +236,7 @@ class Noco:
         )
         return icon_data
 
-    @lru_cache(maxsize=128)
+
     def get_key_data() -> KeyObject:
         """
         Function to get the key data from NocoDB
@@ -765,6 +765,40 @@ class Noco:
         except ValueError:
             logger.error(f"Session ID {sessionid} not found")
             return {}
+        
+    def patch_email_to_cookie(sessionid: str, email: str) -> None:
+        """
+        Function to post the email to the cookie
+        
+        Args:
+            sessionid (str): The session ID
+            email (str): The email
+        """
+        current_nocodb_data = Noco.get_full_cookie_from_session_id(sessionid)
+        current_nocodb_data['email'] = email
+
+        data = {
+            "Id": Noco.get_cookie_Id_from_session_id(sessionid),
+            "sessionid": sessionid,
+            "cookiesJson": current_nocodb_data
+        }
+        Noco.patch_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, data)
+        Noco.refresh_cookie_cache()
+
+
+    def get_email_from_cookie(sessionid: str) -> str:
+        """
+        Function to get the email from the cookie
+        
+        Args:
+            sessionid (str): The session ID
+
+        Returns:
+            str: The email
+        """
+        current_nocodb_data = Noco.get_full_cookie_from_session_id(sessionid)
+        return current_nocodb_data['email']
+    
     def refresh_content_cache():
         """
         Function to refresh the cookie cache

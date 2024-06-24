@@ -9,7 +9,6 @@ dotenv_path = dotenv.find_dotenv()
 dotenv.load_dotenv(dotenv_path)
 
 NOCODB_PATH = os.getenv("nocodb_path")
-
 NOCODB_XC_TOKEN = os.getenv("nocodb_xc_token")
 NOCODB_EMAIL_TABLE = os.getenv("nocodb_email_table")
 NOCODB_KEY_TABLE = os.getenv("nocodb_key_table")
@@ -21,7 +20,6 @@ NOCODB_CONTENT_TABLE = os.getenv("nocodb_content_table")
 NOCODB_COOKIES_TABLE = os.getenv("nocodb_cookies_table")
 NOCODB_PAYMENTINTENT_TABLE = os.getenv("nocodb_paymentintent_table")
 STRIPE_SECRET_KEY = os.getenv("stripe_secret_key")
-
 
 # Create an instance of TableMap
 NOCODB_TABLE_MAP = TableMap(

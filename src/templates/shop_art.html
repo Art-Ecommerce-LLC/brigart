@@ -7,6 +7,7 @@
     <title>Art Showcase</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles_shop_art.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/general_styles.css') }}">
+    <script async src="https://js.stripe.com/v3/"></script>
     <script src="{{ url_for('static', path='/toggle_menu_shop_art.js') }}"></script>
     <script src="{{ url_for('static', path='/general_scripts.js') }}"></script>
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
@@ -34,7 +35,7 @@
     </div>
     <div class="mobile-menu">
         <div class="hamburger-icon">
-            <label class="hambuger-menu" onclick="toggleIcon(); toggleMenu(); toggleDropdown()" >
+            <label class="hambuger-menu" onclick="toggleIcon(); toggleDropdown()" >
                 <div id="nav-icon3">
                     <span></span>
                     <span></span>
@@ -83,18 +84,18 @@
                         <button class="decrease-quantity" onclick="decreaseQuantity(this)">-</button>
                     </div>
                     <div class="quantity-input-wrapper">
-                        <input id= "price-quantity" class = "quantity-input" font-size = "16px" value = "{{ img_data.quantity }}" type="text" readonly>
+                        <input id= "price-quantity" class = "quantity-input" font-size = "16px" value = "{{ img_data.quantity }}" type="number" readonly>
                     </div>
                     <div class="increase-quantity-btn-wrapper">
                         <button class="increase-quantity" onclick="increaseQuantity(this)">+</button>
                     </div>
-                </div>
-                <div class="price-container">
-                    <p class="price" id="price-text">${{ img_data.price }}</p>
-                </div>
-
-                <div class="price-remove-container">
-                    <button class="remove-item" onclick="removeItemButton(this)">X</button>
+                
+                    <div class="price-container">
+                        <p class="price" id="price-text">${{ img_data.price }}</p>
+                    </div>
+                    <div class="price-remove-container">
+                        <button class="remove-item" onclick="removeItemButton(this)">X</button>
+                    </div>
                 </div>
             </div>
         </div>

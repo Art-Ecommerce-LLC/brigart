@@ -61,7 +61,6 @@
     margin-bottom: 22px;
     vertical-align: middle;
     color: white;
-    font-size: 16px;
     white-space: nowrap; /* Prevent text from wrapping */
     overflow: hidden; /* Hide any overflow */
     text-overflow: ellipsis; /* Show ellipsis (...) for overflowing text */ /* Adjust max-width based on your design */
@@ -77,52 +76,48 @@
 }
 
 .quantity-container {
-    display:flex;
+    display: flex;
     flex-direction: row;
+    align-items: center; /* Align items vertically centered */
     white-space: nowrap;
     color: white;
-    flex-wrap: wrap;
-    margin-top:5px;
-    margin-bottom:5px;
-    max-height:40px;
-    margin-left:auto;
-
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-left: auto;
+    height: 40px;
 }
+
 .quantity-controls {
     display: flex;
     flex-direction: row;
-    font-size: 15px;
+    align-items: center; /* Align items vertically centered */
     margin-right: 0px;
-    margin-bottom:150px;
-    margin-left:auto;
-    font-size:  16px;
+    height: 100%;
+}
+.price {
+    margin: 0;
 }
 
 .quantity-container button {
     background: transparent;
     border: medium;
     color: inherit;
-    position: relative;
     cursor: pointer;
     color: white;
     border: none;
     border-radius: 99999px;
-    padding: 10px 20px;
-    background-color: 50%;
-    font-size: 15px;
 }
+
 .quantity-input {
-    font-size: 16px;
     text-align: center;
     background-color: transparent;
     flex: 1 1 auto; /* Allow it to grow and shrink */
     font-family: inherit;
-    line-height: 22px;
     padding: 0;
     color: white;
     border: none; /* Remove border */
     width: 10vw; /* Set a specific width */
-    height: 100%;
+    height: 100%;; /* Set consistent height */
     -webkit-appearance: none; /* Remove default appearance */
     appearance: none; /* Define standard property for compatibility */
 }
@@ -130,25 +125,24 @@
 input[readonly]:focus {
     outline: none;
 }
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    appearance: textfield; /* Hide the arrows for Firefox */
+    -moz-appearance: textfield; /* Hide the arrows for Firefox */
+}
 
 .quantity-container button:hover {
     background-color: white;
     transition : background-color 0.3s;
 }
 
-.quantity-container p {   
-    margin-top:10px;
-}
 
-.price {
-    display: inline-block;
-    font-size: 16px;
-    text-align: right;
-    vertical-align: middle;
-    white-space: nowrap;
-    margin-right:15px;
-    width:250px;
-}
+
 .empty-cart-message {
     color: white;
     font-size: 20px;
@@ -184,16 +178,23 @@ input[readonly]:focus {
 .increase-quantity-btn-wrapper {
     border: 2px solid white;
 }
-.price-remove-container {
+.price-container {/* Set consistent height */
     border: 2px solid white;
     height: 100%;
-    font-size: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
 }
-.price-container {
-    height: 100%;
+.price-container {/* Set consistent height */
     border: 2px solid white;
-    font-size: 16px;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
 }
+
 .checkout-container button {
     padding: 10px 20px;
     background-color: white;
@@ -236,8 +237,9 @@ input[readonly]:focus {
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 16px; /* Add margin between price and remove button */
+    height: 40px; /* Set consistent height */
 }
+
 .remove-item:hover {
     background-color: #0056b3; /* Example color on hover for remove button */
 }
@@ -282,20 +284,11 @@ input[readonly]:focus {
     .image_container img{
         margin-right:6px;
     }
-    
-    .content_cart {
-        line-height: 1.5em;
-    }
     .quantity-container {
         margin-left:0;
         width:100%;
     }
     .quantity-controls{
         margin-left:0px;
-    }
-    .price{
-        margin-left:auto;
-        width: auto;
-        margin-right:5px;
     }
 }

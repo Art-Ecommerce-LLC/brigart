@@ -38,7 +38,7 @@
     </div>
     <div class="mobile-menu">
         <div class="hamburger-icon">
-            <label class="hambuger-menu" onclick="toggleIcon(); toggleMenu(); toggleDropdown()" >
+            <label class="hambuger-menu" onclick="toggleDropdown(); toggleIcon()" >
                 <div id="nav-icon3">
                     <span></span>
                     <span></span>
@@ -72,35 +72,36 @@
 </div>
 <div class="content">
     <div class="left-section" id="leftSection">
-        <div class="collapsible-section" id="shippingInfoSection">
-            <h1 class="collapsible-header disabled">Shipping Information<span class="arrow">&#9660;</span></h1>
-            <div class="collapsible-content">
-                <form id="shipping-form">
-                    <div id="shipping-element">
-                      <!-- Your shipping form elements here -->
-                    </div>
-                </form>
-                <button class="continue-btn" onclick="toggleNextSection('shippingInfoSection', 'paymentInfoSection')">Continue</button>
+        <h1>Contact Information</h1>
+        <form id = "contact-form">
+            <div id="contact-element">
+                <input type="email" id="email" placeholder="Email" required>
+                <button id="submit-email" class="continue-btn">Continue</button>
             </div>
-        </div>
-        <div class="collapsible-section" id="paymentInfoSection">
-            <h1 class="collapsible-header disabled">Payment Information<span class="arrow">&#9660;</span></h1>
-            <div class="collapsible-content">
-                <form id="payment-form">
-                    <div id="payment-element">
-                        <!--Stripe.js injects the Payment Element-->
-                    </div>
-                    <button id="submit" class="continue-btn" onclick="toggleNextSection('paymentInfoSection', 'Submit')">
-                        <div class="spinner hidden"></div>
-                        <span id="button-text"  id="spinner">Pay now</span>
-                    </button>
-                    <div id="payment-message" class="hidden"></div>
-                </form>
+        </form>
+        <h1>Shipping Information</h1>
+        <form id="shipping-form">
+            <div id="shipping-element">
+              <!-- Your shipping form elements here -->
             </div>
-        </div>
+            <div id = "shipping-message" class="hidden"></div>
+        </form>
+        <form id="payment-form">
+            <h1>Payment Information</h1>
+            <div id="payment-element">
+                <!--Stripe.js injects the Payment Element-->
+            </div>
+            <button id="submit" class="continue-btn">
+                <div class="spinner hidden" id="spinner"></div>
+                <span id="button-text">Pay now</span>
+              </button>
+            <div id="payment-message" class="hidden"></div>
+        </form>
     </div>
     <div class="right-section" id="rightSection">
-        <h1>Order Summary</h1>
+        <div>
+            <h1>Order Summary</h1>
+        </div>
         {% for img_data in img_data_list %}
          <div class="info_container">
             <div class="image_container" style="background-image: url('{{ img_data.img_uri }}')" draggable="false" oncontextmenu="return false">
