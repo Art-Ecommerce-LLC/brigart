@@ -3,11 +3,6 @@ const stripe = Stripe("pk_test_51PUCroP7gcDRwQa36l19NuC5DMT7t5wJVn0HEY73nAKbRO7B
 
 
 document.addEventListener('DOMContentLoaded', function() {
-    const contactInfoSection = document.getElementById('contactInfoSection');
-    contactInfoSection.classList.add('open');
-
-    const sameAsShipping = document.getElementById('sameAsShipping');
-    sameAsShipping.checked = false;
 
     // Initialize sections
     initializeSections();
@@ -234,10 +229,6 @@ function toggleNextSection(currentSectionId, nextSectionId) {
     validateSection(currentSectionId).then(isValid => {
         if (isValid) {
             removeFormErrorMessage();
-            // Check if the same-as-shipping checkbox is checked
-            const sameAsShipping = document.getElementById('sameAsShipping');
-
-            // If the next section is the shipping address section and the same-as-shipping checkbox is checked or the next section is the submit button
             if (currentSectionId === 'paymentInfoSection') {
                 handlePurchase(currentSectionId);
                 return;

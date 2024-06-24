@@ -758,10 +758,13 @@ class Noco:
         Returns:
             dict: The payment intent data
         """
-        paymentintent_data = Noco.get_payment_intent_data()
-        index = paymentintent_data.sessionids.index(sessionid)
-        return paymentintent_data.payment_intents[index]
-    
+        try:
+            paymentintent_data = Noco.get_payment_intent_data()
+            index = paymentintent_data.sessionids.index(sessionid)
+            return paymentintent_data.payment_intents[index]
+        except ValueError:
+            logger.error(f"Session ID {sessionid} not found")
+            return {}
     def refresh_content_cache():
         """
         Function to refresh the cookie cache

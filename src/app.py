@@ -793,19 +793,28 @@ async def modify_payment(request: Request, order_contents: OrderContents):
 @app.post("/create-payment-intent")
 async def create_payment(request: Request, order_contents: OrderContents):
     try:
-        # Create a PaymentIntent with the order amount and currency
-
-        intent = stripe.PaymentIntent.create(
+        if Noco.get_payment_intent_data_from_sessionid(request.session.get("session_id")) == {}:
+            intent = stripe.PaymentIntent.create(
             amount=Noco.get_total_price_from_order_contents(order_contents.order_contents) * 100,
             currency='usd',
             automatic_payment_methods={
-                'enabled': True,
-            },
-        )
-        Noco.post_payment_intent_data(request.session.get("session_id"), intent)
-        return JSONResponse({
-            'clientSecret': intent['client_secret']
-        })
+                    'enabled': True,
+                },
+            )
+            Noco.post_payment_intent_data(request.session.get("session_id"), intent)
+            return JSONResponse({
+                'clientSecret': intent['client_secret']
+            })
+        else:
+            intent = stripe.PaymentIntent.modify(
+                intent["id"],
+                metadata= intent["metadata"],
+                amount=Noco.get_total_price_from_order_contents(order_contents.order_contents) * 100,
+            )
+            Noco.patch_payment_intent_data(request.session.get("session_id"), intent)
+            return JSONResponse({
+                'clientSecret': intent['client_secret']
+            })
     except Exception as e:
         logger.error(f"Error in create_payment: {e}")
         return JSONResponse(error=str(e)), 403

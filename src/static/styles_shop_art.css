@@ -112,28 +112,24 @@
     font-size: 15px;
 }
 .quantity-input {
-
     font-size: 16px;
     text-align: center;
-    text-decoration: solid;
-    text-decoration-color: white;
     background-color: transparent;
-    flex: 1 1 0%;
+    flex: 1 1 auto; /* Allow it to grow and shrink */
     font-family: inherit;
     line-height: 22px;
-    padding: 0px;
-    border: medium;
+    padding: 0;
     color: white;
-    vertical-align: top;
-    width:10vw;
-    cursor : default;
-    border: 2px solid white;
+    border: none; /* Remove border */
+    width: 10vw; /* Set a specific width */
     height: 100%;
+    -webkit-appearance: none; /* Remove default appearance */
+    appearance: none; /* Define standard property for compatibility */
 }
+
 input[readonly]:focus {
     outline: none;
 }
-
 
 .quantity-container button:hover {
     background-color: white;
