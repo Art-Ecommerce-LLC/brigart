@@ -11,7 +11,7 @@ src/brig.py
 src/__pycache__/*
 
 # Ignore .env file in src/
-src/.env
+.env
 
 docker-desktop-config.yaml
 
