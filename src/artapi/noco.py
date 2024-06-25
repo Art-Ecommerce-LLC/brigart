@@ -14,8 +14,11 @@ from typing import Union
 import uuid
 
 class Noco:
+    
     """
+
     Class to interact with NocoDB
+
     """
     
     # Store the previous state of the data
@@ -714,12 +717,12 @@ class Noco:
         """
         # For each title in img_quantity_list, get the quantity and title
         img_quantity_list = order_contents['img_quantity_list']
+
         for each in img_quantity_list:
             title = each['title']
             quantity = each['quantity']
             price = Noco.get_art_price_from_title_and_quantity(title, quantity)
             each['price'] = price
-
         total_price = sum([int(each['price']) for each in img_quantity_list])
         return total_price
     
@@ -734,7 +737,7 @@ class Noco:
         return cookie_data.Id[-1]
 
     
-    def post_payment_intent_data(sessionid:str , data: dict) -> None:
+    def post_payment_intent_data(sessionid: str , data: dict) -> None:
         """
         Function to post payment intent data
         
@@ -805,5 +808,27 @@ class Noco:
         """
         Noco.get_content_data.cache_clear()
 
+    # def refresh_img_quant_lists():
+    #     """
 
-    
+    #     Since this table stores the img_quantity_list, we need to loop throught he dictionaries in the img_quantity_list which is in the cookiesJson column
+    #     and then we need to sync it with the prices, and titles in the artwork table, and update the data_uri for each title in the img_quantity_list,
+    #     the data uri is created from the signedPath in the artwork table. and the functions in Noco. The img quant list can't have the data uri object it in it
+    #     you have to replace that part ofthe object in the art object
+    #     """
+    #     cookie_data = Noco.get_cookie_data()
+    #     artwork_data = Noco.get_artwork_data()
+    #     for i, art_title in enumerate(artwork_data.titles):
+    #         for cookie_title in cookie_data.cookiesJson:
+    #             try:
+    #                 price = artwork_data.prices[i]
+    #             except ValueError:
+    #                 # If the title is not found in the artwork data, remove it from the cookie data and patch the cookiesJson back
+    #                 cookie_data.cookiesJson.remove(cookie_title)
+    #                 cookie_data = {
+    #                     "Id": cookie_data.Id[i],
+    #                     "sessionid": cookie_data.sessionids[i],
+    #                     "cookiesJson": cookie_data.cookiesJson
+    #                 }
+    #             try:
+            

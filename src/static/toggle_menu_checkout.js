@@ -184,15 +184,12 @@ function displayTotalQuantityError(message) {
 async function modifyPaymentIntent(order_contents){
 
     // get email input value
-    let emailInput = document.getElementById('email');
-    let email = emailInput.value;
-    console.log(email);
     const response = await fetch('/modify-payment-intent', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ order_contents: order_contents, email: email})
+        body: JSON.stringify({ order_contents: order_contents})
     });
     const data = await response.json();
 }

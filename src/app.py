@@ -778,7 +778,7 @@ async def get_order_contents(request: Request, email: Email):
         return JSONResponse(error=str(e)), 403
 
 @app.post("/modify-payment-intent")
-async def modify_payment(request: Request, order_contents: OrderContents, email: Email):
+async def modify_payment(request: Request, order_contents: OrderContents):
     try:
         payment_intent = Noco.get_payment_intent_data_from_sessionid(request.session.get("session_id"))
         intent = stripe.PaymentIntent.modify(
