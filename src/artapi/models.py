@@ -122,7 +122,7 @@ class CookieObject:
     Id : List[int]
     sessionids: List[str]
     # cookiesJson: List[str]
-    cookiesJson: Dict[str, Any]
+    cookiesJson: List[Dict[str, Any]]
 
 @dataclass(frozen=True)
 class OrderObject:
@@ -143,8 +143,8 @@ class ContactObject:
 
 @dataclass(frozen=True)
 class ContentObject:
-    order_number: List[str]
-    order_content: Dict[str, Any]
+    sessionids: List[str]
+    payment_payloads: List[Dict[str, Any]]
 
 @dataclass
 class TableMap:

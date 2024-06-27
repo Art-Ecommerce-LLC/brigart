@@ -4,9 +4,15 @@ function toggleIcon() {
 }
 // Function to handle the checkout redirection
 async function checkoutRedirect() {
-    const session_id = await get_session_id();
-    window.location.href = `/shop_art/${session_id}`;
+    try {
+        const sessionId = await get_session_id();
+        console.log(sessionId); // Log the sessionId to check its value
+        window.location.href = `/shop_art/${sessionId}`;
+    } catch (error) {
+        console.error('Error in checkoutRedirect:', error);
+    }
 }
+
 
 async function paymentRedirect() {
     const session_id = await get_session_id();
@@ -16,16 +22,24 @@ async function paymentRedirect() {
 
 async function get_session_id() {
     try {
-        const response = await fetch('/get_session_id');
+        const response = await fetch('/get_session_id', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
         const data = await response.json();
-        return data.session_id;
+        console.log('Session ID received:', data.session_id); // Log the received sessionId
+        return data.session_id; // Ensure the correct key is used
     } catch (error) {
         console.error('Error fetching session id:', error);
+        throw error; // Rethrow error to be caught in calling function
     }
 }
+
 
 async function emailListEnter() {
     // Get the email input value

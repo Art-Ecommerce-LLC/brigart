@@ -80,22 +80,25 @@
             </div>
             <div class="quantity-container">
                 <div class = "quantity-controls">
-                    <div class="decrease-quantity-btn-wrapper">
-                        <button class="decrease-quantity" onclick="decreaseQuantity(this)">-</button>
-                    </div>
-                    <div class="quantity-input-wrapper">
-                        <input id= "price-quantity" class = "quantity-input" font-size = "16px" value = "{{ img_data.quantity }}" type="number" readonly>
-                    </div>
-                    <div class="increase-quantity-btn-wrapper">
-                        <button class="increase-quantity" onclick="increaseQuantity(this)">+</button>
-                    </div>
-                
-                    <div class="price-container">
-                        <p class="price" id="price-text">${{ img_data.price }}</p>
-                    </div>
-                    <div class="price-remove-container">
-                        <button class="remove-item" onclick="removeItemButton(this)">X</button>
-                    </div>
+                    <div class = "quantity-control-wrapper">
+                        <div class="decrease-quantity-btn-wrapper">
+                            <button class="decrease-quantity" onclick="decreaseQuantity(this)">-</button>
+                        </div>
+                        <div class="quantity-input-wrapper">
+                            <input id= "price-quantity" class = "quantity-input" font-size = "16px" value = "{{ img_data.quantity }}" type="number" readonly>
+                        </div>
+                        <div class="increase-quantity-btn-wrapper">
+                            <button class="increase-quantity" onclick="increaseQuantity(this)">+</button>
+                        </div>
+                    </div> 
+                    <div class="remove-item-wrapper">
+                        <div class="price-container">
+                            <p class="price" id="price-text">${{ img_data.price }}</p>
+                        </div>
+                        <div class="price-remove-container">
+                            <button class="remove-item" onclick="removeItemButton(this)">X</button>
+                        </div>
+                    </div>                                 
                 </div>
             </div>
         </div>

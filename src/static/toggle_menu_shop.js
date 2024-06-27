@@ -4,8 +4,28 @@ function toggleIcon() {
     icon.classList.toggle('open');
 
 }
+
+function toggleLockPageLinksButtons(boolean) {
+
+    const links = document.querySelectorAll('a');
+    const buttons = document.querySelectorAll('button');
+    links.forEach(link => {
+        link.disabled = boolean;
+    });
+    buttons.forEach(button => {
+        button.disabled = boolean;
+    });
+
+}
+
+
 async function togglePageLockShop(title) {
     // Change the opacity of the body to 0.5 before starting the addToCart function
+    // Lock all buttons on the page
+    toggleLockPageLinksButtons(true);
+
+
+
     document.body.style.opacity = '0.5';
     
     // Add a spinner to indicate loading
@@ -23,6 +43,8 @@ async function togglePageLockShop(title) {
         document.body.style.opacity = '1';
         // Remove the spinner once the addToCart function is done
         spinner.remove();
+        // Unlock all buttons on the page
+        toggleLockPageLinksButtons(false);
     }
 }
 

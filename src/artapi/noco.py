@@ -30,7 +30,9 @@ class Noco:
         "cookie": None,
         "order": None,
         "contact": None,
-        "content": None
+        "content": None,
+        "paymentintent": None
+
     }
 
     def get_auth_headers() -> dict:
@@ -82,6 +84,20 @@ class Noco:
         response = requests.get(Noco.get_nocodb_path(table), headers=Noco.get_auth_headers(), params=params)
         response.raise_for_status()
         return response.json()
+    
+    def delete_nocodb_table_data(table: str, Id: int) -> None:
+        """
+        Function to delete data from a table in NocoDB
+        
+        Args:
+            table (str): The table name
+            Id (int): The ID of the data to delete
+        """
+        body = {
+            "Id": Id
+        }
+        response = requests.delete(f"{Noco.get_nocodb_path(table)}", headers=Noco.get_auth_headers(), json=body)
+        response.raise_for_status
     
     def post_nocodb_table_data(table: str, data: dict) -> None:
         """
@@ -166,7 +182,7 @@ class Noco:
             Ids=[item['Id'] for item in data['list']]
         )
         return artwork_data
-    
+        
     def get_payment_intent_data() -> PaymentIntentObject:
         """
         Function to get the payment intent data from NocoDB
@@ -339,8 +355,8 @@ class Noco:
         """
         data = Noco.get_nocodb_table_data(NOCODB_TABLE_MAP.content_table)
         content_data = ContentObject(
-            order_number=[item['order_number'] for item in data['list']],
-            order_content=[item['order_contents'] for item in data['list']]
+            sessionids=[item['sessionid'] for item in data['list']],
+            payment_payloads=[item['payment_payload'] for item in data['list']]
         )
         return content_data
     
@@ -467,6 +483,7 @@ class Noco:
         Returns:
             dict: The contact cookie
         """
+
         cookie_data = Noco.get_cookie_data()
         index = cookie_data.sessionids.index(session_id)
         contact_cookie = cookie_data.cookiesJson[index]['contact_info']
@@ -541,7 +558,7 @@ class Noco:
             index = cookie_data.sessionids.index(session_id)
             return cookie_data.Id[index]
         except ValueError:
-            logger.info(f"Session ID {session_id} not found")
+            logger.info(f"ID {session_id} not found from Id")
             return ""
     
     
@@ -665,23 +682,18 @@ class Noco:
         """
         Noco.get_artwork_data.cache_clear()
     
-    def empty_cart(session_id: str):
+    def delete_user_session_after_payment(session_id: str) -> None:
         """
-        Function to empty the cart
+        Function to delete the user session after payment
         
         Args:
             session_id (str): The session ID
         """
-        current_nocodb_data = Noco.get_full_cookie_from_session_id(session_id)
-        current_nocodb_data['img_quantity_list'] = []
-
-        data = {
-            "Id": Noco.get_cookie_Id_from_session_id(session_id),
-            "sessionid": session_id,
-            "cookiesJson": current_nocodb_data
-        }
-        Noco.patch_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, data)
-
+        cookie_data = Noco.get_cookie_data()
+        index = cookie_data.sessionids.index(session_id)
+        Noco.delete_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, cookie_data.Id[index])
+        Noco.refresh_cookie_cache()
+        
     def post_order_contents(order_payload : dict) -> None:
         """
         Function to post order contents
@@ -766,7 +778,7 @@ class Noco:
             index = paymentintent_data.sessionids.index(sessionid)
             return paymentintent_data.payment_intents[index]
         except ValueError:
-            logger.error(f"Session ID {sessionid} not found")
+            logger.error(f"Session ID for payment data {sessionid} not found")
             return {}
         
     def patch_email_to_cookie(sessionid: str, email: str) -> None:
@@ -831,4 +843,17 @@ class Noco:
     #                     "cookiesJson": cookie_data.cookiesJson
     #                 }
     #             try:
-            
+    
+    def post_payment_payload(sessionid, payment_payload) -> None:
+        """
+        Function to post the payment payload
+        
+        Args:
+            data (dict): The payment payload
+        """
+        payment_payload = {
+            "sessionid": sessionid,
+            "payment_payload": payment_payload
+        }
+
+        Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.content_table, payment_payload)

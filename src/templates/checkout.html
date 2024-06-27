@@ -72,26 +72,36 @@
 </div>
 <div class="content">
     <div class="left-section" id="leftSection">
-        <h1>Contact Information</h1>
+        <h1 class="contact-header">
+            Contact Information
+            <span class="arrow">&#9660;</span>
+        </h1>
         <form id = "contact-form">
             <div id="contact-element">
-                <input type="email" id="email" placeholder="Email" required>
-                <button id="submit-email" class="continue-btn">Continue</button>
+                <label for="email" class="email-label">Email</label>
+                <input type="email" id="email" class="email" placeholder="Enter Email" required>                
             </div>
+            <button id="submit-email" class="continue-btn">Continue</button>
         </form>
-        <h1>Shipping Information</h1>
+        <h1 class="shipping-header">
+            Shipping Information
+            <span class="arrow">&#9660;</span>
+        </h1>
         <form id="shipping-form">
             <div id="shipping-element">
               <!-- Your shipping form elements here -->
             </div>
             <div id = "shipping-message" class="hidden"></div>
         </form>
-        <form id="payment-form">
-            <h1>Payment Information</h1>
+        <h1 class="payment-header">
+            Payment Information
+            <span class="arrow">&#9660;</span>
+        </h1>
+        <form id="payment-form">     
             <div id="payment-element">
                 <!--Stripe.js injects the Payment Element-->
             </div>
-            <button id="submit" class="continue-btn">
+            <button id="submit" class="submit-payment">
                 <div class="spinner hidden" id="spinner"></div>
                 <span id="button-text">Pay now</span>
               </button>
@@ -100,7 +110,7 @@
     </div>
     <div class="right-section" id="rightSection">
         <div>
-            <h1>Order Summary</h1>
+            <h1 class="order-summary-header">Order Summary</h1>
         </div>
         {% for img_data in img_data_list %}
          <div class="info_container">

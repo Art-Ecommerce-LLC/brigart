@@ -2,60 +2,13 @@
     --section-width: 320px;
 }
 
-#shippingAddressSection.show {
-    display: none;
-}
-.collapsible-header {
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 1.5em;
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
-    background-color: #f9f9f9;
-    transition: background-color 0.3s ease;
-    font-weight: bold;
-}
 .same-as-shipping {
     width: auto;
 }
 .address-checkbox input {
     width: 20px !important;
 }
-/* .right-section h1{
-    font-size: 1.5em;
-    font-weight: bold;
-} */
 
-
-.collapsible-header:hover {
-    background-color: #e9e9e9;
-}
-
-.arrow {
-    transition: transform 0.3s ease;
-}
-
-.collapsible-header.disabled {
-    cursor: default;
-    opacity: 0.5;
-    font-weight: normal;
-}
-
-.collapsible-content {
-    display: none;
-    padding: 10px 0;
-}
-
-.collapsible-section.open .collapsible-content {
-    display: block;
-}
-
-
-.collapsible-section.open .arrow {
-    transform: rotate(180deg);
-}
 .left-section input{
     width: calc(100%);
     padding: 10px;
@@ -113,14 +66,11 @@ input[readonly]:focus {
     border: 2px solid black;
 }
 
-label {
-    font-weight: bold;
-    margin-bottom: 2px;
-}
 br{
     margin:5px;
 }
-.continue-btn {
+.continue-btn,
+.submit-payment {
     background-color: black;
     color: white;
     padding: 10px;
@@ -131,8 +81,19 @@ br{
     width: 100%;
     transition: background-color 0.3s;
 }
+.continue-btn.hide {
+    display: none;
+}
+.submit-payment {
+    display: none;
+}
+.submit-payment.show{
+    display: block;
 
-.continue-btn:hover {
+}
+
+.continue-btn:hover,
+.submit-payment:hover {
     color:black;
     background-color: white;
     border: 2px solid black;
@@ -272,9 +233,7 @@ br{
     background-color: #040404;
     width: 300px;
 }
-.content_cart h1{
-    color:white;
-}
+
 .quantity-container {
     display: flex;
     justify-content: center; /* Center the content horizontally */
@@ -356,6 +315,47 @@ br{
     font-size: 16px; /* Add margin between price and remove button */
     transition: background-color 0.3s;
 }
+.contact-header,
+.shipping-header,
+.payment-header,
+.order-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.5em;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    background-color: #f9f9f9;
+    transition: background-color 0.3s ease;
+    font-weight: bold;
+}
+.submit
+
+.email-label {
+    margin-bottom: 0.25rem;
+    font-size: 0.93rem;
+    transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.contact-header .arrow {
+    transform: rotate(180deg);
+}
+
+.contact-header.close .arrow {
+    transition: transform 0.3s ease-in-out;
+    transform: rotate(0deg);
+}
+
+.payment-header.open .arrow,
+.shipping-header.open .arrow{
+    transition: transform 0.3s ease-in-out;
+    transform: rotate(180deg);
+}
+.contact-header label
+
+.order-summary-header {
+    cursor: default;
+}
+
 .cart_a {
     text-decoration: none;
     color: black;

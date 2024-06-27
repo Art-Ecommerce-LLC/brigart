@@ -1,7 +1,16 @@
 document.addEventListener("DOMContentLoaded", () => {
   const stripe = Stripe("pk_test_51PUCroP7gcDRwQa36l19NuC5DMT7t5wJVn0HEY73nAKbRO7BmozSO2XTSMW6qLPIB7Y6hrJrag5jnnbMY6QgPvoz00la6BYXMS");
 
+  // Clear the email input field
+   document.querySelector(".email").value = "";
+
   document.querySelector('#contact-form').addEventListener("submit", (e) => {
+    document.querySelector(".payment-header").classList.add("open");
+    document.querySelector(".shipping-header").classList.add("open");
+    document.querySelector(".continue-btn").classList.add("hide"); 
+    document.querySelector(".submit-payment").classList.add("show");
+    // make input with class email disabled
+    document.querySelector(".email").disabled = true; 
     e.preventDefault();
     const emailInput = document.getElementById('email');
     console.log(emailInput.value);
@@ -15,6 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   async function getOrderContents(emailInput) {
+
     let response = await fetch("/get_order_contents", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -76,13 +86,15 @@ document.addEventListener("DOMContentLoaded", () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
     });
-    return await response.json();
+    return response.json();
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
 
+    // add show to id's shipping-form and payment-form and add hide to contact-form and button in the contact-header
+    
     const sessionId = await getSessionId()
       .then((data) => {
         return data.session_id;
@@ -90,7 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
       .catch((error) => {
         console.error("Error:", error);
       });
-
+      console.log(sessionId);
     const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: {
@@ -104,7 +116,8 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       showMessage("An unexpected error occurred.");
     }
-
+    // Add classlist open to class payment-header and shipping-header
+    
     setLoading(false);
   }
 

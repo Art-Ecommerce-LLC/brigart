@@ -24,6 +24,9 @@ import uuid
 from src.artapi.noco_config import OPENAPI_URL, BRIG_USERNAME, BRIG_PASSWORD, BEN_USERNAME, BEN_PASSWORD
 import datetime
 import stripe
+from stripe import _error
+
+
 
 
 # Initialize FastAPI App
@@ -126,7 +129,9 @@ async def get_cart_quantity(request: Request):
     logger.info(f"Get cart quantity by {request.client.host}")
     try:
         Noco.refresh_cookie_cache()
+        print(request.session.get("session_id"))
         if request.session.get("session_id") is None:
+
             return JSONResponse({"quantity": 0})
         
         img_quantity_list = Noco.get_cookie_from_session_id(request.session.get("session_id"))
@@ -142,6 +147,7 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity):
     logger.info(f"Shop art URL for {title_quantity.title} by {request.client.host}")
     try:
         Noco.refresh_cookie_cache()
+        print(request.session.get("session_id"))
         cookie_data = {}
         img_quant_dict = {}
         img_quant_dict["title"] = title_quantity.title
@@ -210,13 +216,13 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity):
         logger.error(f"Error in shop_art_url: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-@app.get("/get_session_id")
+@app.post("/get_session_id")
 async def get_session_id(request: Request):
     logger.info(f"Get session id by {request.client.host}")
     try:
         if request.session.get("session_id"):
             return JSONResponse({"session_id": request.session.get("session_id")})
-        else:
+        elif request.session.get("session_id") == None:
             # Create one and store in database then return
             session_id = str(uuid.uuid4())
             request.session["session_id"] = session_id
@@ -234,6 +240,7 @@ async def shop_art(request: Request, sessionid: str):
     logger.info(f"Shop art page accessed by {request.client.host}")
     try:
         Noco.refresh_cookie_cache()
+        print(request.session.get("session_id"))
         img_quant_list = Noco.get_cookie_from_session_id(sessionid)
         if img_quant_list == []:
             return RedirectResponse(url="/shop_art_menu")
@@ -289,11 +296,13 @@ async def shop_giclee_prints(request: Request):
     except Exception as e:
         logger.error(f"Error in shop_giclee_prints: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
+    
 @app.post("/post_total_price")
 async def post_total_price(request: Request, total_price: TotalPrice):
     logger.info(f"Post total price {total_price.totalPrice} by {request.client.host}")
     try:
         # Find the total price and check if it matches
+        print(request.session.get("session_id"))
         Noco.refresh_cookie_cache()
         img_quant_list = Noco.get_cookie_from_session_id(request.session.get("session_id"))
         cookie_price_total = sum(int(item["price"]) for item in img_quant_list)
@@ -311,6 +320,7 @@ async def increase_quantity(request: Request, title: Title):
     logger.info(f"Increase quantity for {title.title} by {request.client.host}")
     try:
         Noco.refresh_cookie_cache()
+        print(request.session.get("session_id"))
         session_id = request.session.get("session_id")
         if not session_id:
             raise HTTPException(status_code=400, detail="Session ID not found")
@@ -348,6 +358,7 @@ async def decrease_quantity(request: Request, title: Title):
     logger.info(f"Decrease quantity for {title.title} by {request.client.host}")
     try:
         Noco.refresh_cookie_cache()
+        print(request.session.get("session_id"))
         session_id = request.session.get("session_id")
         if not session_id:
             raise HTTPException(status_code=400, detail="Session ID not found")
@@ -385,6 +396,7 @@ async def delete_item(request: Request, title: Title):
     logger.info(f"Delete item {title.title} by {request.client.host}")
     try:
         Noco.refresh_cookie_cache()
+        print(request.session.get("session_id"))
         session_id = request.session.get("session_id")
         if not session_id:
             raise HTTPException(status_code=400, detail="Session ID not found")
@@ -420,6 +432,7 @@ async def shop_checkout(request: Request, sessionid: str):
     # raise HTTPException(status_code=404, detail="Page not found")
     logger.info(f"Checkout page accessed by {request.client.host}")
     try: 
+        print(request.session.get("session_id"))
         img_quant_list = Noco.get_cookie_from_session_id(sessionid)
         art_uris = Noco.get_artwork_data().data_uris
         titles = Noco.get_artwork_data().titles
@@ -665,6 +678,7 @@ async def checkout_info(request: Request, checkout_info: CheckoutInfo):
     logger.info(f"Checkout info for {checkout_info.email} by {request.client.host}")
     try:
         # Insert shipping info and contact info into NoCodeDB
+        print(request.session.get("session_id"))
         session_id = request.session.get("session_id")
         unique_order_number = Noco.generate_unique_order_number()
         contact_info = {
@@ -718,56 +732,88 @@ async def checkout_info(request: Request, checkout_info: CheckoutInfo):
         raise HTTPException(status_code=500, detail="Internal server error")
     
 @app.get("/confirmation/{sessionid}", response_class=HTMLResponse)
-async def confirmation(request: Request, sessionid: str):
+async def confirmation(request: Request, sessionid: str, payment_intent: str, payment_intent_client_secret: str, redirect_status: str):
     logger.info(f"Confirmation page accessed by {request.client.host}")
     try:     
+        print(redirect_status)
+        print(payment_intent)
+        print(payment_intent_client_secret)
         Noco.refresh_cookie_cache()
         Noco.refresh_content_cache()
-        Noco.empty_cart(sessionid)
+        print(request.session.get("session_id"))
         img_quant_list = Noco.get_cookie_from_session_id(sessionid)
-        if img_quant_list is None:
-            raise HTTPException(status_code=404, detail="Cart is empty")
-
-        contact_info = Noco.get_contact_cookie_from_session_id(sessionid)
-        billing_info = Noco.get_order_cookie_from_session_id(sessionid)
-        order_number = contact_info['order_number']
-        order_contents = Noco.get_order_contents_from_order_number(order_number)
-
-        order_payload = {
-            "email": contact_info['email'],
-            "phone": contact_info['phone'],
-            "shipping_name": billing_info['fullname'],
-            "shipping_address": billing_info['address1'],
-            "shipping_city": billing_info['city'],
-            "shipping_state": billing_info['state'],
-            "shipping_zip": billing_info['zip'],
-            "order_number": order_number,
-            "order_contents": order_contents['img_quantity_list'],
-            "order_date" : datetime.datetime.now().strftime("%m/%d/%Y"),
-            "total_price": Noco.get_total_price_from_order_contents(order_contents),
+        if img_quant_list == []:
+            logger.info("Cart is empty")
+            return RedirectResponse(url="/shop_art_menu")
+        
+        print(img_quant_list)   
+        payment_details = {
+            "payment_intent": payment_intent,
+            "payment_intent_client_secret": payment_intent_client_secret,
+            "redirect_status": redirect_status,
+            "session_id": sessionid,
+            "img_quantity_list": img_quant_list,
+            "email": Noco.get_email_from_cookie(sessionid),
         }
-
+        
+        Noco.post_payment_payload(sessionid, payment_details)
+        
         context = {
             "brig_logo_url": Noco.get_icon_uri_from_title("brig_logo"),
-            "order_payload": order_payload,
+            "payment_payload": payment_details,
         }
-        return templates.TemplateResponse(request=request, name="confirmation.html", context=context)
+
+        Noco.delete_user_session_after_payment(sessionid)
+        print(context)
+
+        # order_payload = {
+        #     "email": contact_info['email'],
+        #     "phone": contact_info['phone'],
+        #     "shipping_name": billing_info['fullname'],
+        #     "shipping_address": billing_info['address1'],
+        #     "shipping_city": billing_info['city'],
+        #     "shipping_state": billing_info['state'],
+        #     "shipping_zip": billing_info['zip'],
+        #     "order_number": order_number,
+        #     "order_contents": order_contents['img_quantity_list'],
+        #     "order_date" : datetime.datetime.now().strftime("%m/%d/%Y"),
+        #     "total_price": Noco.get_total_price_from_order_contents(order_contents),
+        # }
+
+        # context = {
+        #     "brig_logo_url": Noco.get_icon_uri_from_title("brig_logo"),
+        #     "order_payload": order_payload,
+        # }
+        # return templates.TemplateResponse(request=request, name="confirmation.html", context=context)
     except Exception as e:
         logger.error(f"Error in confirmation: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/get_order_contents")
 async def get_order_contents(request: Request, email: Email):
+    logger.info(f"Get order contents by {email.email}")
     try:
         # Post email to order_contents in NoCodeDB
-        if email.email:
+        
+        print(request.session.get("session_id"))
+        if email.email and request.session.get("session_id"):
             Noco.patch_email_to_cookie(request.session.get("session_id"), email.email)
-
+            Noco.refresh_cookie_cache()
         if not request.session.get('session_id'):
-            logger.warning("Session ID not found")
-            raise HTTPException(status_code=400, detail="Session ID not found")
+            session_id = str(uuid.uuid4())
+            request.session['session_id'] = session_id
+            cookiePost = {
+                "img_quantity_list": [],
+                "email" : email.email,
+            }
+            # Make session id
+            Noco.post_cookie_session_id_and_cookies(session_id, cookiePost)
+            return JSONResponse(cookiePost)
         session_id = request.session.get('session_id')
+        print(session_id)
         order_contents = Noco.get_cookie_from_session_id(session_id)
+        print(order_contents)
+        print(Noco.get_email_from_cookie(session_id))
         order_payload = {
             "img_quantity_list": order_contents,
             "email": Noco.get_email_from_cookie(session_id)
@@ -777,26 +823,11 @@ async def get_order_contents(request: Request, email: Email):
         logger.error(f"Error in get_order_contents: {e}")
         return JSONResponse(error=str(e)), 403
 
-@app.post("/modify-payment-intent")
-async def modify_payment(request: Request, order_contents: OrderContents):
-    try:
-        payment_intent = Noco.get_payment_intent_data_from_sessionid(request.session.get("session_id"))
-        intent = stripe.PaymentIntent.modify(
-            payment_intent["id"],
-            metadata= payment_intent["metadata"],
-            amount=Noco.get_total_price_from_order_contents(order_contents.order_contents) * 100,
-        )
-        Noco.patch_payment_intent_data(request.session.get("session_id"), intent)
-        return JSONResponse({
-            'clientSecret': intent['client_secret']
-        })
-    except Exception as e:
-        logger.error(f"Error in modify_order_contents: {e}")
-        return JSONResponse(error=str(e)), 403
-
 @app.post("/create-payment-intent")
 async def create_payment(request: Request, order_contents: OrderContents):
-    try:
+    try: 
+        session_id = request.session.get("session_id")
+        print(session_id)
         if Noco.get_payment_intent_data_from_sessionid(request.session.get("session_id")) == {}:
             intent = stripe.PaymentIntent.create(
             amount=Noco.get_total_price_from_order_contents(order_contents.order_contents) * 100,
@@ -804,27 +835,48 @@ async def create_payment(request: Request, order_contents: OrderContents):
             automatic_payment_methods={
                     'enabled': True,
                 },
-            receipt_email= Noco.get_email_from_cookie(request.session.get("session_id")),
+            receipt_email = Noco.get_email_from_cookie(request.session.get("session_id")),
+            
             metadata={
                 'integration_check': 'accept_a_payment',
                 'session_id': request.session.get("session_id")
             }
             )
             Noco.post_payment_intent_data(request.session.get("session_id"), intent)
+            
             return JSONResponse({
                 'clientSecret': intent['client_secret']
             })
-        else:
+        elif Noco.get_payment_intent_data_from_sessionid(request.session.get("session_id")) != {}:
             intent = Noco.get_payment_intent_data_from_sessionid(request.session.get("session_id"))
-            intent = stripe.PaymentIntent.modify(
-                intent["id"],
-                metadata= intent["metadata"],
+
+            try:
+                intent = stripe.PaymentIntent.modify(
+                    intent["id"],
+                    metadata= intent["metadata"],
+                    amount=Noco.get_total_price_from_order_contents(order_contents.order_contents) * 100,
+                )
+            except:
+                logger.info("Payment intent already exists")
+                intent = stripe.PaymentIntent.create(
                 amount=Noco.get_total_price_from_order_contents(order_contents.order_contents) * 100,
-            )
+                currency='usd',
+                automatic_payment_methods={
+                        'enabled': True,
+                    },
+                receipt_email = Noco.get_email_from_cookie(request.session.get("session_id")),
+                )
+                Noco.post_payment_intent_data(request.session.get("session_id"), intent)
+                return JSONResponse({
+                    'clientSecret': intent['client_secret']
+                })
+
             Noco.patch_payment_intent_data(request.session.get("session_id"), intent)
+
             return JSONResponse({
                 'clientSecret': intent['client_secret']
             })
+        
     except Exception as e:
         logger.error(f"Error in create_payment: {e}")
         return JSONResponse(error=str(e)), 403
