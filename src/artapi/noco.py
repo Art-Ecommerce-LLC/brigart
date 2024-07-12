@@ -428,6 +428,7 @@ class Noco:
             Id=[item['Id'] for item in data['list']],
             sessionids=[item['sessionids'] for item in data['list']],
             cookies=[item['cookies'] for item in data['list']],
+            created_ats=[item['CreatedAt'] for item in data['list']]
         )
         return cookie_data
     

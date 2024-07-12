@@ -136,6 +136,7 @@ class CookieObject:
     Id : List[int]
     sessionids: List[str]
     cookies: List[Dict[str, Any]]
+    created_ats: List[str] 
 
 @dataclass(frozen=True)
 class OrderObject:

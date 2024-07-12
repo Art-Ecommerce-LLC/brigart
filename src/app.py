@@ -16,6 +16,9 @@ from src.artapi.models import (
     Credentials, Title, TitleQuantity, ContactInfo, PaymentInfo, BillingInfo, Email,
     CheckoutInfo, TotalPrice, OrderDetails
 )
+from contextlib import asynccontextmanager
+from src.artapi.cookie_refresher import remove_expired_cookies
+import asyncio
 from src.artapi.noco import Noco
 from src.artapi.logger import get_logs
 import tempfile
@@ -33,10 +36,20 @@ desc = "Backend platform for BRIG ART"
 if OPENAPI_URL == "None":
     OPENAPI_URL = None
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Start the background task for removing expired cookies
+    task = asyncio.create_task(remove_expired_cookies())
+    yield
+    # Cancel the background task and wait for it to finish
+    task.cancel()
+    await task
+
 app = FastAPI(
     title="Brig API",
     description=desc,
-    openapi_url=OPENAPI_URL
+    openapi_url=OPENAPI_URL,
+    lifespan=lifespan
 )
 
 stripe.api_key = STRIPE_SECRET_KEY
@@ -58,6 +71,8 @@ templates_dir = os.path.join(script_dir, "templates")
 # Static files and templates
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 templates = Jinja2Templates(directory=templates_dir)
+
+
 
 @app.exception_handler(HTTPException)
 async def custom_http_exception_handler(request: Request, exc: HTTPException):
