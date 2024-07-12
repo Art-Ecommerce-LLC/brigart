@@ -402,9 +402,9 @@ async def delete_item(request: Request, title: Title):
         logger.error(f"Error in delete_item: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-# @app.get("/checkout/{sessionid}", response_class=HTMLResponse)
-# async def shop_checkout(request: Request, sessionid: str):
-#     # raise HTTPException(status_code=404, detail="Page not found")
+@app.get("/checkout/{sessionid}", response_class=HTMLResponse)
+async def shop_checkout(request: Request, sessionid: str):
+    raise HTTPException(status_code=404, detail="Page not found")
 #     logger.info(f"Checkout page accessed by {request.client.host}")
 #     try: 
 #         if request.session.get("session_id") != sessionid:
