@@ -18,7 +18,11 @@ class TitleQuantity(BaseModel):
 
 class OrderContents(BaseModel):
     order_contents: Dict[str, Any]
+    email: EmailStr = Field(...)
     
+class OrderDetails(BaseModel):
+    order_contents : Dict[str, Any]
+    email: EmailStr = Field(...)
     
 class OrderInfo(BaseModel):
     email: EmailStr = Field(...)
@@ -61,7 +65,17 @@ class BillingInfo(BaseModel):
     zip: str = Field(..., min_length=5, max_length=10)
 
 class Email(BaseModel):
+    # Email can be nothing too
     email: EmailStr = Field(...)
+
+class Confirmation(BaseModel):
+    email: EmailStr = Field(...)
+    line1: str = Field(...)
+    line2: str = Field(...)
+    city: str = Field(...)
+    state: str = Field(...)
+    postal_code: str = Field(...)
+    country: str = Field(...)
 
 class CheckoutInfo(BaseModel):
     email: EmailStr = Field(...)
@@ -121,8 +135,7 @@ class EmailObject:
 class CookieObject:
     Id : List[int]
     sessionids: List[str]
-    # cookiesJson: List[str]
-    cookiesJson: List[Dict[str, Any]]
+    cookies: List[Dict[str, Any]]
 
 @dataclass(frozen=True)
 class OrderObject:
@@ -157,9 +170,29 @@ class TableMap:
     order_table: str
     cookies_table: str
     paymentintent_table: str
+    session_mapping_table: str
+    final_order_table: str
 
 @dataclass
 class PaymentIntentObject:
     Ids : List[int]
-    sessionids: str
-    payment_intents: Dict[str, Any]
+    orderids: List[str]
+    orderdetails: List[Dict[str, Any]]
+    emails: List[str]
+    amounts: List[Union[int, str]]
+    intentids: List[str]
+
+@dataclass
+class SessionMapping:
+    Ids: List[int]
+    sessionids: List[str]
+    orderids: List[Dict[str, Any]]
+
+@dataclass
+class FinalOrderObject:
+    Ids: List[int]
+    orderids: List[str]
+    emails: List[str]
+    amounts: List[Union[int, str]]
+    intentids: List[str]
+

@@ -69,8 +69,12 @@ input[readonly]:focus {
 br{
     margin:5px;
 }
+.contine-btn-submit { 
+    display: none;
+}
 .continue-btn,
-.submit-payment {
+.submit-payment,
+.continue-btn-submit {
     background-color: black;
     color: white;
     padding: 10px;
@@ -80,20 +84,36 @@ br{
     font-size: 18px;
     width: 100%;
     transition: background-color 0.3s;
+    position: relative;
 }
-.continue-btn.hide {
+.continue-btn.hide{
     display: none;
 }
+
+.continue-btn-submit {
+    display: none;
+}
+.continue-btn-submit.show {
+    display: block;
+}
+
+.continue-btn-submit.hide {
+    display: none;
+}
+
 .submit-payment {
     display: none;
 }
 .submit-payment.show{
     display: block;
-
+}
+.submit-payment.hide {
+    display: none;
 }
 
 .continue-btn:hover,
-.submit-payment:hover {
+.submit-payment:hover,
+.continue-btn-submit:hover {
     color:black;
     background-color: white;
     border: 2px solid black;
@@ -102,7 +122,6 @@ br{
 .checkout-container.hide {
     display: none;
 }
-
 
 .content {
     display: flex;
@@ -329,7 +348,6 @@ br{
     transition: background-color 0.3s ease;
     font-weight: bold;
 }
-.submit
 
 .email-label {
     margin-bottom: 0.25rem;
@@ -350,6 +368,12 @@ br{
     transition: transform 0.3s ease-in-out;
     transform: rotate(180deg);
 }
+
+#payment-element.hide {
+    display: none;
+
+}
+
 .contact-header label
 
 .order-summary-header {

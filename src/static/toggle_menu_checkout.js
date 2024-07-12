@@ -55,20 +55,31 @@ function updateArrow(header) {
 }
 
 function setButtonsState(disabled) {
-    const buttons = document.querySelectorAll('.increase-quantity, .decrease-quantity, .remove-item'); // Adjust the selector to match your button classes
-    // Can you also disable any links on the page
+    const buttons = document.querySelectorAll('.increase-quantity, .decrease-quantity, .remove-item');
     const links = document.querySelectorAll('a');
+
     links.forEach(link => link.disabled = disabled);
     buttons.forEach(button => button.disabled = disabled);
+
+    if (disabled) {
+        let spinner = document.querySelector('.spinner');
+        if (!spinner) {
+            spinner = document.createElement('div');
+            spinner.classList.add('spinner');
+            document.body.appendChild(spinner);
+        }
+        spinner.style.display = 'block';
+        document.body.style.opacity = '0.5';
+    } else {
+        const spinner = document.querySelector('.spinner');
+        if (spinner) {
+            spinner.style.display = 'none';
+            document.body.style.opacity = '1';
+        }
+    }
 }
 
 async function togglePageLock(responsePromise) {
-    setButtonsState(true);
-    document.body.style.opacity = '0.5';
-    const spinner = document.createElement('div');
-    spinner.classList.add('spinner');
-    document.body.appendChild(spinner);
-
     try {
         let response = await responsePromise;
         if (!response.ok) {
@@ -76,12 +87,8 @@ async function togglePageLock(responsePromise) {
         }
         
         return response;
-    } finally {
-        // await sleep(2000)
-        // Unlock the buttons and the page
-        
-        document.body.style.opacity = '1';
-        spinner.remove();
+    } catch(error) {
+        console.error('Error:', error);
     }
 }
 async function getCartQuantity() {
@@ -181,96 +188,97 @@ function displayTotalQuantityError(message) {
 
 }
 
-async function modifyPaymentIntent(order_contents){
+async function modify_payment_intent(email) {
+    try {
+        // check if email is None, if it is then dont execute the next block and return
+        // check if email is empty string
+        if (email === '') {
+            return;
+        }
+        const requestOptions = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email: email })
+        };
+        // since email isne null fetch a create-payment-intent session with the email as body with post
+        const response = await fetch('/modify-payment-intent', requestOptions)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            });
 
-    // get email input value
-    const response = await fetch('/modify-payment-intent', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ order_contents: order_contents})
-    });
-    const data = await response.json();
+        return response;
+    } catch (error) {
+        console.error('Error creating payment intent:', error);
+    }
 }
+
+
 
 async function increaseQuantity(button) {
     try {
-        // Get the order contents
-
-
-
+        // Show spinner and disable buttons immediately
         setButtonsState(true);
 
-        // Wait for the cart quantity to be fetched
+        // Fetch cart quantity
         const cartQuantity = await getCartQuantity();
 
-        // Get the necessary DOM elements
+        // Get necessary DOM elements
         let quantityElement = button.parentElement.querySelector('.quantity-input');
         let quantityPrice = button.parentElement.parentElement.parentElement.querySelector('.price');
-
-        // Parse the current quantity
         let currentQuantity = parseInt(quantityElement.value);
 
-        // Check if the current cart quantity is at or exceeds the maximum limit
         if (cartQuantity >= 1000) {
             displayTotalQuantityError('The maximum quantity allowed is 1000.');
-            setButtonsState(false) // Re-enable the button
+            setButtonsState(false);
             return;
         }
 
-        // Calculate the new quantity
         let newQuantity = currentQuantity + 1;
 
-        // Check if increasing the quantity will exceed the maximum limit
         if (newQuantity > 1000) {
             displayTotalQuantityError('The maximum quantity allowed is 1000.');
-            setButtonsState(false); // Re-enable the button
+            setButtonsState(false);
             return;
         }
 
-        // Prepare the data for the API call
         let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
-
         let requestOptions = {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({title: img_title})
+            body: JSON.stringify({ title: img_title })
         };
 
-        let response = fetch('/increase_quantity', requestOptions);
-        let responseData = await togglePageLock(response)
-            .then((response) => {
-                return response.json();
-            });
-        // Update the UI with the new quantity only after the API call succeeds
+        let response = await fetch('/increase_quantity', requestOptions);
+        if (!response.ok) throw new Error('Network response was not ok');
+        let responseData = await response.json();
+
+        // Update UI with new quantity and price
         quantityElement.value = newQuantity;
         quantityPrice.innerText = '$' + responseData.price;
-        
+
         await updateCartQuantity(cartQuantity + 1);
         updateTotalPrice();
         removeMaxQuantityErrorMessage();
-        
-        let items = await getOrderContents()
-            .then((data) => {
-                return data;
-                })
-            .catch((error) => {
-                console.error("Error:", error);
-            }
-            );
 
-        modifyPaymentIntent(items);
-        // Re-enable the button
+        let email = document.querySelector('.email').value;
+        if (email !== '') {
+            await modify_payment_intent(email);
+        }
+
         setButtonsState(false);
     } catch (error) {
         console.error('Error:', error);
-        // Re-enable the button in case of error
         setButtonsState(false);
     }
 }
+
 
 async function decreaseQuantity(button) {
     try {
@@ -309,16 +317,8 @@ async function decreaseQuantity(button) {
             await updateCartQuantity(cartQuantity - 1);
             updateTotalPrice();
             removeMaxQuantityErrorMessage();
-            let items = await getOrderContents()
-            .then((data) => {
-                return data;
-                })
-            .catch((error) => {
-                console.error("Error:", error);
-            }
-            );
-
-            modifyPaymentIntent(items);
+                // grab the email from the input field
+            let email = document.querySelector('.email').value;
             setButtonsState(false);
         } else {
             await removeItem(button);
@@ -369,16 +369,11 @@ async function removeItem(button) {
         await updateCartQuantity(updated_cart_quantity); // Update cart quantity after removing the item
         updateTotalPrice(); // Update total price after updating cart quantity
         removeMaxQuantityErrorMessage(); // Remove the error message here
-        let items = await getOrderContents()
-            .then((data) => {
-                return data;
-                })
-            .catch((error) => {
-                console.error("Error:", error);
-            }
-            );
-
-        modifyPaymentIntent(items);
+        // grab the email from the input field
+        let email = document.querySelector('.email').value;
+        // create a payment intent with the email
+        console.log(email);
+        await modify_payment_intent(email);
         setButtonsState(false); // Re-enable the buttons
     } catch (error) {
         console.error('Error:', error);
@@ -507,6 +502,14 @@ function toggleMenu() {
 
 // Initial toggle when the page loads
 document.addEventListener('DOMContentLoaded', function() {
+
+
+    const spinner = document.querySelector('.spinner');
+    if (spinner) {
+        spinner.style.display = 'none';
+        document.body.style.opacity = '1';
+    }
+
     getCartQuantity().then(cartQuantity => {
         updateCartQuantity(cartQuantity);
         toggleMenu();

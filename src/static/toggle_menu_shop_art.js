@@ -221,19 +221,18 @@ async function increaseQuantity(button) {
 }
 
 
-async function decreaseQuantity() {
+async function decreaseQuantity(button) {
     try {
         // Disable the button to prevent rapid clicks
         setButtonsState(true);
 
         const cartQuantity = await getCartQuantity(); // Fetch the cart quantity
         // Get the necessary DOM elements
-        let quantityElement = document.querySelector('.quantity-input');
-        let quantityPrice = document.querySelector('.price');
-        let img_title = document.querySelector('.title_container p').innerText;
-
+        let quantityElement = button.parentElement.parentElement.querySelector(".quantity-input-wrapper input")
+        // Parse the current quantity
+        let quantityPrice = button.parentElement.parentElement.parentElement.querySelector('.price');
         let currentQuantity = parseInt(quantityElement.value);
-
+        let img_title = button.parentElement.parentElement.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
         if (currentQuantity > 1) {
             let newQuantity = currentQuantity - 1;
 
@@ -258,7 +257,7 @@ async function decreaseQuantity() {
             await updateTotalPrice();
             removeMaxQuantityErrorMessage();
         } else {
-            await removeItem(button);
+            await removeItem(button, img_title);
         }
 
         // Re-enable the button
@@ -271,20 +270,17 @@ async function decreaseQuantity() {
 }
 
 
-async function removeItem(button) {
+async function removeItem(button, img_title) {
     try {
-        const quantityElement = button.parentElement.querySelector('.quantity-input');
+        const quantityElement = button.parentElement.parentElement.querySelector(".quantity-input-wrapper input")
 
         setButtonsState(true); // Disable the buttons to prevent rapid clicks
 
         const cartQuantity = await getCartQuantity(); // Fetch the cart quantity
 
         // Remove the item from the UI
-        button.parentElement.parentElement.parentElement.remove();
+        button.parentElement.parentElement.parentElement.parentElement.parentElement.remove();
 
-        // Make the API call to delete the item
-        let img_title = button.parentElement.parentElement.parentElement.querySelector('.title_container p').innerText;
-        
         let requestOptions = {
             method: 'POST',
             headers: {

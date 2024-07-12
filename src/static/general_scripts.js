@@ -40,63 +40,6 @@ async function get_session_id() {
     }
 }
 
-
-async function emailListEnter() {
-    // Get the email input value
-    const emailInput = document.getElementById('emailInput');
-    const email = emailInput.value;
-
-    // Check if an existing error message exists and remove it
-    const existingErrorMessage = document.querySelector('.error-msg');
-    if (existingErrorMessage) {
-        existingErrorMessage.remove();
-    }
-
-    // Check if an existing confirmation message exists and remove it
-    const existingConfirmationMsg = document.querySelector('.confirmation-msg');
-    if (existingConfirmationMsg) {
-        existingConfirmationMsg.remove();
-    }
-
-    // Validate the email format (you can add more robust validation)
-    if (!isValidEmail(email)) {
-        emailInput.value = '';
-        // Display an error message next to the input box
-        displayCustomMessage(emailInput, 'Your email is not valid. Please try again', 'error-msg');
-        return;
-    }
-
-    // Prepare the data to send to the backend
-    const data = { email: email };
-
-    try {
-        // Send the data to your Python backend using fetch
-        const response = await fetch('/subscribe', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
-
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-
-        // Wait for the JSON response
-        const jsonResponse = await response.json();
-
-        // Clear the input box after successful submission
-        emailInput.value = '';
-
-        // Display a confirmation message next to the input box
-        displayCustomMessage(emailInput, jsonResponse.message, 'confirmation-msg');
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-
-
 // Function to display a custom message next to an input element
 function displayCustomMessage(element, message, className) {
     // Check if a message element of the specified class already exists

@@ -5,7 +5,8 @@ from src.artapi.config import (
     NOCODB_XC_TOKEN, NOCODB_PATH, NOCODB_TABLE_MAP
 )
 from src.artapi.models import (
-    ArtObject, IconObject, KeyObject, EmailObject, CookieObject, OrderObject, ContactObject, ContentObject, PaymentIntentObject
+    ArtObject, IconObject, KeyObject, EmailObject, CookieObject, OrderObject, ContactObject, ContentObject, PaymentIntentObject,
+    SessionMapping
 )
 from src.artapi.logger import logger
 from PIL import Image
@@ -31,7 +32,9 @@ class Noco:
         "order": None,
         "contact": None,
         "content": None,
-        "paymentintent": None
+        "paymentintent": None,
+        "session_mapping": None,
+        "finalpayment" : None,
 
     }
 
@@ -68,6 +71,7 @@ class Noco:
         """
         return f"{NOCODB_PATH}/api/v2/storage/upload"
     
+    
     def get_nocodb_table_data(table: str) -> dict:
         """
         Function to get the data from a table in NocoDB
@@ -79,7 +83,7 @@ class Noco:
             dict: The response JSON
         """
         params = {
-            "limit": 50
+            "limit": 200
         }
         response = requests.get(Noco.get_nocodb_path(table), headers=Noco.get_auth_headers(), params=params)
         response.raise_for_status()
@@ -162,6 +166,8 @@ class Noco:
         
         base64_data = base64.b64encode(resized_img_data).decode('utf-8')
         return f"data:image/jpeg;base64,{base64_data}"
+    
+
 
     @lru_cache(maxsize=128)
     def get_artwork_data() -> ArtObject:
@@ -193,49 +199,176 @@ class Noco:
         data = Noco.get_nocodb_table_data(NOCODB_TABLE_MAP.paymentintent_table)
         payment_intent_data = PaymentIntentObject(
             Ids=[item['Id'] for item in data['list']],
-            sessionids=[item['sessionid'] for item in data['list']],
-            payment_intents=[item['payment_intent'] for item in data['list']]
+            orderids=[item['orderids'] for item in data['list']],
+            orderdetails=[item['orderdetails'] for item in data['list']],
+            emails=[item['emails'] for item in data['list']],
+            amounts=[item['amounts'] for item in data['list']],
+            intentids = [item['intentids'] for item in data['list']]
         )
         return payment_intent_data
     
-    def get_last_paymentintent_Id() -> int:
+    def post_final_order_data(orderid:str, orderdetail: dict, email: str, amount: str, intentid: str) -> None:
         """
-        Function to get the last payment intent ID
+        Function to post the final order data
         
-        Returns:
-            int: The last payment intent ID
+        Args:
+            orderid (str): The order ID
+            orderdetail (dict): The order detail
+            email (str): The email
+            amount (str): The amount
+            intentid (str): The intent ID
         """
-        paymentintent_data = Noco.get_payment_intent_data()
-        return paymentintent_data.Ids[-1]
+        data = {
+            "orderids": orderid,
+            "orderdetails": orderdetail,
+            "emails": email,
+            "amounts": amount,
+            "intentids": intentid
+        }
+        Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.final_order_table, data)
+
+    def get_session_mapping_data() -> SessionMapping:
+        """
+        Function to get the session mapping data from NocoDB
+
+        Returns:
+            SessionMapping: The session mapping data
+        """
+        data = Noco.get_nocodb_table_data(NOCODB_TABLE_MAP.session_mapping_table)
+        session_mapping_data = SessionMapping(
+            Ids = [item['Id'] for item in data['list']],
+            sessionids=[item['sessionids'] for item in data['list']],
+            orderids=[item['orderids'] for item in data['list']],
+        )
+        return session_mapping_data
     
-    def patch_payment_intent_data(session_id: str, payment_intent: dict) -> None:
+    def post_session_mapping_data(sessionid: str, orderid: str) -> None:
+        """
+        Function to post the session mapping data
+        
+        Args:
+            sessionid (str): The session ID
+            orderid (str): The order ID
+        """
+        data = {
+            "sessionids": sessionid,
+            "orderids": orderid
+        }
+        Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.session_mapping_table, data)
+    
+    def get_session_mapping_Id_from_sessionid(sessionid: str) -> int:
+        """
+        Function to get the session mapping ID from the session ID
+        
+        Args:
+            sessionid (str): The session ID
+
+        Returns:
+            int: The session mapping ID
+        """
+        session_mapping_data = Noco.get_session_mapping_data()
+        index = session_mapping_data.sessionids.index(sessionid)
+        return session_mapping_data.Ids[index]
+
+    def wipe_session_data_from_sessionid(sessionid: str) -> None:
+        """
+        Function to wipe the session data from the session ID
+        
+        Args:
+            sessionid (str): The session ID
+        """
+        session_mapping_data = Noco.get_session_mapping_data()
+        index = session_mapping_data.sessionids.index(sessionid)
+        Noco.delete_nocodb_table_data(NOCODB_TABLE_MAP.paymentintent_table, Noco.get_payment_intent_Id_from_orderid(Noco.get_orderid_from_sessionid(sessionid)))
+        Noco.delete_nocodb_table_data(NOCODB_TABLE_MAP.session_mapping_table, session_mapping_data.Ids[index])
+        Noco.delete_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, Noco.get_cookie_Id_from_session_id(sessionid))
+    
+    def get_payment_intent_from_orderid(orderid: str) -> dict:
+        """
+        Function to get the payment intent row from the order ID
+        
+        Args:
+            orderid (str): The order ID
+
+        Returns:
+            dict: The payment intent row
+        """
+        payment_intent_data = Noco.get_payment_intent_data()
+        index = payment_intent_data.orderids.index(orderid)
+        return {
+            "Id": payment_intent_data.Ids[index],
+            "orderid": payment_intent_data.orderids[index],
+            "orderdetail": payment_intent_data.orderdetails[index],
+            "email": payment_intent_data.emails[index],
+            "amount": payment_intent_data.amounts[index],
+            "intentid": payment_intent_data.intentids[index]
+        }
+
+    
+    def patch_session_mapping_data(sessionid: str, orderid: str, intentid: str, ordercontent: dict) -> None:
+        """
+        Function to patch the session mapping data
+        
+        Args:
+            sessionid (str): The session ID
+            orderid (str): The order ID
+        """
+        data = {
+            "Id": Noco.get_session_mapping_Id_from_sessionid(sessionid),
+            "sessionid": sessionid,
+            "orderid": orderid,
+            "intentid": intentid,
+            "ordercontent": ordercontent
+        }
+        Noco.patch_nocodb_table_data(NOCODB_TABLE_MAP.session_mapping_table, data)
+
+    def patch_email_to_payment_intent(sessionid: str, email: str) -> None:
+        """
+        Function to patch the email to the payment intent. Index for payment intent data is found by getting the orderid of the index of the sessionid in the session mapping data and then indexing that orderid to the payment intent data
+
+        Args:
+            sessionid (str): The session ID
+            email (str): The email
+
+        Returns:
+            str: The payment intent ID
+        """
+        session_mapping_data = Noco.get_session_mapping_data()
+        index = session_mapping_data.sessionids.index(sessionid)
+        order_id = session_mapping_data.orderids[index]
+        payment_intent_data = Noco.get_payment_intent_data()
+        index = payment_intent_data.orderids.index(order_id)
+        data = {
+            "Id": payment_intent_data.Ids[index],
+            "orderids": payment_intent_data.orderids[index],
+            "orderdetails": payment_intent_data.orderdetails[index],
+            "emails": email,
+            "amounts": payment_intent_data.amounts[index],
+            "intentids": payment_intent_data.intentids[index]
+        }
+        Noco.patch_nocodb_table_data(NOCODB_TABLE_MAP.paymentintent_table, data)
+
+    def patch_payment_intent_data(orderid: str, orderdetail : dict, email : str, amount : Union[str,int], intentid: Union[str,int]) -> None:
         """
         Function to patch the payment intent data
         
         Args:
-            session_id (str): The session ID
-            payment_intent (dict): The payment intent
+            sessionid (str): The session ID
+            orderid (str): The order ID
+            orderdetail (dict): The order detail
+            email (str): The email
+            amount (str): The amount
+            intentid (str): The intent ID
         """
         data = {
-            "Id": Noco.get_paymentintent_Id_from_sessionid(session_id),
-            "sessionid": session_id,
-            "payment_intent": payment_intent
+            "Id": Noco.get_payment_intent_Id_from_orderid(orderid),
+            "orderids": orderid,
+            "orderdetails": orderdetail,
+            "emails": email,
+            "amounts": amount,
+            "intentids": intentid
         }
         Noco.patch_nocodb_table_data(NOCODB_TABLE_MAP.paymentintent_table, data)
-
-    def get_paymentintent_Id_from_sessionid(session_id: str) -> int:
-        """
-        Function to get the payment intent ID from the session ID
-        
-        Args:
-            session_id (str): The session ID
-
-        Returns:
-            int: The payment intent ID
-        """
-        paymentintent_data = Noco.get_payment_intent_data()
-        index = paymentintent_data.sessionids.index(session_id)
-        return paymentintent_data.Ids[index]
 
     @lru_cache(maxsize=128)
     def get_icon_data() -> IconObject:
@@ -283,7 +416,6 @@ class Noco:
         )
         return email_data
 
-    @lru_cache(maxsize=128)
     def get_cookie_data() -> CookieObject:
         """
         Function to get the cookie data from NocoDB
@@ -294,8 +426,8 @@ class Noco:
         data = Noco.get_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table)
         cookie_data = CookieObject(
             Id=[item['Id'] for item in data['list']],
-            sessionids=[item['sessionid'] for item in data['list']],
-            cookiesJson=[item['cookiesJson'] for item in data['list']],
+            sessionids=[item['sessionids'] for item in data['list']],
+            cookies=[item['cookies'] for item in data['list']],
         )
         return cookie_data
     
@@ -407,7 +539,8 @@ class Noco:
             index = artwork_data.titles.index(title)
             return artwork_data.prices[index]
         except ValueError:
-            return ""
+            logger.error(f"Artwork with title {title} not found")
+            raise ValueError(f"Artwork with title {title} not found")
     
     def get_art_price_from_title_and_quantity(title: str, quantity: int) -> str:
         """
@@ -435,7 +568,30 @@ class Noco:
         """
         cookie_data = Noco.get_cookie_data()
         index = cookie_data.sessionids.index(session_id)
-        return cookie_data.cookiesJson[index]
+        return cookie_data.cookies[index]
+    
+
+
+    def get_email_from_session_id(session_id: str) -> str:
+        """
+        Function to get the email from the session ID, order id is at the same index as session id in the session mapping table and that same order id has the same index as the email in tehe [payment intent table]
+        
+        Args:
+            session_id (str): The session ID
+
+        Returns:
+            str: The email
+        """
+        try:
+            session_mapping_data = Noco.get_session_mapping_data()
+            index = session_mapping_data.sessionids.index(session_id)
+            order_id = session_mapping_data.orderids[index]
+            payment_intent_data = Noco.get_payment_intent_data()
+            index = payment_intent_data.orderids.index(order_id)
+            return payment_intent_data.emails[index]
+        except ValueError:
+            logger.error(f"Session ID {session_id} not found in session mapping data")
+            return ""
 
     def get_cookie_from_session_id(session_id: str) -> list:
         """
@@ -450,13 +606,23 @@ class Noco:
         try:
             cookie_data = Noco.get_cookie_data()
             index = cookie_data.sessionids.index(session_id)
-            img_quant_list = cookie_data.cookiesJson[index]['img_quantity_list']
+            img_quant_list = cookie_data.cookies[index]["img_quantity_list"]
             return img_quant_list
         except ValueError:
             logger.error(f"Session ID {session_id} not found")
             return []
         # If the session ID is not found, return an empty list
 
+    def delete_session_cookie(session_id: str) -> None:
+        """
+        Function to delete the session cookie
+        
+        Args:
+            session_id (str): The session ID
+        """
+        cookie_data = Noco.get_cookie_data()
+        index = cookie_data.sessionids.index(session_id)
+        Noco.delete_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, cookie_data.Id[index])
     
     def get_order_cookie_from_session_id(session_id: str) -> dict:
         """
@@ -505,7 +671,7 @@ class Noco:
         }
         Noco.patch_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, data)
 
-    def post_cookie_session_id_and_cookies(session_id: str, cookies: dict):
+    def post_cookie_session_id_and_cookies(sessionid: str, cookies: dict):
         """
         Function to post the session ID and cookies
         
@@ -514,8 +680,8 @@ class Noco:
             cookies (str): The cookies
         """
         data = {
-            "sessionid": session_id,
-            "cookiesJson": cookies
+            "sessionids": sessionid,
+            "cookies": cookies
         }
         try:
             Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, data)
@@ -561,12 +727,7 @@ class Noco:
             logger.info(f"ID {session_id} not found from Id")
             return ""
     
-    
-    def refresh_cookie_cache():
-        """
-        Function to refresh the cookie cache
-        """
-        Noco.get_cookie_data.cache_clear()
+
 
     def get_artwork_Id_from_title(title: str) -> Union[int,None]:
         """
@@ -692,7 +853,6 @@ class Noco:
         cookie_data = Noco.get_cookie_data()
         index = cookie_data.sessionids.index(session_id)
         Noco.delete_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, cookie_data.Id[index])
-        Noco.refresh_cookie_cache()
         
     def post_order_contents(order_payload : dict) -> None:
         """
@@ -703,6 +863,41 @@ class Noco:
         """
         Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.content_table, order_payload)
 
+    def get_session_mapping_intent_id(session_id: str) -> str:
+        """
+        Function to get the inteid from the paymentintent object where the orderid in the session mapping table is the indexed value you get from the session id and then when you index the order id to the paymentintenttable you can get the intentid from that index
+        
+        Args:
+            session_id (str): The session ID
+
+        Returns:
+            str: The session mapping intent
+        """
+        try:
+            session_mapping_data = Noco.get_session_mapping_data()
+            index = session_mapping_data.sessionids.index(session_id)
+            order_id = session_mapping_data.orderids[index]
+            payment_intent_data = Noco.get_payment_intent_data()
+            index = payment_intent_data.orderids.index(order_id)
+            return payment_intent_data.intentids[index]
+        except ValueError:
+            logger.error(f"Session ID {session_id} not found in session mapping data")
+            return ""
+        
+    def get_order_contents_from_session_id(session_id: str) -> dict:
+        """
+        Function to get the order contents from the session ID
+        
+        Args:
+            session_id (str): The session ID
+
+        Returns:
+            dict: The order contents
+        """
+        content_data = Noco.get_cookie_data()
+        index = content_data.sessionids.index(session_id)
+        return content_data.cookies[index]
+    
     def get_order_contents_from_order_number(order_number: str) -> dict:
         """
         Function to get the order contents from the order number
@@ -749,37 +944,151 @@ class Noco:
         return cookie_data.Id[-1]
 
     
-    def post_payment_intent_data(sessionid: str , data: dict) -> None:
+    def post_payment_intent_data(orderid: str, orderdetail: dict, email: str, amount: str, intentid: Union[str,int]) -> None:
         """
-        Function to post payment intent data
+        Function to post the payment intent data
         
         Args:
-            data (dict): The payment intent data
+            orderid (str): The order ID
+            orderdetail (dict): The order detail
+            email (str): The email
         """
-        paymentintent_payload = {
-            "sessionid": sessionid,
-            "payment_intent": data
+        data = {
+            "orderids": orderid,
+            "orderdetails": orderdetail,
+            "emails": email,
+            "amounts": amount,
+            "intentids": intentid
         }
+        Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.paymentintent_table, data)
 
-        Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.paymentintent_table, paymentintent_payload)
-
-    def get_payment_intent_data_from_sessionid(sessionid: str) -> dict:
+    def patch_paymentintent_orderdetails_from_orderid(orderid: str, orderdetails: dict) -> None:
         """
-        Function to get the payment intent data from the session ID
+        Function to patch the order details in the payment intent data
+        
+        Args:
+            orderid (str): The order ID
+            orderdetails (dict): The order details
+        """
+        data = {
+            "Id": Noco.get_payment_intent_Id_from_orderid(orderid),
+            "orderids": orderid,
+            "orderdetails": orderdetails,
+            "emails": Noco.get_email_from_orderid(orderid),
+            "amounts": Noco.get_amount_from_orderid(orderid),
+            "intentids": Noco.get_intentid_from_orderid(orderid)
+        }
+        Noco.patch_nocodb_table_data(NOCODB_TABLE_MAP.paymentintent_table, data)
+
+    def delete_sessionmapping_from_sessionid(sessionid: str) -> None:
+        """
+        Function to delete the session mapping from the session ID
+        
+        Args:
+            sessionid (str): The session ID
+        """
+        session_mapping_data = Noco.get_session_mapping_data()
+        index = session_mapping_data.sessionids.index(sessionid)
+        Noco.delete_nocodb_table_data(NOCODB_TABLE_MAP.session_mapping_table, session_mapping_data.Ids[index])
+
+    def get_orderid_from_sessionid(sessionid: str) -> str:
+        """
+        Function to get the order ID from the session ID
         
         Args:
             sessionid (str): The session ID
 
         Returns:
-            dict: The payment intent data
+            str: The order ID
+        """
+        logger.info(f"Getting orderid from sessionid: {sessionid}")
+        try:
+            session_mapping_data = Noco.get_session_mapping_data()
+            index = session_mapping_data.sessionids.index(sessionid)
+            return session_mapping_data.orderids[index]
+        except IndexError as e:
+            logger.error(f"Session ID {sessionid} not found in session mapping data. {e}")
+            return ""
+        except ValueError as e:
+            logger.error(f"Session ID {sessionid} not found in session mapping data. {e}")
+            return ""
+        
+    def get_orderdetails_from_orderid(orderid: str) -> dict:
+        """
+        Function to get the order details from the order ID
+        
+        Args:
+            orderid (str): The order ID
+
+        Returns:
+            dict: The order details
+        """
+        payment_intent_data = Noco.get_payment_intent_data()
+        index = payment_intent_data.orderids.index(orderid)
+        return payment_intent_data.orderdetails[index]
+
+    def get_email_from_orderid(orderid: str) -> str:
+        """
+        Function to get the email from the order ID
+        
+        Args:
+            orderid (str): The order ID
+
+        Returns:
+            str: The email
+        """
+        payment_intent_data = Noco.get_payment_intent_data()
+        index = payment_intent_data.orderids.index(orderid)
+        return payment_intent_data.emails[index]
+    
+    def get_amount_from_orderid(orderid: str) -> str:
+        """
+        Function to get the amount from the order ID
+        
+        Args:
+            orderid (str): The order ID
+
+        Returns:
+            str: The amount
+        """
+        payment_intent_data = Noco.get_payment_intent_data()
+        index = payment_intent_data.orderids.index(orderid)
+        return payment_intent_data.amounts[index]
+    
+    def get_intentid_from_orderid(orderid: str) -> str:
+        """
+        Function to get the intent ID from the order ID
+        
+        Args:
+            orderid (str): The order ID
+
+        Returns:
+            str: The intent ID
         """
         try:
-            paymentintent_data = Noco.get_payment_intent_data()
-            index = paymentintent_data.sessionids.index(sessionid)
-            return paymentintent_data.payment_intents[index]
-        except ValueError:
-            logger.error(f"Session ID for payment data {sessionid} not found")
-            return {}
+            payment_intent_data = Noco.get_payment_intent_data()
+            index = payment_intent_data.orderids.index(orderid)
+            return payment_intent_data.intentids[index]
+        except ValueError as e:
+            logger.error(f"Order ID {orderid} not found in payment intent data. {e}")
+            return ""
+        except KeyError as e:
+            logger.error(f"Intent ID not found in payment intent data. {e}")
+            return ""
+
+    def get_payment_intent_Id_from_orderid(orderid: str) -> str:
+        """
+        Function to get the payment intent ID from the order ID
+        
+        Args:
+            orderid (str): The order ID
+
+        Returns:
+            str: The payment intent ID
+        """
+        payment_intent_data = Noco.get_payment_intent_data()
+        index = payment_intent_data.orderids.index(orderid)
+        return payment_intent_data.Ids[index]
         
     def patch_email_to_cookie(sessionid: str, email: str) -> None:
         """
@@ -798,7 +1107,6 @@ class Noco:
             "cookiesJson": current_nocodb_data
         }
         Noco.patch_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, data)
-        Noco.refresh_cookie_cache()
 
 
     def get_email_from_cookie(sessionid: str) -> str:
