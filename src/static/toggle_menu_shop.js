@@ -276,6 +276,12 @@ function toggleMenu() {
     }
 }
 
+function scrollToImage() {
+    const imageElement = document.querySelector('.artwork');
+    if (imageElement) {
+        imageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
 
 
 // Initial toggle when the page loads
@@ -297,7 +303,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (titleH2.textContent === 'None') {
         window.location.href = '/';
     }
-    
+    scrollToImage();
 });
 
 // Toggle the menu on window resize
