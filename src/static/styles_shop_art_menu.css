@@ -105,19 +105,25 @@
     transform: scale(1.04);
 }
 .glance {
-    height:300px;
+    min-height:10vh;
 }
 
 .glance_inner {
-    text-align: center;
+    margin-left: 5vw;
+    margin-right: 5vw;
+    text-align: top;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: top;
     height: 100%;
+    border-bottom: 1px solid hsla(0, 0%, 39%, .8);
+}
+
+.glance_inner.hide-border {
+    border-bottom: none;
 }
 .glance_inner h1{
     color: white;
     font-family: monospace;
     font-size: 50px;
-    display: show;
 }

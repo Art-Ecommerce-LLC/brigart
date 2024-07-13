@@ -86,7 +86,7 @@
     border-bottom-right-radius: 6%;
 }
 .content {
-    min-height: 55vh;
+    min-height: 60vh;
 }
 
 .content.hide {
@@ -297,7 +297,7 @@ body {
     justify-content: space-between;
     align-items: center;
     background-color: #040404;
-    padding: 20px 40px;
+    padding: 5px 40px;
 }
 
 .navbar{

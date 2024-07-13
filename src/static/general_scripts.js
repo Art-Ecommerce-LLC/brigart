@@ -84,21 +84,26 @@ function updateCartQuantityGeneral() {
 function toggleDropdown() {
     const dropdown = document.querySelector('.mobile-dropdown');
     const glance_h1 = document.querySelector('.glance_inner h1');
+    const glance = document.querySelector('.glance_inner');
     const content = document.querySelector('.content');
     const footer = document.querySelector('.footer');
     // Toggle the 'show' class to control visibility
     dropdown.classList.toggle('show');
     content.classList.toggle('hide');
-    footer.classList.toggle('hide'); // Add or remove 'hide' class to hide or show the content
+    footer.classList.toggle('hide');
+    glance.classList.toggle('hide-border') // Add or remove 'hide' class to hide or show the content
     // Lock the page from scrolling when the dropdown is open
     if (dropdown.classList.contains('show')) {
         document.body.style.overflow = 'hidden';
+        
         if (glance_h1) {
             glance_h1.style.display = 'none'
+            glance.classList.add('hide-border');
         }
     } else {
         document.body.style.overflow = 'auto';
         glance_h1.style.display = 'block'
+        glance.classList.remove('hide-border');
         content.classList.remove('hide');
         footer.classList.remove('hide');
     }
@@ -109,6 +114,7 @@ function toggleMenu() {
     const mobileMenu = document.querySelector('.mobile-menu');
     const dropdown = document.querySelector('.mobile-dropdown')
     const glance_h1 = document.querySelector('.glance_inner h1');
+    const glance = document.querySelector('.glance_inner');
     const content = document.querySelector('.content');
     const footer = document.querySelector('.footer');
     // Toggle the 'show' class to control visibility
@@ -118,23 +124,30 @@ function toggleMenu() {
         navbar.style.display = 'none';
         mobileMenu.style.display = 'flex';
         document.body.style.overflow = 'auto';
+
         if (dropdown.classList.contains('show')) {
             document.body.style.overflow = 'hidden';
             if (glance_h1) {
                 glance_h1.style.display = 'none';
+                glance_h1.classList.add('hide-border');
+                glance.classList.add('hide-border');
 
             }
             content.classList.add('hide');
             footer.classList.add('hide');
+            glance.classList.add('hide-border');
+        
             
         }
         else {
             document.body.style.overflow = 'auto';
             if (glance_h1) {
                 glance_h1.style.display = 'block';
+                glance_h1.classList.remove('hide-border');
             }
             content.classList.remove('hide');
             footer.classList.remove('hide');
+
         }
 
     } else {
@@ -142,7 +155,8 @@ function toggleMenu() {
         mobileMenu.style.display = 'none';
         document.body.style.overflow = 'auto';
         if (glance_h1){
-            glance_h1.style.display = 'block'  
+            glance_h1.style.display = 'block';
+            glance_h1.classList.remove('hide-border');
         }
         content.classList.remove('hide');
         footer.classList.remove('hide');
