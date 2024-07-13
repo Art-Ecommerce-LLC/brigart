@@ -64,14 +64,17 @@
 }
 
 .glance {
-    height:70vw;
+    min-height:10vh;
 }
 .glance_inner {
-    text-align: center;
+    margin-left: 5vw;
+    margin-right: 5vw;
+    text-align: top;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: top;
     height: 100%;
+    border-bottom: 1px solid hsla(0, 0%, 39%, .8);
 }
 .glance_inner h1{
     color: white;
