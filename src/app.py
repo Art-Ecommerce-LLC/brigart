@@ -419,6 +419,56 @@ async def delete_item(request: Request, title: Title):
         logger.error(f"Error in delete_item: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
+# Change checkout to be a payment link creation and then redirect to that payment link with the correct products
+@app.get("/checkout/{sessionid}", response_class=HTMLResponse)
+async def shop_checkout(request: Request, sessionid: str):
+    logger.info(f"Checkout page accessed by {request.client.host}")
+    try:
+        # Create payment link with the items in the cart
+        if request.session.get("session_id") != sessionid:
+            logger.warning(f"Session ID does not match {request.client.host}")
+            return RedirectResponse(url="/shop_art_menu")
+               
+        img_quant_list = Noco.get_cookie_from_session_id(sessionid)
+
+        # Fine the price id of the titles in the cart
+        title_list = []
+        products = stripe.Product.list(limit=300)
+        line_items = []
+        for product in products:
+            for item in img_quant_list:
+                if product.name == item["title"]:
+                    line_items.append({
+                        'price': product.default_price,
+                        'quantity': item["quantity"],
+                    })
+        if line_items == []:
+            logger.info("Cart is empty")
+            return RedirectResponse(url="/shop_art_menu")
+        
+        payment_link = stripe.PaymentLink.create(
+            line_items=line_items,
+            automatic_tax = {
+                'enabled': True,
+                'liability' : {
+                    'type' : 'self',
+                }
+            },
+            shipping_address_collection={
+                'allowed_countries': ['US'],
+            },
+            shipping_options = [{
+                'shipping_rate' : "shr_1PbZ0yP7gcDRwQa3LoqgQqbK",
+            }],
+        )
+        return RedirectResponse(url=payment_link.url)
+    except Exception as e:
+        logger.error(f"Error in shop_checkout: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+        
+
+
+
 # @app.get("/checkout/{sessionid}", response_class=HTMLResponse)
 # async def shop_checkout(request: Request, sessionid: str):
 #     # raise HTTPException(status_code=404, detail="Page not found")
@@ -815,17 +865,18 @@ async def swap_image(title: str = Form(...), new_title: str = Form(...), file: U
 @app.get("/favicon.ico")
 async def favicon(request: Request):
     return RedirectResponse(url="/static/favicon.ico")
-def decode_data_uri(data_uri: str) -> str:
+def decode_data_uri(data_uri: str, title: str) -> str:
     try:
         header, encoded = data_uri.split(",", 1)
         data = base64.b64decode(encoded)
         
-        # Create a temporary file and write the image content to it
-        temp_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-        temp_file_path = temp_file.name
-        with temp_file:
+        # Create a temporary directory
+        temp_dir = tempfile.mkdtemp()
+        temp_file_path = os.path.join(temp_dir, f"{title}.png")
+        
+        # Write the image content to the file with the custom name
+        with open(temp_file_path, "wb") as temp_file:
             temp_file.write(data)
-            temp_file.flush()
         
         return temp_file_path
     except Exception as e:
@@ -849,10 +900,17 @@ async def get_image(title: str, background_tasks: BackgroundTasks):
             raise HTTPException(status_code=404, detail="Image not found")
         
         # Decode the data URI and get the temp file path
-        temp_file_path = decode_data_uri(uri)
+        temp_file_path = decode_data_uri(uri, title)
 
         # Schedule the file to be deleted after the response is sent
         background_tasks.add_task(delete_temp_file, temp_file_path)
+
+        # Create a file in Stripe
+        with open(temp_file_path, "rb") as fp:
+            stripe.File.create(
+                purpose="product_image",
+                file=fp
+            )
 
         return FileResponse(temp_file_path, media_type="image/png", filename=f"{title}.png", background=background_tasks)
     except HTTPException as http_exc:
@@ -888,3 +946,16 @@ async def get_image(title: str, background_tasks: BackgroundTasks):
 #     except Exception as e:
 #         logger.error(f"Failed to get image: {e}")
 #         raise HTTPException(status_code=500, detail="Failed to retrieve image")
+
+
+@app.get("/return_policy", response_class=HTMLResponse)
+async def return_policy(request: Request):
+    logger.info(f"Return policy page accessed by {request.client.host}")
+    try:
+        context = {
+            "brig_logo": Noco.get_icon_uri_from_title("brig_logo")
+        }
+        return templates.TemplateResponse(request=request, name="return_policy.html", context=context)
+    except Exception as e:
+        logger.error(f"Error in return_policy: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
