@@ -39,3 +39,5 @@ filestructure.py
 src/BrigArtAPI.egg-info/*
 
 src/artapi/__pycache__/*
+
+src/artapi/products.py

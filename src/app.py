@@ -1,9 +1,9 @@
 # app/main.py
 from fastapi import (
-    FastAPI, Request, Form, UploadFile, File, HTTPException, Depends
+    FastAPI, Request, Form, UploadFile, File, HTTPException, Depends, BackgroundTasks
 )
 from fastapi.responses import ( 
-    HTMLResponse, JSONResponse, RedirectResponse
+    HTMLResponse, JSONResponse, RedirectResponse, FileResponse, StreamingResponse
 )
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -29,7 +29,9 @@ from src.artapi.noco_config import OPENAPI_URL, BRIG_USERNAME, BRIG_PASSWORD, BE
 import datetime
 import stripe
 from stripe import _error
-
+import urllib.parse
+import base64
+from io import BytesIO
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
 
@@ -417,15 +419,18 @@ async def delete_item(request: Request, title: Title):
         logger.error(f"Error in delete_item: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-@app.get("/checkout/{sessionid}", response_class=HTMLResponse)
-async def shop_checkout(request: Request, sessionid: str):
-    raise HTTPException(status_code=404, detail="Page not found")
+# @app.get("/checkout/{sessionid}", response_class=HTMLResponse)
+# async def shop_checkout(request: Request, sessionid: str):
+#     # raise HTTPException(status_code=404, detail="Page not found")
 #     logger.info(f"Checkout page accessed by {request.client.host}")
 #     try: 
 #         if request.session.get("session_id") != sessionid:
 #             logger.warning(f"Session ID does not match {request.client.host}")
-#             return RedirectResponse(url="/shop_art_menu")       
+#             return RedirectResponse(url="/shop_art_menu")
+               
 #         img_quant_list = Noco.get_cookie_from_session_id(sessionid)
+
+
 #         art_uris = Noco.get_artwork_data().data_uris
 #         titles = Noco.get_artwork_data().titles
 
@@ -807,10 +812,80 @@ async def swap_image(title: str = Form(...), new_title: str = Form(...), file: U
 
         Noco.refresh_artwork_cache()
 
-@app.get("/.well-known/apple-developer-merchantid-domain-association")
-async def apple_pay(request: Request):
-    return RedirectResponse(url="/static/.well-known/apple-developer-merchantid-domain-association")
-
 @app.get("/favicon.ico")
 async def favicon(request: Request):
     return RedirectResponse(url="/static/favicon.ico")
+# def decode_data_uri(data_uri: str) -> str:
+#     try:
+#         header, encoded = data_uri.split(",", 1)
+#         data = base64.b64decode(encoded)
+        
+#         # Create a temporary file and write the image content to it
+#         temp_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+#         temp_file_path = temp_file.name
+#         with temp_file:
+#             temp_file.write(data)
+#             temp_file.flush()
+        
+#         return temp_file_path
+#     except Exception as e:
+#         logger.error(f"Failed to decode data URI: {e}")
+#         raise HTTPException(status_code=500, detail="Failed to decode data URI")
+
+# def delete_temp_file(path: str):
+#     try:
+#         os.remove(path)
+#     except Exception as e:
+#         logger.error(f"Failed to delete temp file: {e}")
+
+# @app.get("/get_image/{title}")
+# async def get_image(title: str, background_tasks: BackgroundTasks):
+#     logger.info(f"Get image for {title}")
+#     try:
+#         # Replace this with your actual method to get the URI
+#         uri = Noco.get_art_uri_from_title(title)
+#         if not uri:
+#             logger.warning(f"Image not found for title {title}")
+#             raise HTTPException(status_code=404, detail="Image not found")
+        
+#         # Decode the data URI and get the temp file path
+#         temp_file_path = decode_data_uri(uri)
+
+#         # Schedule the file to be deleted after the response is sent
+#         background_tasks.add_task(delete_temp_file, temp_file_path)
+
+#         # return FileResponse(temp_file_path, media_type="image/png", filename=f"{title}.png", background=background_tasks)
+#         return StreamingResponse(temp_file_path, media_type="image/png", filename=f"{title}.png", background=background_tasks)
+#     except HTTPException as http_exc:
+#         raise http_exc
+#     except Exception as e:
+#         logger.error(f"Failed to get image: {e}")
+#         raise HTTPException(status_code=500, detail="Failed to retrieve image")
+def decode_data_uri(data_uri: str) -> BytesIO:
+    try:
+        header, encoded = data_uri.split(",", 1)
+        data = base64.b64decode(encoded)
+        return BytesIO(data)
+    except Exception as e:
+        logger.error(f"Failed to decode data URI: {e}")
+        raise HTTPException(status_code=500, detail="Failed to decode data URI")
+
+@app.get("/get_image/{title}")
+async def get_image(title: str):
+    logger.info(f"Get image for {title}")
+    try:
+        # Replace this with your actual method to get the URI
+        uri = Noco.get_art_uri_from_title(title)
+        if not uri:
+            logger.warning(f"Image not found for title {title}")
+            raise HTTPException(status_code=404, detail="Image not found")
+        
+        # Decode the data URI and get the BytesIO stream
+        image_stream = decode_data_uri(uri)
+
+        return StreamingResponse(image_stream, media_type="image/png")
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        logger.error(f"Failed to get image: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve image")
