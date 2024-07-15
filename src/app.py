@@ -815,63 +815,31 @@ async def swap_image(title: str = Form(...), new_title: str = Form(...), file: U
 @app.get("/favicon.ico")
 async def favicon(request: Request):
     return RedirectResponse(url="/static/favicon.ico")
-# def decode_data_uri(data_uri: str) -> str:
-#     try:
-#         header, encoded = data_uri.split(",", 1)
-#         data = base64.b64decode(encoded)
-        
-#         # Create a temporary file and write the image content to it
-#         temp_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-#         temp_file_path = temp_file.name
-#         with temp_file:
-#             temp_file.write(data)
-#             temp_file.flush()
-        
-#         return temp_file_path
-#     except Exception as e:
-#         logger.error(f"Failed to decode data URI: {e}")
-#         raise HTTPException(status_code=500, detail="Failed to decode data URI")
-
-# def delete_temp_file(path: str):
-#     try:
-#         os.remove(path)
-#     except Exception as e:
-#         logger.error(f"Failed to delete temp file: {e}")
-
-# @app.get("/get_image/{title}")
-# async def get_image(title: str, background_tasks: BackgroundTasks):
-#     logger.info(f"Get image for {title}")
-#     try:
-#         # Replace this with your actual method to get the URI
-#         uri = Noco.get_art_uri_from_title(title)
-#         if not uri:
-#             logger.warning(f"Image not found for title {title}")
-#             raise HTTPException(status_code=404, detail="Image not found")
-        
-#         # Decode the data URI and get the temp file path
-#         temp_file_path = decode_data_uri(uri)
-
-#         # Schedule the file to be deleted after the response is sent
-#         background_tasks.add_task(delete_temp_file, temp_file_path)
-
-#         # return FileResponse(temp_file_path, media_type="image/png", filename=f"{title}.png", background=background_tasks)
-#         return StreamingResponse(temp_file_path, media_type="image/png", filename=f"{title}.png", background=background_tasks)
-#     except HTTPException as http_exc:
-#         raise http_exc
-#     except Exception as e:
-#         logger.error(f"Failed to get image: {e}")
-#         raise HTTPException(status_code=500, detail="Failed to retrieve image")
-def decode_data_uri(data_uri: str) -> BytesIO:
+def decode_data_uri(data_uri: str) -> str:
     try:
         header, encoded = data_uri.split(",", 1)
         data = base64.b64decode(encoded)
-        return BytesIO(data)
+        
+        # Create a temporary file and write the image content to it
+        temp_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+        temp_file_path = temp_file.name
+        with temp_file:
+            temp_file.write(data)
+            temp_file.flush()
+        
+        return temp_file_path
     except Exception as e:
         logger.error(f"Failed to decode data URI: {e}")
         raise HTTPException(status_code=500, detail="Failed to decode data URI")
 
+def delete_temp_file(path: str):
+    try:
+        os.remove(path)
+    except Exception as e:
+        logger.error(f"Failed to delete temp file: {e}")
+
 @app.get("/get_image/{title}")
-async def get_image(title: str):
+async def get_image(title: str, background_tasks: BackgroundTasks):
     logger.info(f"Get image for {title}")
     try:
         # Replace this with your actual method to get the URI
@@ -880,12 +848,43 @@ async def get_image(title: str):
             logger.warning(f"Image not found for title {title}")
             raise HTTPException(status_code=404, detail="Image not found")
         
-        # Decode the data URI and get the BytesIO stream
-        image_stream = decode_data_uri(uri)
+        # Decode the data URI and get the temp file path
+        temp_file_path = decode_data_uri(uri)
 
-        return StreamingResponse(image_stream, media_type="image/png")
+        # Schedule the file to be deleted after the response is sent
+        background_tasks.add_task(delete_temp_file, temp_file_path)
+
+        return FileResponse(temp_file_path, media_type="image/png", filename=f"{title}.png", background=background_tasks)
     except HTTPException as http_exc:
         raise http_exc
     except Exception as e:
         logger.error(f"Failed to get image: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve image")
+# def decode_data_uri(data_uri: str) -> BytesIO:
+#     try:
+#         header, encoded = data_uri.split(",", 1)
+#         data = base64.b64decode(encoded)
+#         return BytesIO(data)
+#     except Exception as e:
+#         logger.error(f"Failed to decode data URI: {e}")
+#         raise HTTPException(status_code=500, detail="Failed to decode data URI")
+
+# @app.get("/get_image/{title}")
+# async def get_image(title: str):
+#     logger.info(f"Get image for {title}")
+#     try:
+#         # Replace this with your actual method to get the URI
+#         uri = Noco.get_art_uri_from_title(title)
+#         if not uri:
+#             logger.warning(f"Image not found for title {title}")
+#             raise HTTPException(status_code=404, detail="Image not found")
+        
+#         # Decode the data URI and get the BytesIO stream
+#         image_stream = decode_data_uri(uri)
+
+#         return StreamingResponse(image_stream, media_type="image/png")
+#     except HTTPException as http_exc:
+#         raise http_exc
+#     except Exception as e:
+#         logger.error(f"Failed to get image: {e}")
+#         raise HTTPException(status_code=500, detail="Failed to retrieve image")
