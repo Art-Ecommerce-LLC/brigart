@@ -94,6 +94,7 @@
                     <div class="remove-item-wrapper">
                         <div class="price-container">
                             <p class="price" id="price-text">${{ img_data.price }}</p>
+                            
                         </div>
                         <div class="price-remove-container">
                             <button class="remove-item" onclick="removeItemButton(this)">X</button>
@@ -105,7 +106,10 @@
         {% endfor %}
         <div class = "checkout-container">
             <div class="price-container">
-                <p class="total">Total: $<span id="total-price">{{ total_price }}</span></p>
+                <p class="total">Total: <span id="total-price" class="total-amount">Loading...</span></p>
+                <div class="loading-bar-container">
+                    <div class="loading-bar"></div>
+                </div>
             </div>
             <button class="checkout-btn">CHECKOUT</button>
         </div>

@@ -110,7 +110,10 @@ async function updateTotalPrice() {
 
         const responseData = await response.json();
         if (responseData.totalPrice !== undefined && responseData.totalPrice !== null) {
-            document.getElementById('total-price').innerText = responseData.totalPrice.toFixed(2);
+            document.getElementById('total-price').innerText = '$' + responseData.totalPrice.toFixed(2);
+            // Add a dolar sign before and space to the p total-price
+    
+
         } else {
             console.log('Total price is not valid');
         }
@@ -418,13 +421,24 @@ async function get_session_id() {
         });
 }
 
+function initializeLoadingBar(isLoading) {
+    const loadingBar = document.querySelector('.loading-bar');
+    if (isLoading) {
+        loadingBar.style.display = 'block';
+    } else {
+        loadingBar.style.display = 'none';
+    }
+}
+
 // Initial toggle when the page loads
 document.addEventListener('DOMContentLoaded', async function() {
     getCartQuantity().then(cartQuantity => {
+        initializeLoadingBar(true);
         updateCartQuantity(cartQuantity);
         toggleMenu();
         document.getElementById('currentYear').innerText = new Date().getFullYear();
         updateTotalPrice();
+        initializeLoadingBar(false);
         let isMessageDisplayed = false;
         // Add event listener to the checkout button
         document.querySelector('.checkout-btn').addEventListener('click', async function() {

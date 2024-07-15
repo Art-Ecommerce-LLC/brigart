@@ -498,11 +498,13 @@ body {
     font-size: 30px;
 }
 /* Add this CSS to your existing stylesheet */
-
 .loading-bar-container {
-    display: inline-block;
+    display: none; /* Hide by default */
     position: relative;
-    width: fit-content;
+    width: 100%; /* Full width of the parent element */
+    height: 5px; /* Height of the loading bar */
+    background-color: rgba(255, 255, 255, 0.5); /* Adjust the color and opacity as needed */
+    margin-top: 5px; /* Space between the total price and the loading bar */
 }
 
 .loading-bar {
@@ -510,8 +512,8 @@ body {
     top: 0;
     left: 0;
     height: 100%;
-    width: 100%;
-    background-color: rgba(255, 255, 255, 0.5); /* Adjust the color and opacity as needed */
+    width: 0; /* Initial width is 0 */
+    background-color: #3498db; /* Adjust the color */
     animation: loading 1.5s infinite;
 }
 

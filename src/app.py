@@ -461,12 +461,11 @@ async def shop_checkout(request: Request, sessionid: str):
                 'shipping_rate' : "shr_1PbZ0yP7gcDRwQa3LoqgQqbK",
             }],
         )
+        Noco.delete_session_cookie(sessionid)
         return RedirectResponse(url=payment_link.url)
     except Exception as e:
         logger.error(f"Error in shop_checkout: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
-        
-
 
 
 # @app.get("/checkout/{sessionid}", response_class=HTMLResponse)
