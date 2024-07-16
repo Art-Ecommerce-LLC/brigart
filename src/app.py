@@ -11,7 +11,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import os
 from src.artapi.config import STRIPE_SECRET_KEY
 from src.artapi.logger import logger
-from src.artapi.middleware import add_middleware
+from src.artapi.middleware import add_middleware, limiter
 from src.artapi.models import (
     Credentials, Title, TitleQuantity, ContactInfo, PaymentInfo, BillingInfo, Email,
     CheckoutInfo, TotalPrice, OrderDetails
@@ -29,9 +29,8 @@ from src.artapi.noco_config import OPENAPI_URL, BRIG_USERNAME, BRIG_PASSWORD, BE
 import datetime
 import stripe
 from stripe import _error
-import urllib.parse
 import base64
-from io import BytesIO
+
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
 
@@ -110,6 +109,7 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
 #         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/", response_class=HTMLResponse)
+@limiter.limit("100/minute")  # Public data fetching
 async def homepage(request: Request):
     logger.info(f"Homepage accessed by: {request.client.host}")
     try:
@@ -124,7 +124,9 @@ async def homepage(request: Request):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/shop/{title}", response_class=HTMLResponse)
+@limiter.limit("100/minute")  # Public data fetching
 async def shop(request: Request, title: str):
+
     logger.info(f"Shop page accessed for title {title} by {request.client.host}")
     try:
         
@@ -140,6 +142,7 @@ async def shop(request: Request, title: str):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/get_cart_quantity")
+@limiter.limit("100/minute")  # Public data fetching
 async def get_cart_quantity(request: Request):
     logger.info(f"Get cart quantity by {request.client.host}")
     try:
@@ -156,6 +159,7 @@ async def get_cart_quantity(request: Request):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/shop_art")
+@limiter.limit("100/minute")  # Public data fetching
 async def shop_art_url(request: Request, title_quantity: TitleQuantity):
     logger.info(f"Shop art URL for {title_quantity.title} by {request.client.host}")
     try:
@@ -222,6 +226,7 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/shop_art/{sessionid}", response_class=HTMLResponse)
+@limiter.limit("100/minute")  # Public data fetching
 async def shop_art(request: Request, sessionid: str):
     logger.info(f"Shop art page accessed by {request.client.host}")
     try:
@@ -254,6 +259,7 @@ async def shop_art(request: Request, sessionid: str):
         raise HTTPException(status_code=500, detail="Internal server error")
     
 @app.get("/shop_art_menu", response_class=HTMLResponse)
+@limiter.limit("100/minute")  # Public data fetching
 async def shop_art_menu(request: Request):
     logger.info(f"Shop art menu page accessed by {request.client.host}")
     try:
@@ -269,6 +275,7 @@ async def shop_art_menu(request: Request):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/giclee_prints", response_class=HTMLResponse)
+@limiter.limit("100/minute")  # Public data fetching
 async def shop_giclee_prints(request: Request):
     logger.info(f"Giclee prints page accessed by {request.client.host}")
     try:
@@ -282,6 +289,7 @@ async def shop_giclee_prints(request: Request):
         raise HTTPException(status_code=500, detail="Internal server error")
     
 @app.post("/post_total_price")
+@limiter.limit("100/minute")  # Public data fetching
 async def post_total_price(request: Request, total_price: TotalPrice):
     logger.info(f"Post total price {total_price.totalPrice} by {request.client.host}")
     try:
@@ -297,6 +305,7 @@ async def post_total_price(request: Request, total_price: TotalPrice):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/increase_quantity")
+@limiter.limit("100/minute")  # Public data fetching
 async def increase_quantity(request: Request, title: Title):
     logger.info(f"Increase quantity for {title.title} by {request.client.host}")
     try:
@@ -333,6 +342,7 @@ async def increase_quantity(request: Request, title: Title):
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @app.post("/decrease_quantity")
+@limiter.limit("100/minute")  # Public data fetching
 async def decrease_quantity(request: Request, title: Title):
     logger.info(f"Decrease quantity for {title.title} by {request.client.host}")
     try:
@@ -381,6 +391,7 @@ async def decrease_quantity(request: Request, title: Title):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/delete_item")
+@limiter.limit("100/minute")  # Public data fetching
 async def delete_item(request: Request, title: Title):
     logger.info(f"Delete item {title.title} by {request.client.host}")
     try:
@@ -421,6 +432,7 @@ async def delete_item(request: Request, title: Title):
 
 # Change checkout to be a payment link creation and then redirect to that payment link with the correct products
 @app.get("/checkout/{sessionid}", response_class=HTMLResponse)
+@limiter.limit("100/minute")  # Public data fetching
 async def shop_checkout(request: Request, sessionid: str):
     logger.info(f"Checkout page accessed by {request.client.host}")
     try:
@@ -563,6 +575,7 @@ async def shop_checkout(request: Request, sessionid: str):
 #             raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/get_session_id")
+@limiter.limit("100/minute")  # Public data fetching
 async def get_session_id(request: Request):
     logger.info(f"Get session ID by {request.client.host}")
     try:
@@ -710,6 +723,7 @@ async def get_session_id(request: Request):
     
 
 @app.get("/portal", response_class=HTMLResponse)
+@limiter.limit("100/minute")  # Public data fetching
 async def portal(request: Request):
     logger.info(f"Portal page accessed by {request.client.host}")
     try:
@@ -722,6 +736,7 @@ async def portal(request: Request):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/credentials_check")
+@limiter.limit("100/minute")  # Public data fetching
 async def credentials_check(request: Request, credentials: Credentials):
     logger.info(f"Credentials check for {credentials.username} by {request.client.host}")
     try:
@@ -739,6 +754,7 @@ async def credentials_check(request: Request, credentials: Credentials):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/logs", response_class=HTMLResponse)
+@limiter.limit("100/minute")  # Public data fetching
 async def get_log_file(request: Request):
     logger.info(f"Logs page accessed: {request.client.host}")
     try:
@@ -752,6 +768,7 @@ async def get_log_file(request: Request):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/brig_portal", response_class=HTMLResponse)
+@limiter.limit("100/minute")  # Public data fetching
 async def brig_portal(request: Request):
     logger.info(f"Brig portal page accessed by {request.client.host}")
     try: 
@@ -764,7 +781,8 @@ async def brig_portal(request: Request):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/add_images")
-async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = File(...), prices: List[int] = Form(...)):
+@limiter.limit("100/minute")  # Public data fetching
+async def add_images(request : Request, titles: List[str] = Form(...), files: List[UploadFile] = File(...), prices: List[int] = Form(...)):
     logger.info(f"Add images for titles: {titles}")
     if len(titles) != len(files):
         logger.warning("Number of titles does not match number of files")
@@ -818,7 +836,8 @@ async def add_images(titles: List[str] = Form(...), files: List[UploadFile] = Fi
 
 
 @app.post("/swap_image")
-async def swap_image(title: str = Form(...), new_title: str = Form(...), file: UploadFile = File(...)):
+@limiter.limit("100/minute")  # Public data fetching
+async def swap_image(request : Request,title: str = Form(...), new_title: str = Form(...), file: UploadFile = File(...)):
     logger.info(f"Swap image for {title} to {new_title} ")
     
     try:
@@ -862,6 +881,7 @@ async def swap_image(title: str = Form(...), new_title: str = Form(...), file: U
         Noco.refresh_artwork_cache()
 
 @app.get("/favicon.ico")
+@limiter.limit("100/minute")  # Public data fetching
 async def favicon(request: Request):
     return RedirectResponse(url="/static/favicon.ico")
 def decode_data_uri(data_uri: str, title: str) -> str:
@@ -888,8 +908,10 @@ def delete_temp_file(path: str):
     except Exception as e:
         logger.error(f"Failed to delete temp file: {e}")
 
+
 @app.get("/get_image/{title}")
-async def get_image(title: str, background_tasks: BackgroundTasks):
+@limiter.limit("100/minute")  # Public data fetching
+async def get_image(request : Request,title: str, background_tasks: BackgroundTasks):
     logger.info(f"Get image for {title}")
     try:
         # Replace this with your actual method to get the URI
@@ -948,6 +970,7 @@ async def get_image(title: str, background_tasks: BackgroundTasks):
 
 
 @app.get("/return_policy", response_class=HTMLResponse)
+@limiter.limit("100/minute")  # Public data fetching
 async def return_policy(request: Request):
     logger.info(f"Return policy page accessed by {request.client.host}")
     try:
