@@ -112,6 +112,9 @@
                 </div>
             </div>
             <button class="checkout-btn">CHECKOUT</button>
+            <div class="session-timer">
+                <p>Session expires in: <span id="timer">Loading...</span></p>
+            </div>
         </div>
     </div>
 </div>
@@ -121,5 +124,48 @@
         <p>&copy; <span id="currentYear"></span> Art Ecommerce, LLC. All rights reserved.</p>
     </div>
 </footer>
+<script>
+    async function fetchSessionTime() {
+        const response = await fetch('/get_session_time');
+        const data = await response.json();
+        return data.remaining_time;
+    }
+
+    async function deleteSession() {
+    try {
+        const response = await fetch('/delete_session', { method: 'POST' });
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        // Reload the page after deleting the session
+        window.location.reload();
+    } catch (error) {
+        console.error('Error deleting session:', error);
+    }
+}
+
+function startTimer(duration, display) {
+    let timer = duration, minutes, seconds;
+    const interval = setInterval(() => {
+        minutes = parseInt(timer / 60, 10);
+        seconds = parseInt(timer % 60, 10);
+
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+
+        display.textContent = minutes + ":" + seconds;
+
+        if (--timer < 0) {
+            clearInterval(interval);
+            deleteSession();
+        }
+    }, 1000);
+}
+    document.addEventListener('DOMContentLoaded', async () => {
+        const remainingTime = await fetchSessionTime();
+        const display = document.querySelector('#timer');
+        startTimer(remainingTime, display);
+    });
+</script>
 </body>
 </html>

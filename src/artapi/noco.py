@@ -1166,3 +1166,18 @@ class Noco:
         }
 
         Noco.post_nocodb_table_data(NOCODB_TABLE_MAP.content_table, payment_payload)
+
+
+    def get_cookie_session_begginging_time(sessionid: str) -> str:
+        """
+        Function to get the session time
+        
+        Args:
+            sessionid (str): The session ID
+
+        Returns:
+            str: The session time
+        """
+        cookie_data = Noco.get_cookie_data()
+        index = cookie_data.sessionids.index(sessionid)
+        return cookie_data.created_ats[index]

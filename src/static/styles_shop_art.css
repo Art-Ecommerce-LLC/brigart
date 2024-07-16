@@ -12,6 +12,17 @@
     background-color: #040404;
 }
 
+.session-timer p {
+    color: white;
+    font-size: 20px;
+    margin: 0;
+    padding: 10px;
+    text-align: center;
+    margin-top: 1vh;
+
+}
+
+
 .content_cart {
     margin-left: 49px;
     margin-right: 49px;

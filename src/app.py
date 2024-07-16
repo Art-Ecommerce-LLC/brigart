@@ -30,6 +30,7 @@ import datetime
 import stripe
 from stripe import _error
 import base64
+from datetime import datetime, timedelta, timezone
 
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
@@ -981,3 +982,40 @@ async def return_policy(request: Request):
     except Exception as e:
         logger.error(f"Error in return_policy: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
+    
+@app.get("/get_session_time")
+@limiter.limit("100/minute")  # Public data fetching
+async def get_session_time(request: Request):
+    session_id = request.session.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=400, detail="Session ID not found")
+
+    try:
+        session_creation_time_str = Noco.get_cookie_session_begginging_time(session_id)
+        session_creation_time = datetime.fromisoformat(session_creation_time_str.replace('Z', '+00:00'))  # Convert to datetime object
+        current_time = datetime.now(timezone.utc)
+        elapsed_time = (current_time - session_creation_time).total_seconds()
+        remaining_time = max(0, 900 - elapsed_time)  # 30 minutes = 1800 seconds
+
+        return JSONResponse({"remaining_time": int(remaining_time)})
+
+    except ValueError:
+        raise HTTPException(status_code=500, detail="Invalid session creation time format")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@app.post("/delete_session")
+@limiter.limit("100/minute")  # Public data fetching
+async def delete_session(request: Request):
+    session_id = request.session.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=400, detail="Session ID not found")
+
+    try:
+        # Delete the session from your storage (database, cache, etc.)
+        Noco.delete_session_cookie(session_id)
+        request.session.pop("session_id")
+        return JSONResponse({"message": "Session deleted"})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
