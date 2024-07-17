@@ -13,12 +13,8 @@ from src.artapi.config import STRIPE_SECRET_KEY
 from src.artapi.logger import logger
 from src.artapi.middleware import add_middleware, limiter
 from src.artapi.models import (
-    Credentials, Title, TitleQuantity, ContactInfo, PaymentInfo, BillingInfo, Email,
-    CheckoutInfo, TotalPrice, OrderDetails
+    Credentials, Title, TitleQuantity, TotalPrice
 )
-from contextlib import asynccontextmanager
-from src.artapi.cookie_refresher import remove_expired_cookies
-import asyncio
 from src.artapi.noco import Noco
 from src.artapi.logger import get_logs
 import tempfile
@@ -31,6 +27,12 @@ import stripe
 from stripe import _error
 import base64
 from datetime import datetime, timedelta, timezone
+from src.artapi.nocodb_connector import get_noco_db
+import time
+
+def get_version():
+    return str(int(time.time()))
+
 
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
@@ -38,21 +40,13 @@ desc = "Backend platform for BRIG ART"
 if OPENAPI_URL == "None":
     OPENAPI_URL = None
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Start the background task for removing expired cookies
-    task = asyncio.create_task(remove_expired_cookies())
-    yield
-    # Cancel the background task and wait for it to finish
-    task.cancel()
-    await task
 
 app = FastAPI(
     title="Brig API",
     description=desc,
     openapi_url=OPENAPI_URL,
-    lifespan=lifespan
 )
+
 
 stripe.api_key = STRIPE_SECRET_KEY
 
@@ -97,28 +91,17 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
 
     return HTMLResponse(content=str(exc.detail), status_code=exc.status_code)
 
-# @app.get("/test_noco", response_class=HTMLResponse)
-# async def test_noco(request: Request):
-#     logger.info(f"Test NoCoDB accessed by {request.client.host}")
-#     try:
-#         # Get the image lists
-#         json = Noco.get_cookie_data_no_cache_no_object()
-#         test = Noco.get_cookie_data().cookiesJson
-#         return JSONResponse(test)
-#     except Exception as e:
-#         logger.error(f"Error in test_noco: {e}")
-#         raise HTTPException(status_code=500, detail="Internal server error")
-
 @app.get("/", response_class=HTMLResponse)
-@limiter.limit("100/minute")  # Public data fetching
-async def homepage(request: Request):
+@limiter.limit("100/minute")
+async def homepage(request: Request, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Homepage accessed by: {request.client.host}")
     try:
         context = {
-            "art_uris": Noco.get_artwork_data().data_uris,
-            "art_titles": Noco.get_artwork_data().titles,
-            "brig_logo": Noco.get_icon_uri_from_title("brig_logo")
-        }   
+            "art_uris": noco_db.get_artwork_data().data_uris,
+            "art_titles": noco_db.get_artwork_data().titles,
+            "brig_logo": noco_db.get_icon_uri_from_title("brig_logo"),
+            "version": get_version()
+        }
         return templates.TemplateResponse(request=request, name="index.html", context=context)
     except Exception as e:
         logger.error(f"Error in homepage: {e}")
@@ -126,16 +109,16 @@ async def homepage(request: Request):
 
 @app.get("/shop/{title}", response_class=HTMLResponse)
 @limiter.limit("100/minute")  # Public data fetching
-async def shop(request: Request, title: str):
+async def shop(request: Request, title: str, noco_db: Noco = Depends(get_noco_db)):
 
     logger.info(f"Shop page accessed for title {title} by {request.client.host}")
     try:
-        
         context = {
-            "img_uri": Noco.get_art_uri_from_title(title.replace("+", " ")),
+            "img_uri": noco_db.get_art_uri_from_title(title.replace("+", " ")),
             "img_title": title.replace("+", " "),
-            "price": Noco.get_art_price_from_title(title.replace("+", " ")),
-            "brig_logo" : Noco.get_icon_uri_from_title("brig_logo")
+            "price": noco_db.get_art_price_from_title(title.replace("+", " ")),
+            "brig_logo" : noco_db.get_icon_uri_from_title("brig_logo"),
+            "version": get_version()
         }
         return templates.TemplateResponse(request=request, name="shop.html", context=context)
     except Exception as e:
@@ -144,14 +127,14 @@ async def shop(request: Request, title: str):
 
 @app.get("/get_cart_quantity")
 @limiter.limit("100/minute")  # Public data fetching
-async def get_cart_quantity(request: Request):
+async def get_cart_quantity(request: Request, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Get cart quantity by {request.client.host}")
     try:
-        print(request.session.get("session_id"))
+
         if request.session.get("session_id") is None:
             return JSONResponse({"quantity": 0})
         
-        img_quantity_list = Noco.get_cookie_from_session_id(request.session.get("session_id"))
+        img_quantity_list = noco_db.get_cookie_from_session_id(request.session.get("session_id"))
         total_quantity = sum(int(item['quantity']) for item in img_quantity_list)
         logger.info(f"Total cart quantity: {total_quantity}")
         return JSONResponse({"quantity": total_quantity})
@@ -161,14 +144,14 @@ async def get_cart_quantity(request: Request):
 
 @app.post("/shop_art")
 @limiter.limit("100/minute")  # Public data fetching
-async def shop_art_url(request: Request, title_quantity: TitleQuantity):
+async def shop_art_url(request: Request, title_quantity: TitleQuantity, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Shop art URL for {title_quantity.title} by {request.client.host}")
     try:
         cookie_data = {}
         img_quant_dict = {}
         img_quant_dict["title"] = title_quantity.title
         img_quant_dict["quantity"] = title_quantity.quantity
-        img_quant_dict["price"] = Noco.get_art_price_from_title_and_quantity(title_quantity.title, title_quantity.quantity)
+        img_quant_dict["price"] = noco_db.get_art_price_from_title_and_quantity(title_quantity.title, title_quantity.quantity)
 
         if request.session.get("session_id") is None:
             session_id = str(uuid.uuid4())
@@ -176,27 +159,27 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity):
             img_quant_list = []
             img_quant_list.append(img_quant_dict)
             cookie_data["img_quantity_list"] = img_quant_list
-            Noco.post_cookie_session_id_and_cookies(session_id, cookie_data)
+            noco_db.post_cookie_session_id_and_cookies(session_id, cookie_data)
             return JSONResponse({"quantity": title_quantity.quantity})
         
 
         session_id = request.session.get("session_id")
-        img_quant_list = Noco.get_cookie_from_session_id(session_id)
+        img_quant_list = noco_db.get_cookie_from_session_id(session_id)
 
         for item in img_quant_list:
             if item["title"] == title_quantity.title:
                 item["quantity"] = item["quantity"] + title_quantity.quantity
                 total_quantity = sum(item["quantity"] for item in img_quant_list)
-                item["price"] = Noco.get_art_price_from_title_and_quantity(item["title"], item["quantity"])
+                item["price"] = noco_db.get_art_price_from_title_and_quantity(item["title"], item["quantity"])
                 cookiesJson = {
                     "img_quantity_list": img_quant_list
                 }
                 data = {
-                    "Id": int(Noco.get_cookie_Id_from_session_id(session_id)),
+                    "Id": int(noco_db.get_cookie_Id_from_session_id(session_id)),
                     "sessionids": session_id,
                     "cookies": cookiesJson,
                 }
-                Noco.patch_cookies_data(data)
+                noco_db.patch_cookies_data(data)
                 logger.info(f"Updated quantity for {title_quantity.title}, new quantity: {total_quantity}")
                 return JSONResponse({"quantity": total_quantity})
             
@@ -204,11 +187,11 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity):
         cookiesJson = {
             "img_quantity_list": img_quant_list
         }
-        cookie_id = Noco.get_cookie_Id_from_session_id(session_id)
+        cookie_id = noco_db.get_cookie_Id_from_session_id(session_id)
 
         if cookie_id == "" :
             logger.warning("Cookie could not be found for the session id")
-            Noco.post_cookie_session_id_and_cookies(session_id, cookiesJson)
+            noco_db.post_cookie_session_id_and_cookies(session_id, cookiesJson)
             return JSONResponse({"quantity": title_quantity.quantity})
 
         data = {
@@ -217,7 +200,7 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity):
             "cookies": cookiesJson,
         }
 
-        Noco.patch_cookies_data(data)
+        noco_db.patch_cookies_data(data)
         total_quantity = sum(int(item["quantity"]) for item in img_quant_list)
         logger.info(f"Total cart quantity: {total_quantity}")
         return JSONResponse({"quantity": total_quantity})
@@ -228,15 +211,15 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity):
 
 @app.get("/shop_art/{sessionid}", response_class=HTMLResponse)
 @limiter.limit("100/minute")  # Public data fetching
-async def shop_art(request: Request, sessionid: str):
+async def shop_art(request: Request, sessionid: str, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Shop art page accessed by {request.client.host}")
     try:
         if request.session.get("session_id") != sessionid:
             logger.warning(f"Session ID does not match {request.client.host}")
             return RedirectResponse(url="/shop_art_menu")                        
-        img_quant_list = Noco.get_cookie_from_session_id(sessionid)
-        art_uris = Noco.get_artwork_data().data_uris
-        titles = Noco.get_artwork_data().titles
+        img_quant_list = noco_db.get_cookie_from_session_id(sessionid)
+        art_uris = noco_db.get_artwork_data().data_uris
+        titles = noco_db.get_artwork_data().titles
         # Check if the title is in the cart if so, get the image url
         img_data_list = []
         for item in img_quant_list: 
@@ -247,12 +230,13 @@ async def shop_art(request: Request, sessionid: str):
                     img_dict["img_url"] = img_url
                     img_dict["img_title"] = title
                     img_dict["quantity"] = item['quantity']
-                    img_dict["price"] = Noco.get_art_price_from_title_and_quantity(item['title'], item['quantity'])
+                    img_dict["price"] = noco_db.get_art_price_from_title_and_quantity(item['title'], item['quantity'])
                     img_data_list.append(img_dict)
                     
         context = {
             "img_data_list": img_data_list,
-            "brig_logo_url": Noco.get_icon_uri_from_title("brig_logo"),
+            "brig_logo_url": noco_db.get_icon_uri_from_title("brig_logo"),
+            "version": get_version()
         }
         return templates.TemplateResponse(request=request, name="shop_art.html", context=context)
     except Exception as e:
@@ -261,14 +245,16 @@ async def shop_art(request: Request, sessionid: str):
     
 @app.get("/shop_art_menu", response_class=HTMLResponse)
 @limiter.limit("100/minute")  # Public data fetching
-async def shop_art_menu(request: Request):
+async def shop_art_menu(request: Request, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Shop art menu page accessed by {request.client.host}")
     try:
+        
         context = {
-            "art_uris":Noco.get_artwork_data().data_uris,
-            "titles": Noco.get_artwork_data().titles,
-            "price_list": Noco.get_artwork_data().prices,
-            "brig_logo": Noco.get_icon_uri_from_title("brig_logo"),
+            "art_uris":noco_db.get_artwork_data().data_uris,
+            "titles": noco_db.get_artwork_data().titles,
+            "price_list": noco_db.get_artwork_data().prices,
+            "brig_logo": noco_db.get_icon_uri_from_title("brig_logo"),
+            "version" : get_version()
         }
         return templates.TemplateResponse(request=request, name="shop_art_menu.html", context=context)
     except Exception as e:
@@ -277,12 +263,13 @@ async def shop_art_menu(request: Request):
 
 @app.get("/giclee_prints", response_class=HTMLResponse)
 @limiter.limit("100/minute")  # Public data fetching
-async def shop_giclee_prints(request: Request):
+async def shop_giclee_prints(request: Request, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Giclee prints page accessed by {request.client.host}")
     try:
         context = {
-            "giclee_prints": Noco.get_artwork_data().data_uris,
-            "brig_logo_url": Noco.get_icon_uri_from_title("brig_logo"),
+            "giclee_prints": noco_db.get_artwork_data().data_uris,
+            "brig_logo_url": noco_db.get_icon_uri_from_title("brig_logo"),
+            "version": get_version()
         }
         return templates.TemplateResponse(request=request, name="gicle_prints.html", context=context)
     except Exception as e:
@@ -291,10 +278,10 @@ async def shop_giclee_prints(request: Request):
     
 @app.post("/post_total_price")
 @limiter.limit("100/minute")  # Public data fetching
-async def post_total_price(request: Request, total_price: TotalPrice):
+async def post_total_price(request: Request, total_price: TotalPrice, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Post total price {total_price.totalPrice} by {request.client.host}")
     try:
-        img_quant_list = Noco.get_cookie_from_session_id(request.session.get("session_id"))
+        img_quant_list = noco_db.get_cookie_from_session_id(request.session.get("session_id"))
         cookie_price_total = sum(int(item["price"]) for item in img_quant_list)
         if cookie_price_total == total_price.totalPrice:
             return JSONResponse({"totalPrice": total_price.totalPrice})
@@ -307,7 +294,7 @@ async def post_total_price(request: Request, total_price: TotalPrice):
 
 @app.post("/increase_quantity")
 @limiter.limit("100/minute")  # Public data fetching
-async def increase_quantity(request: Request, title: Title):
+async def increase_quantity(request: Request, title: Title, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Increase quantity for {title.title} by {request.client.host}")
     try:
         session_id = request.session.get("session_id")
@@ -315,27 +302,27 @@ async def increase_quantity(request: Request, title: Title):
             logger.info(f"Session ID not found from request {request.client.host}")
             raise HTTPException(status_code=400, detail="Session ID not found")
 
-        img_quant_list = Noco.get_cookie_from_session_id(session_id)
+        img_quant_list = noco_db.get_cookie_from_session_id(session_id)
         matched_price = None
         # Check if the title is already in the cart
         for each in img_quant_list:
             if title.title == each["title"]:
                 each["quantity"] += 1  # Increment quantity
-                each["price"] = Noco.get_art_price_from_title_and_quantity(each["title"], each["quantity"])
+                each["price"] = noco_db.get_art_price_from_title_and_quantity(each["title"], each["quantity"])
                 matched_price = each["price"]
                 break
         else:
             raise HTTPException(status_code=404, detail="Title not found in cart")
 
         patch_data = {
-            "Id": int(Noco.get_cookie_Id_from_session_id(session_id)),
+            "Id": int(noco_db.get_cookie_Id_from_session_id(session_id)),
             "sessionids": session_id,
             "cookies": {
                 "img_quantity_list": img_quant_list,
             },    
         }
 
-        Noco.patch_cookies_data(patch_data)
+        noco_db.patch_cookies_data(patch_data)
         return JSONResponse({"price": matched_price})
 
     except Exception as e:
@@ -344,7 +331,7 @@ async def increase_quantity(request: Request, title: Title):
 
 @app.post("/decrease_quantity")
 @limiter.limit("100/minute")  # Public data fetching
-async def decrease_quantity(request: Request, title: Title):
+async def decrease_quantity(request: Request, title: Title, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Decrease quantity for {title.title} by {request.client.host}")
     try:
         session_id = request.session.get("session_id")
@@ -352,7 +339,7 @@ async def decrease_quantity(request: Request, title: Title):
             logger.info(f"Session ID not found from request {request.client.host}")
             raise HTTPException(status_code=400, detail="Session ID not found")
 
-        img_quant_list = Noco.get_cookie_from_session_id(session_id)
+        img_quant_list = noco_db.get_cookie_from_session_id(session_id)
         matched_price = None
 
         # Check if the title is already in the cart
@@ -366,26 +353,26 @@ async def decrease_quantity(request: Request, title: Title):
                     break
 
                 each["quantity"] -= 1  # Decrement quantity
-                each["price"] = Noco.get_art_price_from_title_and_quantity(each["title"], each["quantity"])
+                each["price"] = noco_db.get_art_price_from_title_and_quantity(each["title"], each["quantity"])
                 matched_price = each["price"]
                 break
         else:
             raise HTTPException(status_code=404, detail="Title not found in cart")
 
         if img_quant_list == []:
-            Noco.delete_session_cookie(session_id)
+            noco_db.delete_session_cookie(session_id)
             request.session.pop("session_id")
             return JSONResponse({"price": 0})
 
         patch_data = {
-            "Id": int(Noco.get_cookie_Id_from_session_id(session_id)),
+            "Id": int(noco_db.get_cookie_Id_from_session_id(session_id)),
             "sessionids": session_id,
             "cookies": {
                 "img_quantity_list": img_quant_list
             }
         }
 
-        Noco.patch_cookies_data(patch_data)
+        noco_db.patch_cookies_data(patch_data)
         return JSONResponse({"price": matched_price})
     except Exception as e:
         logger.error(f"Error in decrease_quantity: {e}")
@@ -393,14 +380,14 @@ async def decrease_quantity(request: Request, title: Title):
 
 @app.post("/delete_item")
 @limiter.limit("100/minute")  # Public data fetching
-async def delete_item(request: Request, title: Title):
+async def delete_item(request: Request, title: Title, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Delete item {title.title} by {request.client.host}")
     try:
         session_id = request.session.get("session_id")
         if not session_id:
             raise HTTPException(status_code=400, detail="Session ID not found")
 
-        img_quant_list = Noco.get_cookie_from_session_id(session_id)
+        img_quant_list = noco_db.get_cookie_from_session_id(session_id)
         matched_price = None
 
         
@@ -413,19 +400,19 @@ async def delete_item(request: Request, title: Title):
             raise HTTPException(status_code=404, detail="Title not found in cart")
         
         if img_quant_list == []:
-            Noco.delete_session_cookie(session_id)
+            noco_db.delete_session_cookie(session_id)
             request.session.pop("session_id")
             return JSONResponse({"price": 0})
         
         patch_data = {
-            "Id": int(Noco.get_cookie_Id_from_session_id(session_id)),
+            "Id": int(noco_db.get_cookie_Id_from_session_id(session_id)),
             "sessionids": session_id,
             "cookies": {
                 "img_quantity_list": img_quant_list
             }
         }
 
-        Noco.patch_cookies_data(patch_data)
+        noco_db.patch_cookies_data(patch_data)
         return JSONResponse({"price": matched_price})
     except Exception as e:
         logger.error(f"Error in delete_item: {e}")
@@ -434,7 +421,7 @@ async def delete_item(request: Request, title: Title):
 # Change checkout to be a payment link creation and then redirect to that payment link with the correct products
 @app.get("/checkout/{sessionid}", response_class=HTMLResponse)
 @limiter.limit("100/minute")  # Public data fetching
-async def shop_checkout(request: Request, sessionid: str):
+async def shop_checkout(request: Request, sessionid: str, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Checkout page accessed by {request.client.host}")
     try:
         # Create payment link with the items in the cart
@@ -442,7 +429,7 @@ async def shop_checkout(request: Request, sessionid: str):
             logger.warning(f"Session ID does not match {request.client.host}")
             return RedirectResponse(url="/shop_art_menu")
                
-        img_quant_list = Noco.get_cookie_from_session_id(sessionid)
+        img_quant_list = noco_db.get_cookie_from_session_id(sessionid)
 
         # Fine the price id of the titles in the cart
         title_list = []
@@ -474,109 +461,14 @@ async def shop_checkout(request: Request, sessionid: str):
                 'shipping_rate' : "shr_1PbZ0yP7gcDRwQa3LoqgQqbK",
             }],
         )
-        Noco.delete_session_cookie(sessionid)
         return RedirectResponse(url=payment_link.url)
     except Exception as e:
         logger.error(f"Error in shop_checkout: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-# @app.get("/checkout/{sessionid}", response_class=HTMLResponse)
-# async def shop_checkout(request: Request, sessionid: str):
-#     # raise HTTPException(status_code=404, detail="Page not found")
-#     logger.info(f"Checkout page accessed by {request.client.host}")
-#     try: 
-#         if request.session.get("session_id") != sessionid:
-#             logger.warning(f"Session ID does not match {request.client.host}")
-#             return RedirectResponse(url="/shop_art_menu")
-               
-#         img_quant_list = Noco.get_cookie_from_session_id(sessionid)
-
-
-#         art_uris = Noco.get_artwork_data().data_uris
-#         titles = Noco.get_artwork_data().titles
-
-#         # Check if the title is in the cart if so, get the image url
-#         img_data_list = []
-#         for item in img_quant_list:
-#             for title in titles:
-#                 if item["title"] in title:
-#                     img_uri = art_uris[titles.index(title)]
-#                     img_dict = {}
-#                     img_dict["img_uri"] = img_uri
-#                     img_dict["img_title"] = title
-#                     img_dict["quantity"] = item["quantity"]
-#                     img_dict["price"] = Noco.get_art_price_from_title_and_quantity(item["title"], item["quantity"])
-#                     img_data_list.append(img_dict)
-#         total_quantity = sum(int(item["quantity"]) for item in img_quant_list)
-#         total_price = sum(int(item["price"]) for item in img_quant_list) 
-#         context = {
-#             "img_data_list": img_data_list,
-#             "brig_logo_url": Noco.get_icon_uri_from_title("brig_logo"),
-#             "total_price": total_price,
-#             "total_quantity": total_quantity
-#         }
-#         return templates.TemplateResponse(request=request, name="checkout.html", context=context)
-#     except Exception as e:
-#         logger.error(f"Error in shop_checkout: {e}")
-#         raise HTTPException(status_code=500, detail="Internal server error")
-
-# @app.post("/subscribe")
-# async def subscribe(request: Request, email: Email):
-#     logger.info(f"Subscribe request by {email.email} from {request.client.host}")
-#     try:
-#         if email.email:
-#             # Insert into NoCodeDB
-#             email_address = email.email
-#             if email_address in Noco.get_email_data().emails:
-#                 logger.warning(f"Email {email_address} already subscribed")
-#                 return {"message": "Email already subscribed"}
-            
-#             Noco.post_email(email_address)
-#             logger.info(f"Email subscribed and inserted into nocodb: {email_address}")
-#             return {"message": "Email subscribed successfully"}           
-#     except Exception as e:
-#         logger.error(f"Error in subscribe: {e}")
-#         raise HTTPException(status_code=500, detail="Internal server error")
-
-
-# @app.get("/confirmation/{sessionid}", response_class=HTMLResponse)
-# async def confirmation(request: Request, sessionid: str):
-#     logger.info(f"Confirmation page accessed by {request.client.host}")
-#     try:     
-#         if request.session.get("session_id") != sessionid:
-#             logger.warning(f"Session ID does not match {request.client.host}")
-#             return RedirectResponse(url="/shop_art_menu")
-                                    
-#         img_quant_list = Noco.get_cookie_from_session_id(sessionid)
-#         if img_quant_list == []:
-#             logger.info("Cart is empty")
-#             return RedirectResponse(url="/shop_art_menu")
-
-#         orderid = Noco.get_orderid_from_sessionid(sessionid)
-#         paymentintent = Noco.get_payment_intent_from_orderid(orderid)
-#         Noco.post_final_order_data(paymentintent['orderid'], paymentintent['orderdetail'], paymentintent['email'], paymentintent['amount'], paymentintent['intentid'])  
-#         context = {
-#             "total_price": Noco.get_total_price_from_order_contents({"img_quantity_list": img_quant_list}),
-#             "brig_logo_url": Noco.get_icon_uri_from_title("brig_logo"),
-#             "order_number" : Noco.get_orderid_from_sessionid(sessionid),
-#             "order_details" : img_quant_list
-#         }
-        
-#         request.session.pop("session_id")
-#         return templates.TemplateResponse(request=request, name="confirmation.html", context=context)
-#     except Exception as e:
-#         logger.error(f"Error in confirmation: {e}")
-#         raise HTTPException(status_code=500, detail="Internal server error")
-#     finally:
-#         try:
-#             Noco.wipe_session_data_from_sessionid(sessionid)
-#         except Exception as e:
-#             logger.error("Session data could not be wiped")
-#             raise HTTPException(status_code=500, detail="Internal server error")
-
-@app.post("/get_session_id")
-@limiter.limit("100/minute")  # Public data fetching
+@app.get("/get_session_id")
+@limiter.limit("100/minute") 
 async def get_session_id(request: Request):
     logger.info(f"Get session ID by {request.client.host}")
     try:
@@ -590,146 +482,15 @@ async def get_session_id(request: Request):
         logger.error(f"Error in get_session_id: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-# @app.post("/modify-payment-intent")
-# async def modify_payment_intent(request: Request, email: Email):
-#     logger.info(f"Modify payment intent by {request.client.host}")
-#     try:
-#         email = email.email
-#         session_id = request.session.get("session_id")
-#         ordercookie = Noco.get_cookie_from_session_id(session_id)
-#         order_detail = {
-#                 "img_quantity_list": ordercookie,
-#         }
-#         if ordercookie == []:
-#             logger.warning(f"Session ID not found for {request.client.host}")
-#             return JSONResponse(error="Session ID not found"), 403
-        
-#         print(session_id)
-#         orderid = Noco.get_orderid_from_sessionid(session_id)
-#         if orderid == "":
-#             logger.warning(f"Order ID not found for {request.client.host}")
-#             return JSONResponse(error="Order ID not found"), 403
-        
-#         intentid = Noco.get_intentid_from_orderid(orderid)
-#         if intentid == "":
-#             logger.warning(f"Intent ID not found for {request.client.host}")
-#             return JSONResponse(error="Intent ID not found"), 403
-        
-#         intent = stripe.PaymentIntent.modify(
-#             intentid,
-#             receipt_email=email,
-#             amount=Noco.get_total_price_from_order_contents(order_detail) * 100,
-#             metadata={
-#                     'sessionid': session_id,
-#                     'orderdetail': str(Noco.get_cookie_from_session_id(session_id)),
-#                     'orderid': orderid
-#             }
-#         )
-#         Noco.patch_payment_intent_data(orderid, order_detail, intent["receipt_email"], intent["amount"], intent["id"])
-#     except Exception as e:
-#         logger.error(f"Error in modify_payment_intent: {e}")
-#         return JSONResponse(error=str(e)), 403
-
-# @app.post("/create-payment-intent")
-# async def create_payment(request: Request):
-#     try:
-#         # email
-#         session_id = request.session.get("session_id") 
-#         ordercookie = Noco.get_cookie_from_session_id(session_id)
-#         order_detail = {
-#                 "img_quantity_list": ordercookie,
-#         }
-#         if ordercookie == []:
-#             Noco.delete_session_cookie(session_id)
-#             logger.warning(f"Session ID not found for {request.client.host}")
-#             return JSONResponse(error="Session ID not found"), 403
-        
-#         orderid = Noco.get_orderid_from_sessionid(session_id)
-#         if orderid == "":
-#             orderid = Noco.generate_unique_order_number()
-#             amount = Noco.get_total_price_from_order_contents(order_detail) * 100
-#             order_detail = {
-#                 "img_quantity_list": ordercookie,
-#             }
-
-#             # taxamount = stripe.tax.Calculation.create(
-#             #     currency='usd',
-#             #     line_items=[{"amount" : amount, "reference" : "Artwork"}],
-#             #     customer_details = {"ipaddress" : request.client.host}
-#             # )
-#             intent = stripe.PaymentIntent.create(
-#                 amount=Noco.get_total_price_from_order_contents(order_detail) * 100,
-#                 currency='usd',
-#                 automatic_payment_methods={
-#                         'enabled': True,
-#                     },
-#                 metadata={
-#                     'sessionid': request.session.get("session_id"),
-#                     'orderdetail': str(Noco.get_cookie_from_session_id(request.session.get("session_id"))),
-#                     'orderid': orderid
-#                 }
-#             )
-#             Noco.post_session_mapping_data(session_id, orderid)
-#             # Noco.post_payment_intent_data(orderid, order_detail, email, intent["amount"], intent["id"])
-#             return JSONResponse({
-#                 'clientSecret': intent['client_secret'],
-#                 'session_id': session_id,
-#             })
-        
-#         intentid = Noco.get_intentid_from_orderid(orderid)
-#         if intentid != "":
-#             intent = stripe.PaymentIntent.modify(
-#                 intentid,
-#                 amount=Noco.get_total_price_from_order_contents(order_detail) * 100,
-#                 metadata={
-#                     'sessionid': session_id,
-#                     'orderdetail': str(Noco.get_cookie_from_session_id(session_id)),
-#                     'orderid': orderid
-#                 }
-#             )
-#             Noco.patch_payment_intent_data(orderid, order_detail, intent["receipt_email"], intent["amount"], intent["id"])
-#             return JSONResponse({
-#                 'clientSecret': intent['client_secret']
-#             })
-#         elif intentid == "":
-#             # There is a paymentintent but the orderid doesn't match the databases
-#             # Patch the sessionid with a new orderid and create a new paymentintent
-#             # Delete the old mapping and replace the session id in the request session
-#             orderid = Noco.generate_unique_order_number()
-#             # replace the old orderid with the new one
-#             order_detail = {
-#                 "img_quantity_list": ordercookie,
-#             }
-#             intent = stripe.PaymentIntent.create(
-#                 amount=Noco.get_total_price_from_order_contents(order_detail) * 100,
-#                 currency='usd',
-#                 automatic_payment_methods={
-#                         'enabled': True,
-#                     },
-#                 metadata={
-#                     'sessionid': session_id,
-#                     'orderdetail': str(Noco.get_cookie_from_session_id(request.session.get("session_id"))),
-#                     'orderid': orderid
-#                 }
-#             )
-#             Noco.delete_sessionmapping_from_sessionid(session_id)
-#             Noco.post_session_mapping_data(session_id, orderid)
-#             # Noco.post_payment_intent_data(orderid, order_detail, email, intent["amount"], intent["id"])
-#             return JSONResponse({
-#                 'clientSecret': intent['client_secret']
-#             })
-#     except Exception as e:
-#         logger.error(f"Error in create_payment: {e}")
-#         return JSONResponse(error=str(e)), 403
-    
 
 @app.get("/portal", response_class=HTMLResponse)
 @limiter.limit("100/minute")  # Public data fetching
-async def portal(request: Request):
+async def portal(request: Request, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Portal page accessed by {request.client.host}")
     try:
         context = {
-            "brig_logo_url": Noco.get_icon_uri_from_title("brig_logo")
+            "brig_logo_url": noco_db.get_icon_uri_from_title("brig_logo"),
+            "version": get_version()
         }
         return templates.TemplateResponse(request=request, name="login.html", context=context)
     except Exception as e:
@@ -738,7 +499,7 @@ async def portal(request: Request):
 
 @app.post("/credentials_check")
 @limiter.limit("100/minute")  # Public data fetching
-async def credentials_check(request: Request, credentials: Credentials):
+async def credentials_check(request: Request, credentials: Credentials, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Credentials check for {credentials.username} by {request.client.host}")
     try:
         if credentials.username == BRIG_USERNAME and credentials.password == BRIG_PASSWORD:
@@ -756,13 +517,16 @@ async def credentials_check(request: Request, credentials: Credentials):
 
 @app.get("/logs", response_class=HTMLResponse)
 @limiter.limit("100/minute")  # Public data fetching
-async def get_log_file(request: Request):
+async def get_log_file(request: Request, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Logs page accessed: {request.client.host}")
     try:
         if not request.session.get('ben_logged_in'):
             return RedirectResponse(url='/portal')
         logs = get_logs()
-        context = {"logs": logs}
+        context = {
+            "logs": logs,
+            "version": get_version()
+        }
         return templates.TemplateResponse(request=request, name="logs.html", context=context)
     except Exception as e:
         logger.error(f"Error in get_log_file: {e}")
@@ -770,12 +534,15 @@ async def get_log_file(request: Request):
 
 @app.get("/brig_portal", response_class=HTMLResponse)
 @limiter.limit("100/minute")  # Public data fetching
-async def brig_portal(request: Request):
+async def brig_portal(request: Request, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Brig portal page accessed by {request.client.host}")
     try: 
         if not request.session.get('logged_in'):
             return RedirectResponse(url='/portal')
-        context = {"brig_logo_url": Noco.get_icon_uri_from_title("brig_logo")}
+        context = {
+            "brig_logo_url": noco_db.get_icon_uri_from_title("brig_logo"),
+            "version": get_version()
+        }
         return templates.TemplateResponse(request=request, name="brig_portal.html", context=context)
     except Exception as e:
         logger.error(f"Error in brig_portal: {e}")
@@ -783,7 +550,7 @@ async def brig_portal(request: Request):
 
 @app.post("/add_images")
 @limiter.limit("100/minute")  # Public data fetching
-async def add_images(request : Request, titles: List[str] = Form(...), files: List[UploadFile] = File(...), prices: List[int] = Form(...)):
+async def add_images(request : Request, titles: List[str] = Form(...), files: List[UploadFile] = File(...), prices: List[int] = Form(...), noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Add images for titles: {titles}")
     if len(titles) != len(files):
         logger.warning("Number of titles does not match number of files")
@@ -793,7 +560,7 @@ async def add_images(request : Request, titles: List[str] = Form(...), files: Li
     try:
         for title, file in zip(titles, files):
             try:
-                id = Noco.get_last_art_Id() + 1
+                id = noco_db.get_last_art_Id() + 1
             except IndexError:
                 id = 1
             with tempfile.NamedTemporaryFile(suffix=".PNG", delete=False) as temp_file:
@@ -804,7 +571,7 @@ async def add_images(request : Request, titles: List[str] = Form(...), files: Li
             with open(temp_file_path, "rb") as f:
                 files_to_upload = {"file": f}
                 path = os.path.basename(temp_file_path)
-                data = Noco.upload_image(files_to_upload, path)
+                data = noco_db.upload_image(files_to_upload, path)
                 new_file_info = data[0]
                 new_file_path = new_file_info.get('path')
                 new_signed_path = new_file_info.get('signedPath')
@@ -821,7 +588,7 @@ async def add_images(request : Request, titles: List[str] = Form(...), files: Li
                         "signedPath": new_signed_path
                     }]
                 }
-                Noco.post_image(update_data)
+                noco_db.post_image(update_data)
                 return_message = {"message": "Image(s) added successfully"}
                 return_list.append(return_message)
     except Exception as e:
@@ -832,17 +599,17 @@ async def add_images(request : Request, titles: List[str] = Form(...), files: Li
             if each and os.path.exists(each):
                 os.remove(each)
 
-        Noco.refresh_artwork_cache()
+        noco_db.refresh_artwork_cache()
         return return_list[0] if return_list else {"message": "No images added"}
 
 
 @app.post("/swap_image")
 @limiter.limit("100/minute")  # Public data fetching
-async def swap_image(request : Request,title: str = Form(...), new_title: str = Form(...), file: UploadFile = File(...)):
+async def swap_image(request : Request, title: str = Form(...), new_title: str = Form(...), file: UploadFile = File(...), noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Swap image for {title} to {new_title} ")
     
     try:
-        Id = Noco.get_artwork_Id_from_title(title)
+        Id = noco_db.get_artwork_Id_from_title(title)
         if not Id:
             logger.warning(f"Image not found for title {title}")
             return {"message": "Image not found"}
@@ -853,7 +620,7 @@ async def swap_image(request : Request,title: str = Form(...), new_title: str = 
         with open(temp_file_path, "rb") as f:
             files_to_upload = {"file": f}
             path = os.path.basename(temp_file_path)
-            data = Noco.upload_image(files_to_upload, path)
+            data = noco_db.upload_image(files_to_upload, path)
             new_file_info = data[0]
             new_file_path = new_file_info.get('path')
             new_signed_path = new_file_info.get('signedPath')
@@ -869,7 +636,7 @@ async def swap_image(request : Request,title: str = Form(...), new_title: str = 
                     "signedPath": new_signed_path
                 }]
             }
-            Noco.patch_image(update_data)
+            noco_db.patch_image(update_data)
             logger.info(f"Successfully swapped image for {title} to {new_title}")
             return {"message": "Image swapped successfully"}
     except Exception as e:
@@ -879,12 +646,13 @@ async def swap_image(request : Request,title: str = Form(...), new_title: str = 
         if temp_file_path and os.path.exists(temp_file_path):
             os.remove(temp_file_path)
 
-        Noco.refresh_artwork_cache()
+        noco_db.refresh_artwork_cache()
 
 @app.get("/favicon.ico")
 @limiter.limit("100/minute")  # Public data fetching
 async def favicon(request: Request):
     return RedirectResponse(url="/static/favicon.ico")
+
 def decode_data_uri(data_uri: str, title: str) -> str:
     try:
         header, encoded = data_uri.split(",", 1)
@@ -912,11 +680,11 @@ def delete_temp_file(path: str):
 
 @app.get("/get_image/{title}")
 @limiter.limit("100/minute")  # Public data fetching
-async def get_image(request : Request,title: str, background_tasks: BackgroundTasks):
+async def get_image(request : Request,title: str, background_tasks: BackgroundTasks, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Get image for {title}")
     try:
         # Replace this with your actual method to get the URI
-        uri = Noco.get_art_uri_from_title(title)
+        uri = noco_db.get_art_uri_from_title(title)
         if not uri:
             logger.warning(f"Image not found for title {title}")
             raise HTTPException(status_code=404, detail="Image not found")
@@ -954,7 +722,7 @@ async def get_image(request : Request,title: str, background_tasks: BackgroundTa
 #     logger.info(f"Get image for {title}")
 #     try:
 #         # Replace this with your actual method to get the URI
-#         uri = Noco.get_art_uri_from_title(title)
+#         uri = noco_db.get_art_uri_from_title(title)
 #         if not uri:
 #             logger.warning(f"Image not found for title {title}")
 #             raise HTTPException(status_code=404, detail="Image not found")
@@ -972,11 +740,12 @@ async def get_image(request : Request,title: str, background_tasks: BackgroundTa
 
 @app.get("/return_policy", response_class=HTMLResponse)
 @limiter.limit("100/minute")  # Public data fetching
-async def return_policy(request: Request):
+async def return_policy(request: Request, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Return policy page accessed by {request.client.host}")
     try:
         context = {
-            "brig_logo": Noco.get_icon_uri_from_title("brig_logo")
+            "brig_logo": noco_db.get_icon_uri_from_title("brig_logo"),
+            "version": get_version()
         }
         return templates.TemplateResponse(request=request, name="return_policy.html", context=context)
     except Exception as e:
@@ -985,13 +754,13 @@ async def return_policy(request: Request):
     
 @app.get("/get_session_time")
 @limiter.limit("100/minute")  # Public data fetching
-async def get_session_time(request: Request):
+async def get_session_time(request: Request, noco_db: Noco = Depends(get_noco_db)):
     session_id = request.session.get("session_id")
     if not session_id:
         raise HTTPException(status_code=400, detail="Session ID not found")
 
     try:
-        session_creation_time_str = Noco.get_cookie_session_begginging_time(session_id)
+        session_creation_time_str = noco_db.get_cookie_session_begginging_time(session_id)
         session_creation_time = datetime.fromisoformat(session_creation_time_str.replace('Z', '+00:00'))  # Convert to datetime object
         current_time = datetime.now(timezone.utc)
         elapsed_time = (current_time - session_creation_time).total_seconds()
@@ -1007,14 +776,14 @@ async def get_session_time(request: Request):
 
 @app.post("/delete_session")
 @limiter.limit("100/minute")  # Public data fetching
-async def delete_session(request: Request):
+async def delete_session(request: Request, noco_db: Noco = Depends(get_noco_db)):
     session_id = request.session.get("session_id")
     if not session_id:
         raise HTTPException(status_code=400, detail="Session ID not found")
 
     try:
         # Delete the session from your storage (database, cache, etc.)
-        Noco.delete_session_cookie(session_id)
+        noco_db.delete_session_cookie(session_id)
         request.session.pop("session_id")
         return JSONResponse({"message": "Session deleted"})
     except Exception as e:

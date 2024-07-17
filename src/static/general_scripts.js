@@ -13,7 +13,6 @@ async function checkoutRedirect() {
     }
 }
 
-
 async function paymentRedirect() {
     const session_id = await get_session_id();
     window.location.href = `/checkout/${session_id}`;
@@ -23,7 +22,7 @@ async function paymentRedirect() {
 async function get_session_id() {
     try {
         const response = await fetch('/get_session_id', {
-            method: 'POST',
+            method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
             }

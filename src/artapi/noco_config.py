@@ -1,7 +1,9 @@
 import os
 from src.artapi.noco import Noco
 
-key_data = Noco.get_key_data()
+noco_db = Noco()
+
+key_data = noco_db.get_key_data()
 
 for i in range(len(key_data.envvars)):
     os.environ[key_data.envvars[i]] = key_data.envvals[i]
