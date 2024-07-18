@@ -13,6 +13,13 @@ from PIL import Image
 from io import BytesIO
 from typing import Union
 import uuid
+import asyncio
+from io import BytesIO
+import datetime
+import tempfile
+import os
+from datetime import datetime, timezone
+import time
 
 class Noco:
     
@@ -173,9 +180,6 @@ class Noco:
         base64_data = base64.b64encode(resized_img_data).decode('utf-8')
         return f"data:image/jpeg;base64,{base64_data}"
 
-    
-
-
     @lru_cache(maxsize=128)
     def get_artwork_data(self) -> ArtObject:
         """
@@ -277,19 +281,6 @@ class Noco:
         index = session_mapping_data.sessionids.index(sessionid)
         return session_mapping_data.Ids[index]
 
-    def wipe_session_data_from_sessionid(self, sessionid: str) -> None:
-        """
-        Function to wipe the session data from the session ID
-        
-        Args:
-            sessionid (str): The session ID
-        """
-        session_mapping_data = self.get_session_mapping_data()
-        index = session_mapping_data.sessionids.index(sessionid)
-        Noco.delete_nocodb_table_data(NOCODB_TABLE_MAP.paymentintent_table, self.get_payment_intent_Id_from_orderid(self.get_orderid_from_sessionid(sessionid)))
-        Noco.delete_nocodb_table_data(NOCODB_TABLE_MAP.session_mapping_table, session_mapping_data.Ids[index])
-        Noco.delete_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, self.get_cookie_Id_from_session_id(sessionid))
-    
     def get_payment_intent_from_orderid(self, orderid: str) -> dict:
         """
         Function to get the payment intent row from the order ID
@@ -893,24 +884,6 @@ class Noco:
         }
         self.post_nocodb_table_data(NOCODB_TABLE_MAP.paymentintent_table, data)
 
-    def patch_paymentintent_orderdetails_from_orderid(self, orderid: str, orderdetails: dict) -> None:
-        """
-        Function to patch the order details in the payment intent data
-        
-        Args:
-            orderid (str): The order ID
-            orderdetails (dict): The order details
-        """
-        data = {
-            "Id": self.get_payment_intent_Id_from_orderid(orderid),
-            "orderids": orderid,
-            "orderdetails": orderdetails,
-            "emails": self.get_email_from_orderid(orderid),
-            "amounts": self.get_amount_from_orderid(orderid),
-            "intentids": self.get_intentid_from_orderid(orderid)
-        }
-        self.patch_nocodb_table_data(NOCODB_TABLE_MAP.paymentintent_table, data)
-
     def delete_sessionmapping_from_sessionid(self, sessionid: str) -> None:
         """
         Function to delete the session mapping from the session ID
@@ -957,3 +930,5 @@ class Noco:
         cookie_data = self.get_cookie_data()
         index = cookie_data.sessionids.index(sessionid)
         return cookie_data.created_ats[index]
+    
+    
