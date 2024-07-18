@@ -2,6 +2,7 @@
 import dotenv
 import os
 from src.artapi.models import TableMap
+
 # Get file path of .env file
 dotenv_path = dotenv.find_dotenv()
 
@@ -26,19 +27,15 @@ NOCODB_FINAL_ORDER_TABLE = os.getenv("nocodb_final_order_table")
 
 STRIPE_SECRET_KEY = os.getenv("stripe_secret_key")
 
+
+ORIGIN = os.getenv("origin")
+
 # Create an instance of TableMap
 NOCODB_TABLE_MAP = TableMap(
     img_table=NOCODB_IMG_TABLE,
     icon_table=NOCODB_ICON_TABLE,
     key_table=NOCODB_KEY_TABLE,
-    email_table=NOCODB_EMAIL_TABLE,
-    content_table=NOCODB_CONTENT_TABLE,
-    contact_table=NOCODB_CONTACT_TABLE,
-    order_table=NOCODB_ORDER_TABLE,
     cookies_table=NOCODB_COOKIES_TABLE,
-    paymentintent_table=NOCODB_PAYMENTINTENT_TABLE,
-    session_mapping_table=NOCODB_SESSION_MAPPING_TABLE,
-    final_order_table=NOCODB_FINAL_ORDER_TABLE
 )
 
 

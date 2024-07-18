@@ -8,7 +8,6 @@ function submitForm(title) {
 
 // Initial toggle when the page loads
 document.addEventListener('DOMContentLoaded', function() {
-    updateCartQuantity();
     toggleMenu();
 
     // Check on scroll

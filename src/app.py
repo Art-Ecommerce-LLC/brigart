@@ -1,6 +1,6 @@
 # app/main.py
 from fastapi import (
-    FastAPI, Request, Form, UploadFile, File, HTTPException, Depends, BackgroundTasks
+    FastAPI, Request, Form, UploadFile, File, HTTPException, Depends, BackgroundTasks, WebSocket, WebSocketDisconnect
 )
 from fastapi.responses import ( 
     HTMLResponse, JSONResponse, RedirectResponse, FileResponse, StreamingResponse
@@ -9,7 +9,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import os
-from src.artapi.config import STRIPE_SECRET_KEY
+from src.artapi.config import STRIPE_SECRET_KEY, ORIGIN
 from src.artapi.logger import logger
 from src.artapi.middleware import add_middleware, limiter
 from src.artapi.models import (
@@ -22,13 +22,14 @@ import os
 from typing import List
 import uuid
 from src.artapi.noco_config import OPENAPI_URL, BRIG_USERNAME, BRIG_PASSWORD, BEN_USERNAME, BEN_PASSWORD
-from src.artapi.utils import Utils
 import datetime
 import stripe
 from datetime import datetime, timezone
 from src.artapi.nocodb_connector import get_noco_db
 from contextlib import asynccontextmanager
 import asyncio
+from typing import List
+
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
 
@@ -38,7 +39,9 @@ if OPENAPI_URL == "None":
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup event
-    asyncio.create_task(Utils.delete_expired_sessions())
+    noco_db = Noco()
+    asyncio.create_task(noco_db.delete_expired_sessions())
+    asyncio.create_task(noco_db.check_for_artwork_updates())
     yield
     # No spec
 
@@ -92,6 +95,23 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
 
     return HTMLResponse(content=str(exc.detail), status_code=exc.status_code)
 
+
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    noco_db = Noco()
+    await websocket.accept()
+    noco_db.connected_clients.append(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            # Process the data and handle it
+            if data == "Artwork data updated":
+                for client in noco_db.connected_clients:
+                    await client.send_text("Artwork data updated")
+    except WebSocketDisconnect:
+        noco_db.connected_clients.remove(websocket)
+
 @app.get("/", response_class=HTMLResponse)
 @limiter.limit("100/minute")
 async def homepage(request: Request, noco_db: Noco = Depends(get_noco_db)):
@@ -101,7 +121,8 @@ async def homepage(request: Request, noco_db: Noco = Depends(get_noco_db)):
             "art_uris": noco_db.get_artwork_data().data_uris,
             "art_titles": noco_db.get_artwork_data().titles,
             "brig_logo": noco_db.get_icon_uri_from_title("brig_logo"),
-            "version": Utils.get_version()
+            "version": noco_db.get_version(),
+            "host" : ORIGIN.split("://")[1]
         }
         return templates.TemplateResponse(request=request, name="index.html", context=context)
     except Exception as e:
@@ -119,7 +140,7 @@ async def shop(request: Request, title: str, noco_db: Noco = Depends(get_noco_db
             "img_title": title.replace("+", " "),
             "price": noco_db.get_art_price_from_title(title.replace("+", " ")),
             "brig_logo" : noco_db.get_icon_uri_from_title("brig_logo"),
-            "version": Utils.get_version()
+            "version": noco_db.get_version()
         }
         return templates.TemplateResponse(request=request, name="shop.html", context=context)
     except Exception as e:
@@ -237,7 +258,7 @@ async def shop_art(request: Request, sessionid: str, noco_db: Noco = Depends(get
         context = {
             "img_data_list": img_data_list,
             "brig_logo_url": noco_db.get_icon_uri_from_title("brig_logo"),
-            "version": Utils.get_version()
+            "version": noco_db.get_version()
         }
         return templates.TemplateResponse(request=request, name="shop_art.html", context=context)
     except Exception as e:
@@ -255,7 +276,7 @@ async def shop_art_menu(request: Request, noco_db: Noco = Depends(get_noco_db)):
             "titles": noco_db.get_artwork_data().titles,
             "price_list": noco_db.get_artwork_data().prices,
             "brig_logo": noco_db.get_icon_uri_from_title("brig_logo"),
-            "version" : Utils.get_version()
+            "version" : noco_db.get_version()
         }
         return templates.TemplateResponse(request=request, name="shop_art_menu.html", context=context)
     except Exception as e:
@@ -270,7 +291,7 @@ async def shop_giclee_prints(request: Request, noco_db: Noco = Depends(get_noco_
         context = {
             "giclee_prints": noco_db.get_artwork_data().data_uris,
             "brig_logo_url": noco_db.get_icon_uri_from_title("brig_logo"),
-            "version": Utils.get_version()
+            "version": noco_db.get_version()
         }
         return templates.TemplateResponse(request=request, name="gicle_prints.html", context=context)
     except Exception as e:
@@ -488,7 +509,7 @@ async def portal(request: Request, noco_db: Noco = Depends(get_noco_db)):
     try:
         context = {
             "brig_logo_url": noco_db.get_icon_uri_from_title("brig_logo"),
-            "version": Utils.get_version()
+            "version": noco_db.get_version()
         }
         return templates.TemplateResponse(request=request, name="login.html", context=context)
     except Exception as e:
@@ -523,7 +544,7 @@ async def get_log_file(request: Request, noco_db: Noco = Depends(get_noco_db)):
         logs = get_logs()
         context = {
             "logs": logs,
-            "version": Utils.get_version()
+            "version": noco_db.get_version()
         }
         return templates.TemplateResponse(request=request, name="logs.html", context=context)
     except Exception as e:
@@ -539,7 +560,7 @@ async def brig_portal(request: Request, noco_db: Noco = Depends(get_noco_db)):
             return RedirectResponse(url='/portal')
         context = {
             "brig_logo_url": noco_db.get_icon_uri_from_title("brig_logo"),
-            "version": Utils.get_version()
+            "version": noco_db.get_version()
         }
         return templates.TemplateResponse(request=request, name="brig_portal.html", context=context)
     except Exception as e:
@@ -664,10 +685,10 @@ async def get_image(request : Request, title: str, background_tasks: BackgroundT
             raise HTTPException(status_code=404, detail="Image not found")
         
         # Decode the data URI and get the temp file path
-        temp_file_path = Utils.decode_data_uri(uri, title)
+        temp_file_path = noco_db.decode_data_uri(uri, title)
 
         # Schedule the file to be deleted after the response is sent
-        background_tasks.add_task(Utils.delete_temp_file, temp_file_path)
+        background_tasks.add_task(noco_db.delete_temp_file, temp_file_path)
 
         # Create a file in Stripe
         with open(temp_file_path, "rb") as fp:
@@ -693,7 +714,7 @@ async def get_image(title: str, noco_db: Noco = Depends(get_noco_db)):
             logger.warning(f"Image not found for title {title}")
             raise HTTPException(status_code=404, detail="Image not found")
         # Decode the data URI and get the BytesIO stream
-        image_stream = Utils.decode_data_uri_to_BytesIO(uri)
+        image_stream = noco_db.decode_data_uri_to_BytesIO(uri)
         return StreamingResponse(image_stream, media_type="image/png")
     except HTTPException as http_exc:
         raise http_exc
@@ -709,7 +730,7 @@ async def return_policy(request: Request, noco_db: Noco = Depends(get_noco_db)):
     try:
         context = {
             "brig_logo": noco_db.get_icon_uri_from_title("brig_logo"),
-            "version": Utils.get_version()
+            "version": noco_db.get_version()
         }
         return templates.TemplateResponse(request=request, name="return_policy.html", context=context)
     except Exception as e:
