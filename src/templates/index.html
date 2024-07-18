@@ -12,6 +12,8 @@
     <script src="{{ url_for('static', path='/general_scripts.js') }}?v={{ version }}"></script>
     <script async src="https://js.stripe.com/v3/"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <meta id="host" data-name="{{ host }}">
+    <meta id="websocket" data-name="{{ websocket }}">
 </head>
 <body>
 <div class="header">
@@ -97,11 +99,12 @@
         <p>&copy; <span id="currentYear"></span> Art Ecommerce, LLC. All rights reserved.</p>
     </div>
 </footer>
-<meta id="host" data-name="{{ host }}">
 <script>
     // Establish WebSocket connection
     var host = $('#host').data('name');
-    const socket = new WebSocket(host + "/ws");
+    var websocket = $('#websocket').data('name')
+    var host_string = websocket + host + "/ws";
+    const socket = new WebSocket(host_string);
     socket.onmessage = function(event) {
         const message = event.data;
         if (message === "Artwork data updated") {
