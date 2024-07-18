@@ -104,6 +104,7 @@
     var host = $('#host').data('name');
     var websocket = $('#websocket').data('name')
     var host_string = websocket + host + "/ws";
+    console.log(host_string);
     const socket = new WebSocket(host_string);
     socket.onmessage = function(event) {
         const message = event.data;
