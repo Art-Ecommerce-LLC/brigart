@@ -9,7 +9,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import os
-from src.artapi.config import STRIPE_SECRET_KEY, ORIGIN
+from src.artapi.config import STRIPE_SECRET_KEY, HOST
 from src.artapi.logger import logger
 from src.artapi.middleware import add_middleware, limiter
 from src.artapi.models import (
@@ -122,7 +122,7 @@ async def homepage(request: Request, noco_db: Noco = Depends(get_noco_db)):
             "art_titles": noco_db.get_artwork_data().titles,
             "brig_logo": noco_db.get_icon_uri_from_title("brig_logo"),
             "version": noco_db.get_version(),
-            "host" : ORIGIN.split("://")[1]
+            "host" : HOST
         }
         return templates.TemplateResponse(request=request, name="index.html", context=context)
     except Exception as e:

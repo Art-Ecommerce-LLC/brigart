@@ -29,6 +29,7 @@ STRIPE_SECRET_KEY = os.getenv("stripe_secret_key")
 
 
 ORIGIN = os.getenv("origin")
+HOST = os.getenv("host")
 
 # Create an instance of TableMap
 NOCODB_TABLE_MAP = TableMap(

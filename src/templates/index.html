@@ -101,7 +101,7 @@
 <script>
     // Establish WebSocket connection
     var host = $('#host').data('name');
-    const socket = new WebSocket("ws://" + host + "/ws");
+    const socket = new WebSocket(host + "/ws");
     socket.onmessage = function(event) {
         const message = event.data;
         if (message === "Artwork data updated") {
