@@ -29,6 +29,9 @@ import base64
 from datetime import datetime, timedelta, timezone
 from src.artapi.nocodb_connector import get_noco_db
 import time
+from contextlib import asynccontextmanager
+import asyncio
+from io import BytesIO
 
 def get_version():
     return str(int(time.time()))
@@ -41,11 +44,77 @@ if OPENAPI_URL == "None":
     OPENAPI_URL = None
 
 
+async def delete_expired_sessions():
+    while True:
+        try:
+            noco_db = Noco()  # Instantiate your database connection
+            cookie_data = noco_db.get_cookie_data()
+            sessions = cookie_data.sessionids
+            created_ats = cookie_data.created_ats
+            current_time = datetime.now(timezone.utc)
+
+            for session_id, creation_time_str in zip(sessions, created_ats):
+                session_creation_time = datetime.fromisoformat(creation_time_str.replace('Z', '+00:00'))
+
+                elapsed_time = (current_time - session_creation_time).total_seconds()
+                if elapsed_time > 900:  # 15 minutes = 900 seconds
+                    noco_db.delete_session_cookie(session_id)
+                    logger.info(f"Deleted expired session {session_id}")
+
+        except Exception as e:
+            logger.error(f"Error deleting expired sessions: {e}")
+
+        # Wait for 1 minute before checking again
+        await asyncio.sleep(60)
+
+def decode_data_uri(data_uri: str, title: str) -> str:
+    try:
+        header, encoded = data_uri.split(",", 1)
+        data = base64.b64decode(encoded)
+        
+        # Create a temporary directory
+        temp_dir = tempfile.mkdtemp()
+        temp_file_path = os.path.join(temp_dir, f"{title}.png")
+        
+        # Write the image content to the file with the custom name
+        with open(temp_file_path, "wb") as temp_file:
+            temp_file.write(data)
+        
+        return temp_file_path
+    except Exception as e:
+        logger.error(f"Failed to decode data URI: {e}")
+        raise HTTPException(status_code=500, detail="Failed to decode data URI")
+
+def delete_temp_file(path: str):
+    try:
+        os.remove(path)
+    except Exception as e:
+        logger.error(f"Failed to delete temp file: {e}")
+
+
+def decode_data_uri_to_BytesIO(data_uri: str) -> BytesIO:
+    try:
+        header, encoded = data_uri.split(",", 1)
+        data = base64.b64decode(encoded)
+        return BytesIO(data)
+    except Exception as e:
+        logger.error(f"Failed to decode data URI: {e}")
+        raise HTTPException(status_code=500, detail="Failed to decode data URI")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup event
+    asyncio.create_task(delete_expired_sessions())
+    yield
+    # No spec
+
 app = FastAPI(
     title="Brig API",
     description=desc,
     openapi_url=OPENAPI_URL,
+    lifespan= lifespan
 )
+
 
 
 stripe.api_key = STRIPE_SECRET_KEY
@@ -653,34 +722,10 @@ async def swap_image(request : Request, title: str = Form(...), new_title: str =
 async def favicon(request: Request):
     return RedirectResponse(url="/static/favicon.ico")
 
-def decode_data_uri(data_uri: str, title: str) -> str:
-    try:
-        header, encoded = data_uri.split(",", 1)
-        data = base64.b64decode(encoded)
-        
-        # Create a temporary directory
-        temp_dir = tempfile.mkdtemp()
-        temp_file_path = os.path.join(temp_dir, f"{title}.png")
-        
-        # Write the image content to the file with the custom name
-        with open(temp_file_path, "wb") as temp_file:
-            temp_file.write(data)
-        
-        return temp_file_path
-    except Exception as e:
-        logger.error(f"Failed to decode data URI: {e}")
-        raise HTTPException(status_code=500, detail="Failed to decode data URI")
-
-def delete_temp_file(path: str):
-    try:
-        os.remove(path)
-    except Exception as e:
-        logger.error(f"Failed to delete temp file: {e}")
-
-
-@app.get("/get_image/{title}")
+# Also creates a file in Stripe
+@app.get("/download_image/{title}")
 @limiter.limit("100/minute")  # Public data fetching
-async def get_image(request : Request,title: str, background_tasks: BackgroundTasks, noco_db: Noco = Depends(get_noco_db)):
+async def get_image(request : Request, title: str, background_tasks: BackgroundTasks, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Get image for {title}")
     try:
         # Replace this with your actual method to get the URI
@@ -708,34 +753,24 @@ async def get_image(request : Request,title: str, background_tasks: BackgroundTa
     except Exception as e:
         logger.error(f"Failed to get image: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve image")
-# def decode_data_uri(data_uri: str) -> BytesIO:
-#     try:
-#         header, encoded = data_uri.split(",", 1)
-#         data = base64.b64decode(encoded)
-#         return BytesIO(data)
-#     except Exception as e:
-#         logger.error(f"Failed to decode data URI: {e}")
-#         raise HTTPException(status_code=500, detail="Failed to decode data URI")
 
-# @app.get("/get_image/{title}")
-# async def get_image(title: str):
-#     logger.info(f"Get image for {title}")
-#     try:
-#         # Replace this with your actual method to get the URI
-#         uri = noco_db.get_art_uri_from_title(title)
-#         if not uri:
-#             logger.warning(f"Image not found for title {title}")
-#             raise HTTPException(status_code=404, detail="Image not found")
-        
-#         # Decode the data URI and get the BytesIO stream
-#         image_stream = decode_data_uri(uri)
-
-#         return StreamingResponse(image_stream, media_type="image/png")
-#     except HTTPException as http_exc:
-#         raise http_exc
-#     except Exception as e:
-#         logger.error(f"Failed to get image: {e}")
-#         raise HTTPException(status_code=500, detail="Failed to retrieve image")
+@app.get("/stream_image/{title}")
+async def get_image(title: str, noco_db: Noco = Depends(get_noco_db)):
+    logger.info(f"Get image for {title}")
+    try:
+        # Replace this with your actual method to get the URI
+        uri = noco_db.get_art_uri_from_title(title)
+        if not uri:
+            logger.warning(f"Image not found for title {title}")
+            raise HTTPException(status_code=404, detail="Image not found")
+        # Decode the data URI and get the BytesIO stream
+        image_stream = decode_data_uri_to_BytesIO(uri)
+        return StreamingResponse(image_stream, media_type="image/png")
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        logger.error(f"Failed to get image: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve image")
 
 
 @app.get("/return_policy", response_class=HTMLResponse)
@@ -764,7 +799,7 @@ async def get_session_time(request: Request, noco_db: Noco = Depends(get_noco_db
         session_creation_time = datetime.fromisoformat(session_creation_time_str.replace('Z', '+00:00'))  # Convert to datetime object
         current_time = datetime.now(timezone.utc)
         elapsed_time = (current_time - session_creation_time).total_seconds()
-        remaining_time = max(0, 900 - elapsed_time)  # 30 minutes = 1800 seconds
+        remaining_time = max(0, 1800 - elapsed_time)  # 30 minutes = 1800 seconds
 
         return JSONResponse({"remaining_time": int(remaining_time)})
 
@@ -780,7 +815,6 @@ async def delete_session(request: Request, noco_db: Noco = Depends(get_noco_db))
     session_id = request.session.get("session_id")
     if not session_id:
         raise HTTPException(status_code=400, detail="Session ID not found")
-
     try:
         # Delete the session from your storage (database, cache, etc.)
         noco_db.delete_session_cookie(session_id)
