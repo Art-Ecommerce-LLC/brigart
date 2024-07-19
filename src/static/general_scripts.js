@@ -90,23 +90,28 @@ function toggleDropdown() {
     dropdown.classList.toggle('show');
     content.classList.toggle('hide');
     footer.classList.toggle('hide');
-    glance.classList.toggle('hide-border') // Add or remove 'hide' class to hide or show the content
+    if (glance_h1 && glance) {
+        glance_h1.classList.toggle('hide-border');
+        glance.classList.toggle('hide-border');
+    } // Add or remove 'hide' class to hide or show the content
     // Lock the page from scrolling when the dropdown is open
     if (dropdown.classList.contains('show')) {
         document.body.style.overflow = 'hidden';
         
-        if (glance_h1) {
+        if (glance_h1 && glance) {
             glance_h1.style.display = 'none'
             glance.classList.add('hide-border');
         }
     } else {
         document.body.style.overflow = 'auto';
-        glance_h1.style.display = 'block'
-        glance.classList.remove('hide-border');
+        if (glance_h1 && glance) {
+            glance_h1.style.display = 'block'
+            glance.classList.remove('hide-border');
         content.classList.remove('hide');
         footer.classList.remove('hide');
     }
 
+}
 }
 function toggleMenu() {
     const navbar = document.querySelector('.navbar');
@@ -126,7 +131,7 @@ function toggleMenu() {
 
         if (dropdown.classList.contains('show')) {
             document.body.style.overflow = 'hidden';
-            if (glance_h1) {
+            if (glance_h1 && glance) {
                 glance_h1.style.display = 'none';
                 glance_h1.classList.add('hide-border');
                 glance.classList.add('hide-border');
@@ -134,13 +139,12 @@ function toggleMenu() {
             }
             content.classList.add('hide');
             footer.classList.add('hide');
-            glance.classList.add('hide-border');
         
             
         }
         else {
             document.body.style.overflow = 'auto';
-            if (glance_h1) {
+            if (glance_h1 && glance) {
                 glance_h1.style.display = 'block';
                 glance_h1.classList.remove('hide-border');
             }

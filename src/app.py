@@ -95,8 +95,6 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
 
     return HTMLResponse(content=str(exc.detail), status_code=exc.status_code)
 
-
-
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     noco_db = Noco()
