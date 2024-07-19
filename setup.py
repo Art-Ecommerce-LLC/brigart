@@ -21,7 +21,8 @@ setup(
         'pillow==8.3.2',
         'aiohttp==3.9.5',
         'loguru==0.7.2',
-        'slowapi==0.1.9'
+        'slowapi==0.1.9',
+        'websockets==12.0'
     ],
     entry_points={
         'console_scripts': [
