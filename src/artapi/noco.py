@@ -525,19 +525,33 @@ class Noco:
                 existing_price_amount = existing_price.unit_amount // 100
 
                 if existing_price_amount != price:
-                    # Create new price
-                    new_price = stripe.Price.create(
-                        product=product_id,
-                        unit_amount=price * 100,
-                        currency="usd",
-                        tax_behavior="exclusive"
-                    )
-                    logger.info(f"Created new price for product title {title}")
+                    # Check if there's an existing inactive price with the same amount
+                    prices = stripe.Price.list(product=product_id)
+                    matching_inactive_price = next((p for p in prices if p.unit_amount == price * 100 and not p.active), None)
+
+                    if matching_inactive_price:
+                        # Reactivate the inactive matching price
+                        stripe.Price.modify(
+                            matching_inactive_price.id,
+                            active=True
+                        )
+                        new_price_id = matching_inactive_price.id
+                        logger.info(f"Reactivated existing price for product title {title}")
+                    else:
+                        # Create new price
+                        new_price = stripe.Price.create(
+                            product=product_id,
+                            unit_amount=price * 100,
+                            currency="usd",
+                            tax_behavior="exclusive"
+                        )
+                        new_price_id = new_price.id
+                        logger.info(f"Created new price for product title {title}")
 
                     # Update product with new price
                     stripe.Product.modify(
                         product_id,
-                        default_price=new_price.id
+                        default_price=new_price_id
                     )
                     logger.info(f"Updated product with new price for title {title}")
 
@@ -566,35 +580,55 @@ class Noco:
             logger.error(f"Error creating or updating Stripe product for title {title}: {e}")
             raise
 
+
     async def check_for_artwork_updates(self, interval: int = 60):
         while True:
             try:
                 if self.has_artwork_data_changed():
                     artwork_data = self.get_artwork_data_no_cache()
-                    for i, title in enumerate(artwork_data.titles):
+                    previous_data = self.get_artwork_data()
+
+                    # Process the existing artwork data
+                    min_length = min(len(artwork_data.titles), len(previous_data.titles))
+
+                    for i in range(min_length):
                         new_image_data = artwork_data.data_uris[i]
                         new_price = int(artwork_data.prices[i])
                         new_title = artwork_data.titles[i]
-                        new_image_path = self.decode_data_uri(new_image_data, title)
+                        new_image_path = self.decode_data_uri(new_image_data, new_title)
 
-                        previous_data = self.get_artwork_data()
                         previous_image_data = previous_data.data_uris[i]
                         previous_price = int(previous_data.prices[i])
-                        previous_title = previous_data.titles[i] 
-                        print(new_price, previous_price)
-                        print(new_title, previous_title)
+                        previous_title = previous_data.titles[i]
+
                         if new_image_data != previous_image_data or new_price != previous_price or new_title != previous_title:
-                            image_url = self.upload_image_to_stripe(new_image_path, title)
-                            self.create_or_update_stripe_product(title, new_price, image_url)
-                            logger.info(f"Updated Stripe product for title {title}")    
+                            image_url = self.upload_image_to_stripe(new_image_path, new_title)
+                            self.create_or_update_stripe_product(new_title, new_price, image_url)
+                            logger.info(f"Updated Stripe product for title {new_title}")
 
                         if new_image_path and os.path.exists(new_image_path):
                             os.remove(new_image_path)
+
+                    # Process any new artwork data
+                    if len(artwork_data.titles) > len(previous_data.titles):
+                        for i in range(len(previous_data.titles), len(artwork_data.titles)):
+                            new_image_data = artwork_data.data_uris[i]
+                            new_price = int(artwork_data.prices[i])
+                            new_title = artwork_data.titles[i]
+                            new_image_path = self.decode_data_uri(new_image_data, new_title)
+
+                            image_url = self.upload_image_to_stripe(new_image_path, new_title)
+                            self.create_or_update_stripe_product(new_title, new_price, image_url)
+                            logger.info(f"Created new Stripe product for title {new_title}")
+
+                            if new_image_path and os.path.exists(new_image_path):
+                                os.remove(new_image_path)
 
                     # Update the cached artwork data
                     self.update_previous_data()
 
                     await self.notify_clients_of_update("Artwork data updated")
+
             except Exception as e:
                 logger.error(f"Error checking for artwork updates: {e}")
             await asyncio.sleep(interval)

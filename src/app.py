@@ -307,7 +307,7 @@ async def post_total_price(request: Request, total_price: TotalPrice, noco_db: N
         if cookie_price_total == total_price.totalPrice:
             return JSONResponse({"totalPrice": total_price.totalPrice})
         else:
-            logger.warning(f"Total price {total_price} does not match")
+            logger.warning(f"Total price {total_price} does not match {cookie_price_total}")
             raise HTTPException(status_code=400, detail="Total price does not match")
     except Exception as e:
         logger.error(f"Error in post_total_price: {e}")
