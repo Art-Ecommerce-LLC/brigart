@@ -95,20 +95,20 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
 
     return HTMLResponse(content=str(exc.detail), status_code=exc.status_code)
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    noco_db = Noco()
-    await websocket.accept()
-    noco_db.connected_clients.append(websocket)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            # Process the data and handle it
-            if data == "Artwork data updated":
-                for client in noco_db.connected_clients:
-                    await client.send_text("Artwork data updated")
-    except WebSocketDisconnect:
-        noco_db.connected_clients.remove(websocket)
+# @app.websocket("/ws")
+# async def websocket_endpoint(websocket: WebSocket):
+#     noco_db = Noco()
+#     await websocket.accept()
+#     noco_db.connected_clients.append(websocket)
+#     try:
+#         while True:
+#             data = await websocket.receive_text()
+#             # Process the data and handle it
+#             if data == "Artwork data updated":
+#                 for client in noco_db.connected_clients:
+#                     await client.send_text("Artwork data updated")
+#     except WebSocketDisconnect:
+#         noco_db.connected_clients.remove(websocket)
 
 @app.get("/", response_class=HTMLResponse)
 @limiter.limit("100/minute")
@@ -533,193 +533,193 @@ async def credentials_check(request: Request, credentials: Credentials, noco_db:
         logger.error(f"Error in credentials_check: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-@app.get("/logs", response_class=HTMLResponse)
-@limiter.limit("100/minute")  # Public data fetching
-async def get_log_file(request: Request, noco_db: Noco = Depends(get_noco_db)):
-    logger.info(f"Logs page accessed: {request.client.host}")
-    try:
-        if not request.session.get('ben_logged_in'):
-            return RedirectResponse(url='/portal')
-        logs = get_logs()
-        context = {
-            "logs": logs,
-            "version": noco_db.get_version()
-        }
-        return templates.TemplateResponse(request=request, name="logs.html", context=context)
-    except Exception as e:
-        logger.error(f"Error in get_log_file: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+# @app.get("/logs", response_class=HTMLResponse)
+# @limiter.limit("100/minute")  # Public data fetching
+# async def get_log_file(request: Request, noco_db: Noco = Depends(get_noco_db)):
+#     logger.info(f"Logs page accessed: {request.client.host}")
+#     try:
+#         if not request.session.get('ben_logged_in'):
+#             return RedirectResponse(url='/portal')
+#         logs = get_logs()
+#         context = {
+#             "logs": logs,
+#             "version": noco_db.get_version()
+#         }
+#         return templates.TemplateResponse(request=request, name="logs.html", context=context)
+#     except Exception as e:
+#         logger.error(f"Error in get_log_file: {e}")
+#         raise HTTPException(status_code=500, detail="Internal server error")
 
-@app.get("/brig_portal", response_class=HTMLResponse)
-@limiter.limit("100/minute")  # Public data fetching
-async def brig_portal(request: Request, noco_db: Noco = Depends(get_noco_db)):
-    logger.info(f"Brig portal page accessed by {request.client.host}")
-    try: 
-        if not request.session.get('logged_in'):
-            return RedirectResponse(url='/portal')
-        context = {
-            "brig_logo_url": noco_db.get_icon_uri_from_title("brig_logo"),
-            "version": noco_db.get_version()
-        }
-        return templates.TemplateResponse(request=request, name="brig_portal.html", context=context)
-    except Exception as e:
-        logger.error(f"Error in brig_portal: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+# @app.get("/brig_portal", response_class=HTMLResponse)
+# @limiter.limit("100/minute")  # Public data fetching
+# async def brig_portal(request: Request, noco_db: Noco = Depends(get_noco_db)):
+#     logger.info(f"Brig portal page accessed by {request.client.host}")
+#     try: 
+#         if not request.session.get('logged_in'):
+#             return RedirectResponse(url='/portal')
+#         context = {
+#             "brig_logo_url": noco_db.get_icon_uri_from_title("brig_logo"),
+#             "version": noco_db.get_version()
+#         }
+#         return templates.TemplateResponse(request=request, name="brig_portal.html", context=context)
+#     except Exception as e:
+#         logger.error(f"Error in brig_portal: {e}")
+#         raise HTTPException(status_code=500, detail="Internal server error")
 
-@app.post("/add_images")
-@limiter.limit("100/minute")  # Public data fetching
-async def add_images(request : Request, titles: List[str] = Form(...), files: List[UploadFile] = File(...), prices: List[int] = Form(...), noco_db: Noco = Depends(get_noco_db)):
-    logger.info(f"Add images for titles: {titles}")
-    if len(titles) != len(files):
-        logger.warning("Number of titles does not match number of files")
-        return {"message": "Number of titles doesn't match number of files"}
-    return_list = []
-    temp_file_paths = []
-    try:
-        for title, file in zip(titles, files):
-            try:
-                id = noco_db.get_last_art_Id() + 1
-            except IndexError:
-                id = 1
-            with tempfile.NamedTemporaryFile(suffix=".PNG", delete=False) as temp_file:
-                temp_file_path = temp_file.name
-                temp_file_paths.append(temp_file_path)
-                temp_file.write(await file.read())
-                temp_file.flush()
-            with open(temp_file_path, "rb") as f:
-                files_to_upload = {"file": f}
-                path = os.path.basename(temp_file_path)
-                data = noco_db.upload_image(files_to_upload, path)
-                new_file_info = data[0]
-                new_file_path = new_file_info.get('path')
-                new_signed_path = new_file_info.get('signedPath')
-                new_title = title.replace(" ", "+")
-                path_title = new_title + ".png"
-                update_data = {
-                    "Id": id,
-                    "img_label": title,
-                    "price": prices[titles.index(title)],
-                    "img": [{
-                        "title": path_title,
-                        "mimetype": file.content_type,
-                        "path": new_file_path,
-                        "signedPath": new_signed_path
-                    }]
-                }
-                noco_db.post_image(update_data)
-                return_message = {"message": "Image(s) added successfully"}
-                return_list.append(return_message)
-    except Exception as e:
-        logger.error(f"Failed to add images: {e}")
-        return {"message": "Image(s) not added successfully"}
-    finally:
-        for each in temp_file_paths:
-            if each and os.path.exists(each):
-                os.remove(each)
+# @app.post("/add_images")
+# @limiter.limit("100/minute")  # Public data fetching
+# async def add_images(request : Request, titles: List[str] = Form(...), files: List[UploadFile] = File(...), prices: List[int] = Form(...), noco_db: Noco = Depends(get_noco_db)):
+#     logger.info(f"Add images for titles: {titles}")
+#     if len(titles) != len(files):
+#         logger.warning("Number of titles does not match number of files")
+#         return {"message": "Number of titles doesn't match number of files"}
+#     return_list = []
+#     temp_file_paths = []
+#     try:
+#         for title, file in zip(titles, files):
+#             try:
+#                 id = noco_db.get_last_art_Id() + 1
+#             except IndexError:
+#                 id = 1
+#             with tempfile.NamedTemporaryFile(suffix=".PNG", delete=False) as temp_file:
+#                 temp_file_path = temp_file.name
+#                 temp_file_paths.append(temp_file_path)
+#                 temp_file.write(await file.read())
+#                 temp_file.flush()
+#             with open(temp_file_path, "rb") as f:
+#                 files_to_upload = {"file": f}
+#                 path = os.path.basename(temp_file_path)
+#                 data = noco_db.upload_image(files_to_upload, path)
+#                 new_file_info = data[0]
+#                 new_file_path = new_file_info.get('path')
+#                 new_signed_path = new_file_info.get('signedPath')
+#                 new_title = title.replace(" ", "+")
+#                 path_title = new_title + ".png"
+#                 update_data = {
+#                     "Id": id,
+#                     "img_label": title,
+#                     "price": prices[titles.index(title)],
+#                     "img": [{
+#                         "title": path_title,
+#                         "mimetype": file.content_type,
+#                         "path": new_file_path,
+#                         "signedPath": new_signed_path
+#                     }]
+#                 }
+#                 noco_db.post_image(update_data)
+#                 return_message = {"message": "Image(s) added successfully"}
+#                 return_list.append(return_message)
+#     except Exception as e:
+#         logger.error(f"Failed to add images: {e}")
+#         return {"message": "Image(s) not added successfully"}
+#     finally:
+#         for each in temp_file_paths:
+#             if each and os.path.exists(each):
+#                 os.remove(each)
 
-        noco_db.refresh_artwork_cache()
-        return return_list[0] if return_list else {"message": "No images added"}
+#         noco_db.refresh_artwork_cache()
+#         return return_list[0] if return_list else {"message": "No images added"}
 
 
-@app.post("/swap_image")
-@limiter.limit("100/minute")  # Public data fetching
-async def swap_image(request : Request, title: str = Form(...), new_title: str = Form(...), file: UploadFile = File(...), noco_db: Noco = Depends(get_noco_db)):
-    logger.info(f"Swap image for {title} to {new_title} ")
+# @app.post("/swap_image")
+# @limiter.limit("100/minute")  # Public data fetching
+# async def swap_image(request : Request, title: str = Form(...), new_title: str = Form(...), file: UploadFile = File(...), noco_db: Noco = Depends(get_noco_db)):
+#     logger.info(f"Swap image for {title} to {new_title} ")
     
-    try:
-        Id = noco_db.get_artwork_Id_from_title(title)
-        if not Id:
-            logger.warning(f"Image not found for title {title}")
-            return {"message": "Image not found"}
-        with tempfile.NamedTemporaryFile(suffix=".PNG", delete=False) as temp_file:
-            temp_file_path = temp_file.name
-            temp_file.write(await file.read())
-            temp_file.flush()
-        with open(temp_file_path, "rb") as f:
-            files_to_upload = {"file": f}
-            path = os.path.basename(temp_file_path)
-            data = noco_db.upload_image(files_to_upload, path)
-            new_file_info = data[0]
-            new_file_path = new_file_info.get('path')
-            new_signed_path = new_file_info.get('signedPath')
-            title = new_title.replace(" ", "+")
-            title = title + ".png"
-            update_data = {
-                "Id": Id,
-                "img_label": new_title,
-                "img": [{
-                    "title": title,
-                    "mimetype": file.content_type,
-                    "path": new_file_path,
-                    "signedPath": new_signed_path
-                }]
-            }
-            noco_db.patch_image(update_data)
-            logger.info(f"Successfully swapped image for {title} to {new_title}")
-            return {"message": "Image swapped successfully"}
-    except Exception as e:
-        logger.error(f"Failed to swap image: {e}")
-        return {"message": "Image not swapped successfully"}
-    finally:
-        if temp_file_path and os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
+#     try:
+#         Id = noco_db.get_artwork_Id_from_title(title)
+#         if not Id:
+#             logger.warning(f"Image not found for title {title}")
+#             return {"message": "Image not found"}
+#         with tempfile.NamedTemporaryFile(suffix=".PNG", delete=False) as temp_file:
+#             temp_file_path = temp_file.name
+#             temp_file.write(await file.read())
+#             temp_file.flush()
+#         with open(temp_file_path, "rb") as f:
+#             files_to_upload = {"file": f}
+#             path = os.path.basename(temp_file_path)
+#             data = noco_db.upload_image(files_to_upload, path)
+#             new_file_info = data[0]
+#             new_file_path = new_file_info.get('path')
+#             new_signed_path = new_file_info.get('signedPath')
+#             title = new_title.replace(" ", "+")
+#             title = title + ".png"
+#             update_data = {
+#                 "Id": Id,
+#                 "img_label": new_title,
+#                 "img": [{
+#                     "title": title,
+#                     "mimetype": file.content_type,
+#                     "path": new_file_path,
+#                     "signedPath": new_signed_path
+#                 }]
+#             }
+#             noco_db.patch_image(update_data)
+#             logger.info(f"Successfully swapped image for {title} to {new_title}")
+#             return {"message": "Image swapped successfully"}
+#     except Exception as e:
+#         logger.error(f"Failed to swap image: {e}")
+#         return {"message": "Image not swapped successfully"}
+#     finally:
+#         if temp_file_path and os.path.exists(temp_file_path):
+#             os.remove(temp_file_path)
 
-        noco_db.refresh_artwork_cache()
+#         noco_db.refresh_artwork_cache()
 
 @app.get("/favicon.ico")
 @limiter.limit("100/minute")  # Public data fetching
 async def favicon(request: Request):
     return RedirectResponse(url="/static/favicon.ico")
 
-# Also creates a file in Stripe
-@app.get("/download_image/{title}")
-@limiter.limit("100/minute")  # Public data fetching
-async def get_image(request : Request, title: str, background_tasks: BackgroundTasks, noco_db: Noco = Depends(get_noco_db)):
-    logger.info(f"Get image for {title}")
-    try:
-        # Replace this with your actual method to get the URI
-        uri = noco_db.get_art_uri_from_title(title)
-        if not uri:
-            logger.warning(f"Image not found for title {title}")
-            raise HTTPException(status_code=404, detail="Image not found")
+# # Also creates a file in Stripe
+# @app.get("/download_image/{title}")
+# @limiter.limit("100/minute")  # Public data fetching
+# async def get_image(request : Request, title: str, background_tasks: BackgroundTasks, noco_db: Noco = Depends(get_noco_db)):
+#     logger.info(f"Get image for {title}")
+#     try:
+#         # Replace this with your actual method to get the URI
+#         uri = noco_db.get_art_uri_from_title(title)
+#         if not uri:
+#             logger.warning(f"Image not found for title {title}")
+#             raise HTTPException(status_code=404, detail="Image not found")
         
-        # Decode the data URI and get the temp file path
-        temp_file_path = noco_db.decode_data_uri(uri, title)
+#         # Decode the data URI and get the temp file path
+#         temp_file_path = noco_db.decode_data_uri(uri, title)
 
-        # Schedule the file to be deleted after the response is sent
-        background_tasks.add_task(noco_db.delete_temp_file, temp_file_path)
+#         # Schedule the file to be deleted after the response is sent
+#         background_tasks.add_task(noco_db.delete_temp_file, temp_file_path)
 
-        # Create a file in Stripe
-        with open(temp_file_path, "rb") as fp:
-            stripe.File.create(
-                purpose="product_image",
-                file=fp
-            )
+#         # Create a file in Stripe
+#         with open(temp_file_path, "rb") as fp:
+#             stripe.File.create(
+#                 purpose="product_image",
+#                 file=fp
+#             )
 
-        return FileResponse(temp_file_path, media_type="image/png", filename=f"{title}.png", background=background_tasks)
-    except HTTPException as http_exc:
-        raise http_exc
-    except Exception as e:
-        logger.error(f"Failed to get image: {e}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve image")
+#         return FileResponse(temp_file_path, media_type="image/png", filename=f"{title}.png", background=background_tasks)
+#     except HTTPException as http_exc:
+#         raise http_exc
+#     except Exception as e:
+#         logger.error(f"Failed to get image: {e}")
+#         raise HTTPException(status_code=500, detail="Failed to retrieve image")
 
-@app.get("/stream_image/{title}")
-async def get_image(title: str, noco_db: Noco = Depends(get_noco_db)):
-    logger.info(f"Get image for {title}")
-    try:
-        # Replace this with your actual method to get the URI
-        uri = noco_db.get_art_uri_from_title(title)
-        if not uri:
-            logger.warning(f"Image not found for title {title}")
-            raise HTTPException(status_code=404, detail="Image not found")
-        # Decode the data URI and get the BytesIO stream
-        image_stream = noco_db.decode_data_uri_to_BytesIO(uri)
-        return StreamingResponse(image_stream, media_type="image/png")
-    except HTTPException as http_exc:
-        raise http_exc
-    except Exception as e:
-        logger.error(f"Failed to get image: {e}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve image")
+# @app.get("/stream_image/{title}")
+# async def get_image(title: str, noco_db: Noco = Depends(get_noco_db)):
+#     logger.info(f"Get image for {title}")
+#     try:
+#         # Replace this with your actual method to get the URI
+#         uri = noco_db.get_art_uri_from_title(title)
+#         if not uri:
+#             logger.warning(f"Image not found for title {title}")
+#             raise HTTPException(status_code=404, detail="Image not found")
+#         # Decode the data URI and get the BytesIO stream
+#         image_stream = noco_db.decode_data_uri_to_BytesIO(uri)
+#         return StreamingResponse(image_stream, media_type="image/png")
+#     except HTTPException as http_exc:
+#         raise http_exc
+#     except Exception as e:
+#         logger.error(f"Failed to get image: {e}")
+#         raise HTTPException(status_code=500, detail="Failed to retrieve image")
 
 
 @app.get("/return_policy", response_class=HTMLResponse)
