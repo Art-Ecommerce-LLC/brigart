@@ -11,7 +11,6 @@
     <script src="{{ url_for('static', path='/toggle_menu.js') }}?v={{ version }}"></script>
     <script src="{{ url_for('static', path='/general_scripts.js') }}?v={{ version }}"></script>
     <script async src="https://js.stripe.com/v3/"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <meta id="host" data-name="{{ host }}">
     <meta id="websocket" data-name="{{ websocket }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -103,21 +102,6 @@
         <p>&copy; <span id="currentYear"></span> Art Ecommerce, LLC. All rights reserved.</p>
     </div>
 </footer>
-<script>
-    // Establish WebSocket connection
-    var host = $('#host').data('name');
-    var websocket = $('#websocket').data('name')
-    var host_string = websocket + host + "/ws";
-    console.log(host_string);
-    const socket = new WebSocket(host_string);
-    socket.onmessage = function(event) {
-        const message = event.data;
-        if (message === "Artwork data updated") {
-            // Refresh the artwork data on the page
-            location.reload(); // Reload the page to get updated data from the server
-        }
-    };
-</script>
 
 </body>
 </html>
