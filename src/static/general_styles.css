@@ -519,6 +519,11 @@ body {
     background-color: #3498db; /* Adjust the color */
     animation: loading 1.5s infinite;
 }
+.glance_inner h1{
+    color: white;
+    font-size: 50px;
+    font-weight: 350;
+}
 
 @keyframes loading {
     0% {
@@ -571,7 +576,8 @@ body {
         color: white;
         text-decoration: none;
         padding: 20px;
-        font-size: 50px; /* Increase font size */
+        font-size: 35px;
+        font-weight: 350; /* Increase font size */
         width: 100%;
         transition: color 0.3s;
         box-sizing: border-box;
@@ -591,5 +597,14 @@ body {
     .footer {
         text-align: center;
 
+    }
+    .glance_inner h1 {
+        font-size: 35px;
+    }
+}
+
+@media (max-width: 590px) {
+    .glance_inner h1{
+        font-size: 30px;
     }
 }
