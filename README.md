@@ -15,7 +15,7 @@ The purpose of this project is to create a professional platform for the artist,
 
 ## .env file secrets
 
-1. **Make sure the .env file is in the root directory. You need these as secrets for the app to work**
+1. **Make sure the .env file is in the root directory. You need the secrets to be filled out. Find the necessary enviornment varibles in the src/artapi/config.py and src/artapi/noco_config.py**
 
 
 ## How to Set Up Local Environment
