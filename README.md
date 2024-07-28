@@ -5,7 +5,7 @@ The purpose of this project is to create a professional platform for the artist,
 ## Current Features
 - A singleton database connection to a database that holds the images, titles, and prices of artwork.
 - The ability to automatically update prices, titles, and images on an HTML template without always writing new HTML code based off the data in the database
-- Selected images have their resolution reduced. Then they are turned into Data URI's which are sent to the HTML through the template context. They are recieved on the frontend in a background-image: url(<datauri>) to prevent users or browsers from easily downloading them.
+- Selected images have their resolution reduced. Then they are turned into Data URI's which are sent to the HTML through the template context. They are recieved on the frontend in a background-image: url(...) to prevent users or browsers from easily downloading them.
 
 ## Features (Coming Soon)
 - Automated product updates using the Stripe API that change the image and prices based on changes in the NocoDB database.
