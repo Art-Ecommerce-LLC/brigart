@@ -400,13 +400,22 @@ async def decrease_quantity(request: Request, title: Title, noco_db: Noco = Depe
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/delete_item")
-@limiter.limit("100/minute")  # Public data fetching
+@limiter.limit("100/minute") 
 async def delete_item(request: Request, title: Title, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Delete item {title.title} by {request.client.host}")
     try:
+
+        # Get list of artwork titles
+        titles = noco_db.get_artwork_data().titles
+        if title.title not in titles:
+            logger.warning(f"Title {title.title} not found")
+            raise HTTPException(status_code=404, detail="Title not found")
+
         session_id = request.session.get("session_id")
         if not session_id:
             raise HTTPException(status_code=400, detail="Session ID not found")
+
+
 
         img_quant_list = noco_db.get_cookie_from_session_id(session_id)
         matched_price = None
