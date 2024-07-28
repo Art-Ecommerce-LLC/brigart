@@ -11,6 +11,12 @@ The purpose of this project is to create a professional platform for the artist,
 - Python virtual environment
 - NocoDB Instance with PostgreSQL
 - Python 3.9.13
+- Stripe API
+
+## .env file secrets
+
+1. **Make sure the .env file is in the root directory. You need these as secrets for the app to work**
+
 
 ## How to Set Up Local Environment
 
@@ -36,13 +42,13 @@ The purpose of this project is to create a professional platform for the artist,
    ```bash
    .venv/scripts/activate.bat 
    ```
-5. **While in the main directory, make sure (.venv) pops up to the left, bottomost line of text in the terminal. Then run**
+5. **While in the root directory, make sure (.venv) pops up to the left, bottomost line of text in the terminal. Then run**
 
    ```bash
    pip install -r requirements.txt
    ```
 
-6. **Now that dependencies are download and you are in the main directory. Run**
+6. **Now that dependencies are download and you are in the root directory. Run**
    ```
    uvicorn src.app:app --reload
    ```
