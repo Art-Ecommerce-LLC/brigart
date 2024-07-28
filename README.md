@@ -44,7 +44,7 @@ The purpose of this project is to create a professional platform for the artist,
    ```
    **(Windows 11/10)**
    ```bash
-   .venv/scripts/activate.bat 
+   .venv/scripts/activate
    ```
 5. **While in the root directory, make sure (.venv) pops up to the left, bottomost line of text in the terminal. Then run**
 
