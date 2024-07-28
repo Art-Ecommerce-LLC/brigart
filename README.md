@@ -1,23 +1,24 @@
-Welcome to BrigArt,
+# Welcome to BrigArt
 
 The purpose of this project is to create a professional platform for the artist, Brig, to sell his prints.
 
+## Features (Coming Soon)
+- Automated product updates using the Stripe API that change the image and prices based off of changes in the NocoDB database.
+- Webhook to trigger the check to see if there are products that need updating when someone uses the API.
 
-Features(Coming Soon)
+## Requirements
+- Git
+- Python virtual environment
+- NocoDB Instance with PostgreSQL
 
-* Automated product updates using the Stripe API that change the image and prices based off of changes in the NocoDB database
+## How to Set Up Local Environment
 
-* Webhook to trigger the check to see if there are products that need updating when someone uses the API
+1. **Clone the repository:**
 
-Requiremnts:
+   ```bash
+   git clone https://github.com/Art-Ecommerce-LLC/brigart.git
 
-* Git
-* Python virtual enviornment
-* NocoDB Instance with PostgreSQL
 
-How to set up local enviornment:
-
-* Clone the repository with git clone https://github.com/Art-Ecommerce-LLC/brigart.git
 * Open terminal and navigate to the main directory of the repo
 * Download a python virtual enviornment by running python -m venv .venv
 * Activate the virtual enviornmnet with source .venv/bin/activate for Mac OS/Linux and .
