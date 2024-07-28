@@ -26,7 +26,11 @@ The purpose of this project is to create a professional platform for the artist,
    git clone https://github.com/Art-Ecommerce-LLC/brigart.git
    ```
 
-2. **Open terminal and navigate to the main directory of the repo**
+2. **Open terminal and navigate to the root directory of the repo**
+
+   ```bash
+   cd brigart
+   ```
 
 3. **Download a python virtual enviornment by running**
 
