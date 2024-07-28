@@ -3,7 +3,7 @@
 The purpose of this project is to create a professional platform for the artist, Brig, to sell his prints.
 
 ## Current Features
-- A singleton database connection to a databse that holds the images, titles, and prices of artwork.
+- A singleton database connection to a database that holds the images, titles, and prices of artwork.
 - The ability to automatically update prices, titles, and images on an HTML template without always writing new HTML code based off the data in the database
 
 ## Features (Coming Soon)
