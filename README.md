@@ -25,7 +25,7 @@ The purpose of this project is to create a professional platform for the artist,
 3. **Download a python virtual enviornment by running**
 
    ```bash
-   python -m venv .venv**
+   python -m venv .venv
    ```
 
 4. **(Mac OS) Activate the virtual enviornmnet with source**
