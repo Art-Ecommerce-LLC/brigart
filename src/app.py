@@ -402,7 +402,7 @@ async def decrease_quantity(request: Request, title: Title, noco_db: Noco = Depe
 @app.post("/delete_item")
 @limiter.limit("100/minute") 
 async def delete_item(request: Request, title: Title, noco_db: Noco = Depends(get_noco_db)):
-    logger.info(f"Delete item {title.title} by {request.client.host}")
+    logger.info(f"Delete item by {request.client.host}")
     try:
 
         # Get list of artwork titles
