@@ -501,37 +501,37 @@ async def get_session_id(request: Request):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@app.get("/portal", response_class=HTMLResponse)
-@limiter.limit("100/minute")  # Public data fetching
-async def portal(request: Request, noco_db: Noco = Depends(get_noco_db)):
-    logger.info(f"Portal page accessed by {request.client.host}")
-    try:
-        context = {
-            "brig_logo_url": noco_db.get_icon_uri_from_title("brig_logo"),
-            "version": noco_db.get_version()
-        }
-        return templates.TemplateResponse(request=request, name="login.html", context=context)
-    except Exception as e:
-        logger.error(f"Error in portal: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+# @app.get("/portal", response_class=HTMLResponse)
+# @limiter.limit("100/minute")  # Public data fetching
+# async def portal(request: Request, noco_db: Noco = Depends(get_noco_db)):
+#     logger.info(f"Portal page accessed by {request.client.host}")
+#     try:
+#         context = {
+#             "brig_logo_url": noco_db.get_icon_uri_from_title("brig_logo"),
+#             "version": noco_db.get_version()
+#         }
+#         return templates.TemplateResponse(request=request, name="login.html", context=context)
+#     except Exception as e:
+#         logger.error(f"Error in portal: {e}")
+#         raise HTTPException(status_code=500, detail="Internal server error")
 
-@app.post("/credentials_check")
-@limiter.limit("100/minute")  # Public data fetching
-async def credentials_check(request: Request, credentials: Credentials, noco_db: Noco = Depends(get_noco_db)):
-    logger.info(f"Credentials check for {credentials.username} by {request.client.host}")
-    try:
-        if credentials.username == BRIG_USERNAME and credentials.password == BRIG_PASSWORD:
-            request.session['logged_in'] = True
-            return RedirectResponse(url='/brig_portal', status_code=200)
-        if credentials.username == BEN_USERNAME and credentials.password == BEN_PASSWORD:
-            request.session['ben_logged_in'] = True
-            return RedirectResponse(url='/logs', status_code=201)
-        else:
-            logger.warning(f"Invalid credentials for {credentials.username}")
-            raise HTTPException(status_code=401, detail="Invalid Credentials")
-    except Exception as e:
-        logger.error(f"Error in credentials_check: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+# @app.post("/credentials_check")
+# @limiter.limit("100/minute")  # Public data fetching
+# async def credentials_check(request: Request, credentials: Credentials, noco_db: Noco = Depends(get_noco_db)):
+#     logger.info(f"Credentials check for {credentials.username} by {request.client.host}")
+#     try:
+#         if credentials.username == BRIG_USERNAME and credentials.password == BRIG_PASSWORD:
+#             request.session['logged_in'] = True
+#             return RedirectResponse(url='/brig_portal', status_code=200)
+#         if credentials.username == BEN_USERNAME and credentials.password == BEN_PASSWORD:
+#             request.session['ben_logged_in'] = True
+#             return RedirectResponse(url='/logs', status_code=201)
+#         else:
+#             logger.warning(f"Invalid credentials for {credentials.username}")
+#             raise HTTPException(status_code=401, detail="Invalid Credentials")
+#     except Exception as e:
+#         logger.error(f"Error in credentials_check: {e}")
+#         raise HTTPException(status_code=500, detail="Internal server error")
 
 # @app.get("/logs", response_class=HTMLResponse)
 # @limiter.limit("100/minute")  # Public data fetching
