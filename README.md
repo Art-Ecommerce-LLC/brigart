@@ -38,13 +38,13 @@ The purpose of this project is to create a professional platform for the artist,
    ```
 5. **While in the main directory, make sure (.venv) pops up to the left, bottomost line of text in the terminal. Then run**
 
-  ```bash
+   ```bash
    pip install -r requirements.txt
-  ```
+   ```
 
 6. **Now that dependencies are download and you are in the main directory. Run**
    ```
-    uvicorn src.app:app --reload
+   uvicorn src.app:app --reload
    ```
 
 
