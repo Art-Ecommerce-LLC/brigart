@@ -2,6 +2,9 @@
 
 The purpose of this project is to create a professional platform for the artist, Brig, to sell his prints.
 
+## Current Features
+- A singleton database connection that can change prices, titles, and images on an HTML template without always writing new HTML code.
+
 ## Features (Coming Soon)
 - Automated product updates using the Stripe API that change the image and prices based on changes in the NocoDB database.
 - Webhook to trigger the check to see if there are products that need updating when someone uses the API.
