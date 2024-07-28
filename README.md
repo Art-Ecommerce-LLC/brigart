@@ -38,9 +38,9 @@ The purpose of this project is to create a professional platform for the artist,
    python -m venv .venv
    ```
 
-4. **(Mac OS/Linux) Activate the virtual enviornmnet with source**
+4. **(Mac OS/Linux) Activate the virtual enviornmnet with**
    ```bash
-   .venv/bin/activate
+   source .venv/bin/activate
    ```
    **(Windows 11/10)**
    ```bash
