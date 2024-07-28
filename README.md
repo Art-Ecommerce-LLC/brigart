@@ -52,7 +52,7 @@ The purpose of this project is to create a professional platform for the artist,
    pip install -r requirements.txt
    ```
 
-6. **Now that dependencies are download and you are in the root directory. Run**
+6. **Now that dependencies are downloaded and you are in the root directory. Run**
    ```
    uvicorn src.app:app --reload
    ```
