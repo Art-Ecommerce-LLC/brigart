@@ -35,18 +35,15 @@ function checkFade() {
 
 // Load images when the page is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    loadImagesInView();
     checkFade();
 });
 
 // Load images when scrolling
 window.addEventListener('scroll', function() {
-    loadImagesInView();
     checkFade();
 });
 
 // Load images when resizing the window
 window.addEventListener('resize', function() {
-    loadImagesInView();
     checkFade();
 });
