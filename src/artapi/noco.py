@@ -4,7 +4,7 @@ from src.artapi.config import (
     NOCODB_XC_TOKEN, NOCODB_PATH, NOCODB_TABLE_MAP
 )
 from src.artapi.models import (
-    ArtObject, IconObject, KeyObject, CookieObject
+    ArtObject, IconObject, KeyObject, CookieObject, ProductMapObject
 )
 from src.artapi.logger import logger
 from PIL import Image
@@ -12,6 +12,7 @@ from io import BytesIO
 from typing import Union
 import stripe
 from src.artapi.config import STRIPE_SECRET_KEY
+from src.artapi.stripe_connector import StripeAPI
 import time
 from datetime import datetime, timezone
 import pandas as pd
@@ -23,6 +24,7 @@ class PreviousData:
         self.icon: Union[IconObject, None] = None
         self.key: Union[KeyObject, None] = None
         self.cookie: Union[CookieObject, None] = None
+        self.product_map: Union[ProductMapObject, None] = None
 
 class Noco:
     """
@@ -231,6 +233,7 @@ class Noco:
             raise
 
 
+
     def update_previous_data(self) -> Dict[str, pd.DataFrame]:
         try:
             # Watch for changes to the Id's, img_label, art_paths, and prices
@@ -432,6 +435,31 @@ class Noco:
             logger.error(f"Error getting artwork data without cache: {e}")
             raise
 
+    def get_product_map_data_no_cache(self) -> ProductMapObject:
+        """
+            Get the product map data from NocoDB
+
+            Returns:
+                ProductMapObject: An object containing the product map data
+
+            Raises:
+                Exception: If there is an error getting the product map data
+        """
+        try:
+            data = self.get_nocodb_table_data(NOCODB_TABLE_MAP.product_map_table)
+            product_map_data = ProductMapObject(
+                Id=[item['Id'] for item in data['list']],
+                noco_product_Ids=[item['noco_product_Id'] for item in data['list']],
+                stripe_product_ids=[item['stripe_product_id'] for item in data['list']],
+                created_ats=[item['CreatedAt'] for item in data['list']],
+                updated_ats=[item['UpdatedAt'] for item in data['list']]
+            )
+            logger.info("Fetched and parsed product map data from NocoDB")
+            return product_map_data
+        except Exception as e:
+            logger.error(f"Error getting product map data: {e}")
+            raise
+
     def get_artwork_data_no_cache_no_datauri(self) -> ArtObject:
         """
             Get the artwork data from NocoDB without caching and without data URIs
@@ -547,12 +575,6 @@ class Noco:
         try:
             # Do a check to see if there is specific data in the IconObject that needs to be updated
             if self.previous_data.icon:
-                old_data = self.previous_data.icon.updated_ats
-                new_data = self.get_current_icon_data_timestamps()
-                if self.compare_updated_at_timestamps(old_data, new_data):
-                    incosistencies = self.find_tuple_of_incosistent_ids_from_updated_ats(old_data, new_data)
-                    self.patch_inconsistent_icon_data(incosistencies)
-                    return self.previous_data.icon
                 return self.previous_data.icon
             else:
                 self.previous_data.icon = self.get_icon_data_no_cache()
@@ -561,53 +583,7 @@ class Noco:
             logger.error(f"Error getting icon data: {e}")
             raise
 
-    def patch_inconsistent_icon_data(self, inconsistencies: tuple) -> None:
-        """
-            Patch the inconsistent icon data in the cache from the new data
 
-            Arguments:
-                inconsistencies (tuple): A tuple containing the list of inconsistent icon IDs and new icon IDs
-
-            Raises:
-                Exception: If there is an error patching the inconsistent icon data
-        """
-        try:
-            incosistent_ids, new_ids = inconsistencies
-            if len(new_ids) > 0:
-                for new_id in new_ids:
-                    # Index the new_id from the no cache no data uri
-                    new_data = self.get_icon_data_no_cache()
-                    new_data_id = new_data.Ids[new_id]
-                    new_data_title = new_data.titles[new_id]
-                    new_data_created_at = new_data.created_ats[new_id]
-                    new_data_updated_at = new_data.updated_ats[new_id]
-                    new_data_path = new_data.icon_paths[new_id]
-                    self.previous_data.icon.Ids.append(new_data_id)
-                    self.previous_data.icon.titles.append(new_data_title)
-                    self.previous_data.icon.created_ats.append(new_data_created_at)
-                    self.previous_data.icon.updated_ats.append(new_data_updated_at)
-                    self.previous_data.icon.icon_paths.append(new_data_path)
-                    self.previous_data.icon.data_uris.append(self.convert_paths_to_data_uris([new_data_path]))
-                    logger.info(f"Patched new data for title {new_data_title}")
-            if incosistent_ids > 0:
-                for incosistent_id in incosistent_ids:
-                    # Index the incosistent_id from the no cache no data uri
-                    incosistent_data = self.get_icon_data_no_cache()
-                    incosistent_data_id = incosistent_data.Ids[incosistent_id]
-                    incosistent_data_title = incosistent_data.titles[incosistent_id]
-                    incosistent_data_created_at = incosistent_data.created_ats[incosistent_id]
-                    incosistent_data_updated_at = incosistent_data.updated_ats[incosistent_id]
-                    incosistent_data_path = incosistent_data.icon_paths[incosistent_id]
-                    self.previous_data.icon.Ids[incosistent_id] = incosistent_data_id
-                    self.previous_data.icon.titles[incosistent_id] = incosistent_data_title
-                    self.previous_data.icon.created_ats[incosistent_id] = incosistent_data_created_at
-                    self.previous_data.icon.updated_ats[incosistent_id] = incosistent_data_updated_at
-                    self.previous_data.icon.icon_paths[incosistent_id] = incosistent_data_path
-                    self.previous_data.icon.data_uris[incosistent_id] = self.convert_paths_to_data_uris([incosistent_data_path])
-                    logger.info(f"Patched inconsistent data for title {incosistent_data_title}")
-        except Exception as e:
-            logger.error(f"Error patching inconsistent icon data: {e}")
-            raise
 
     def get_icon_data_no_cache(self) -> IconObject:
         """
@@ -996,127 +972,6 @@ class Noco:
             return cookie_data.created_ats[index]
         except Exception as e:
             logger.error(f"Error getting session beginning time for session ID {sessionid}: {e}")
-            raise
-    
-    def upload_image_to_stripe(self, file_path: str, title: str) -> str:
-        """
-            Upload an image to Stripe
-
-            Arguments:
-                file_path (str): The path of the file to upload
-                title (str): The title of the image
-            
-            Returns:
-                str: The URL of the uploaded image
-        """
-        try:
-            with open(file_path, "rb") as fp:
-                stripe_file = stripe.File.create(
-                    purpose="product_image",
-                    file=fp
-                )
-            file_link = stripe.FileLink.create(
-                file=stripe_file.id
-            )
-            logger.info(f"Uploaded image to Stripe for title {title}: File ID {stripe_file.id}, File Link {file_link.url}")
-            return file_link.url
-        except Exception as e:
-            logger.error(f"Error uploading image to Stripe for title {title}: {e}")
-            raise
-    
-    # Break into two seperate functions
-    def create_or_update_stripe_product(self, title: str, price: int, image_url: str) -> None:
-        """
-            Create or update a Stripe product
-
-            Arguments:
-                title (str): The title of the product
-                price (int): The price of the product
-                image_url (str): The URL of the image of the product
-            
-            Raises:
-                Exception: If there is an error creating or updating the Stripe
-
-            
-        """
-        try:
-            products = stripe.Product.list(limit=100)
-            product_exists = False
-            product_id = None
-
-            for product in products:
-                if product.name == title:
-                    product_exists = True
-                    product_id = product.id
-                    break
-
-            if product_exists:
-                # Check if the image has changed
-                if product.images != [image_url]:
-                    stripe.Product.modify(
-                        product_id,
-                        images=[image_url]
-                    )
-                    logger.info(f"Updated Stripe product image for title {title}")
-
-                existing_price_id = product.default_price
-                existing_price = stripe.Price.retrieve(existing_price_id)
-                existing_price_amount = existing_price.unit_amount // 100
-
-                if existing_price_amount != price:
-                    # Check if there's an existing inactive price with the same amount
-                    prices = stripe.Price.list(product=product_id)
-                    matching_inactive_price = next((p for p in prices if p.unit_amount == price * 100 and not p.active), None)
-
-                    if matching_inactive_price:
-                        # Reactivate the inactive matching price
-                        stripe.Price.modify(
-                            matching_inactive_price.id,
-                            active=True
-                        )
-                        new_price_id = matching_inactive_price.id
-                        logger.info(f"Reactivated existing price for product title {title}")
-                    else:
-                        # Create new price
-                        new_price = stripe.Price.create(
-                            product=product_id,
-                            unit_amount=price * 100,
-                            currency="usd",
-                            tax_behavior="exclusive"
-                        )
-                        new_price_id = new_price.id
-                        logger.info(f"Created new price for product title {title}")
-
-                    # Update product with new price
-                    stripe.Product.modify(
-                        product_id,
-                        default_price=new_price_id
-                    )
-                    logger.info(f"Updated product with new price for title {title}")
-
-                    # Archive the old price if needed
-                    stripe.Price.modify(
-                        existing_price_id,
-                        active=False
-                    )
-                    logger.info(f"Set existing price inactive for product title {title}")
-
-            else:
-                stripe.Product.create(
-                    name=title,
-                    tax_code="txcd_99999999",
-                    default_price_data={
-                        'currency': 'usd',
-                        'unit_amount': price * 100,
-                        'tax_behavior': 'exclusive'
-                    },
-                    images=[image_url],
-                    shippable=True,
-                )
-                logger.info(f"Created new Stripe product for title {title}")
-
-        except Exception as e:
-            logger.error(f"Error creating or updating Stripe product for title {title}: {e}")
             raise
 
     @staticmethod

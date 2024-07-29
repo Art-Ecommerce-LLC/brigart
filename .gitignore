@@ -43,3 +43,7 @@ src/artapi/__pycache__/*
 src/artapi/products.py
 
 git-filter-repo.py
+
+src/artapi/stripetest.py
+
+src/artapi/stripe_secret.py

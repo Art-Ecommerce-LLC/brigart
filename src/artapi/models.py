@@ -66,9 +66,18 @@ class CookieObject:
     cookies: List[Dict[str, Any]]
     created_ats: List[str] = None
 
+@dataclass()
+class ProductMapObject:
+    Id: List[int]
+    noco_product_Ids: List[int] = None
+    stripe_product_ids: List[str] = None
+    created_ats: List[str] = None
+    updated_ats: List[str] = None
+
 @dataclass
 class TableMap:
     img_table: str
     icon_table: str
     key_table: str
     cookies_table: str
+    product_map_table: str

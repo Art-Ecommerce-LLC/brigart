@@ -13,17 +13,11 @@ NOCODB_PATH = os.getenv("nocodb_path")
 NOCODB_XC_TOKEN = os.getenv("nocodb_xc_token")
 
 # Prod Tables
-NOCODB_EMAIL_TABLE = os.getenv("nocodb_email_table")
 NOCODB_KEY_TABLE = os.getenv("nocodb_key_table")
 NOCODB_IMG_TABLE = os.getenv("nocodb_img_table")
 NOCODB_ICON_TABLE = os.getenv("nocodb_icon_table")
-NOCODB_CONTACT_TABLE = os.getenv("nocodb_contact_table")
-NOCODB_ORDER_TABLE = os.getenv("nocodb_order_table")
-NOCODB_CONTENT_TABLE = os.getenv("nocodb_content_table")
 NOCODB_COOKIES_TABLE = os.getenv("nocodb_cookies_table")
-NOCODB_PAYMENTINTENT_TABLE = os.getenv("nocodb_paymentintent_table")
-NOCODB_SESSION_MAPPING_TABLE = os.getenv("nocodb_session_mapping_table")
-NOCODB_FINAL_ORDER_TABLE = os.getenv("nocodb_final_order_table")
+NOCODB_PRODUCT_MAP_TABLE = os.getenv("nocodb_product_map_table")
 
 STRIPE_SECRET_KEY = os.getenv("stripe_secret_key")
 
@@ -38,6 +32,7 @@ NOCODB_TABLE_MAP = TableMap(
     icon_table=NOCODB_ICON_TABLE,
     key_table=NOCODB_KEY_TABLE,
     cookies_table=NOCODB_COOKIES_TABLE,
+    product_map_table =NOCODB_PRODUCT_MAP_TABLE
 )
 
 
