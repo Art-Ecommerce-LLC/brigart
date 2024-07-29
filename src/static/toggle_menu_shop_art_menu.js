@@ -7,23 +7,6 @@ function submitForm(title) {
     window.location.href = '/shop/' + title;
 }
 
-function loadImagesInView() {
-    const artworks = document.querySelectorAll('.artwork');
-
-    artworks.forEach((artwork, index) => {
-        const rect = artwork.getBoundingClientRect();
-        const windowHeight = window.innerHeight;
-
-        if (rect.top < windowHeight && rect.bottom >= 0) {
-            // Load the image source if it's within the viewport
-            const imgSrc = artwork.getAttribute('data-src');
-            if (imgSrc) {
-                artwork.setAttribute('src', imgSrc);
-                artwork.removeAttribute('data-src'); // Remove data-src attribute after loading
-            }
-        }
-    });
-}
 
 function checkFade() {
     const artworks = document.querySelectorAll('.artwork');
