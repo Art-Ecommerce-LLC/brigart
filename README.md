@@ -39,18 +39,28 @@ The purpose of this project is to create a professional platform for the artist,
 
 3. **Download a python virtual enviornment by running**
 
+   **Mac OS/Linux**
+   ```bash
+   python3 -m venv .venv
+   ```
+
+   **Windows 11**
    ```bash
    python -m venv .venv
    ```
 
-4. **(Mac OS/Linux) Activate the virtual enviornmnet with**
+4. **Activate the virtual enviornmnet with**
+
+   **Mac OS/Linux**
    ```bash
    source .venv/bin/activate
    ```
-   **(Windows 11/10)**
+
+   **Windows 11**
    ```bash
    .venv/scripts/activate
    ```
+
 5. **While in the root directory, make sure (.venv) pops up to the left, bottomost line of text in the terminal. Then run**
 
    ```bash
