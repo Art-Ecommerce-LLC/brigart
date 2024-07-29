@@ -37,9 +37,12 @@ class ShopObject:
 # Dataclass to turn list of strings into a list of objects
 @dataclass()
 class IconObject:
-    icon_paths: List[str]
-    titles: List[str]
+    Ids: List[int]
+    icon_paths: List[str] = None
+    titles: List[str] = None
     data_uris: List[str] = None
+    created_ats: List[str] = None
+    updated_ats: List[str] = None
 
 @dataclass()
 class ArtObject:

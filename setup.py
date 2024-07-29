@@ -15,14 +15,13 @@ setup(
         'urllib3==2.2.1',
         'uvicorn==0.27.1',
         'starlette==0.36.3',
-        'email_validator==2.1.1',
-        'smartystreets_python_sdk==4.14.2',
         'python-multipart==0.0.9',
         'pillow==8.3.2',
         'aiohttp==3.9.5',
         'loguru==0.7.2',
         'slowapi==0.1.9',
-        'websockets==12.0'
+        'websockets==12.0',
+        'pandas == 2.2.2'
     ],
     entry_points={
         'console_scripts': [

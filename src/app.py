@@ -1,34 +1,27 @@
 # app/main.py
 from fastapi import (
-    FastAPI, Request, Form, UploadFile, File, HTTPException, Depends, BackgroundTasks, WebSocket, WebSocketDisconnect
+    FastAPI, Request, HTTPException, Depends
 )
 from fastapi.responses import ( 
-    HTMLResponse, JSONResponse, RedirectResponse, FileResponse, StreamingResponse
+    HTMLResponse, JSONResponse, RedirectResponse
 )
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import os
-from src.artapi.config import STRIPE_SECRET_KEY, HOST, WEBSOCKET
+from src.artapi.config import STRIPE_SECRET_KEY
 from src.artapi.logger import logger
 from src.artapi.middleware import add_middleware, limiter
 from src.artapi.models import (
-    Credentials, Title, TitleQuantity, TotalPrice
+    Title, TitleQuantity, TotalPrice
 )
 from src.artapi.noco import Noco
-from src.artapi.logger import get_logs
-import tempfile
 import os
-from typing import List
 import uuid
-from src.artapi.noco_config import OPENAPI_URL, BRIG_USERNAME, BRIG_PASSWORD, BEN_USERNAME, BEN_PASSWORD
+from src.artapi.noco_config import OPENAPI_URL
 import datetime
 import stripe
 from datetime import datetime, timezone
 from src.artapi.nocodb_connector import get_noco_db
-from contextlib import asynccontextmanager
-import asyncio
-from typing import List
 
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
@@ -36,20 +29,10 @@ desc = "Backend platform for BRIG ART"
 if OPENAPI_URL == "None":
     OPENAPI_URL = None
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup event
-    noco_db = Noco()
-    asyncio.create_task(noco_db.delete_expired_sessions())
-    asyncio.create_task(noco_db.check_for_artwork_updates())
-    yield
-    # No spec
-
 app = FastAPI(
     title="Brig API",
     description=desc,
-    openapi_url=OPENAPI_URL,
-    lifespan= lifespan
+    openapi_url=OPENAPI_URL
 )
 
 stripe.api_key = STRIPE_SECRET_KEY
@@ -95,20 +78,6 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
 
     return HTMLResponse(content=str(exc.detail), status_code=exc.status_code)
 
-# @app.websocket("/ws")
-# async def websocket_endpoint(websocket: WebSocket):
-#     noco_db = Noco()
-#     await websocket.accept()
-#     noco_db.connected_clients.append(websocket)
-#     try:
-#         while True:
-#             data = await websocket.receive_text()
-#             # Process the data and handle it
-#             if data == "Artwork data updated":
-#                 for client in noco_db.connected_clients:
-#                     await client.send_text("Artwork data updated")
-#     except WebSocketDisconnect:
-#         noco_db.connected_clients.remove(websocket)
 
 @app.get("/", response_class=HTMLResponse)
 @limiter.limit("100/minute")
@@ -119,9 +88,7 @@ async def homepage(request: Request, noco_db: Noco = Depends(get_noco_db)):
             "art_uris": noco_db.get_artwork_data().data_uris,
             "art_titles": noco_db.get_artwork_data().titles,
             "brig_logo": noco_db.get_icon_uri_from_title("brig_logo"),
-            "version": noco_db.get_version(),
-            "host" : HOST,
-            "websocket" : WEBSOCKET
+            "version": noco_db.get_version()
         }
         return templates.TemplateResponse(request=request, name="index.html", context=context)
     except Exception as e:
@@ -129,7 +96,7 @@ async def homepage(request: Request, noco_db: Noco = Depends(get_noco_db)):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/shop/{title}", response_class=HTMLResponse)
-@limiter.limit("100/minute")  # Public data fetching
+@limiter.limit("100/minute") 
 async def shop(request: Request, title: str, noco_db: Noco = Depends(get_noco_db)):
 
     logger.info(f"Shop page accessed for title {title} by {request.client.host}")
@@ -147,11 +114,10 @@ async def shop(request: Request, title: str, noco_db: Noco = Depends(get_noco_db
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/get_cart_quantity")
-@limiter.limit("100/minute")  # Public data fetching
+@limiter.limit("100/minute") 
 async def get_cart_quantity(request: Request, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Get cart quantity by {request.client.host}")
     try:
-
         if request.session.get("session_id") is None:
             return JSONResponse({"quantity": 0})
         
@@ -164,7 +130,7 @@ async def get_cart_quantity(request: Request, noco_db: Noco = Depends(get_noco_d
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/shop_art")
-@limiter.limit("100/minute")  # Public data fetching
+@limiter.limit("100/minute") 
 async def shop_art_url(request: Request, title_quantity: TitleQuantity, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Shop art URL for {title_quantity.title} by {request.client.host}")
     try:
@@ -231,13 +197,14 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity, noco_db:
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/shop_art/{sessionid}", response_class=HTMLResponse)
-@limiter.limit("100/minute")  # Public data fetching
+@limiter.limit("100/minute") 
 async def shop_art(request: Request, sessionid: str, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Shop art page accessed by {request.client.host}")
     try:
         if request.session.get("session_id") != sessionid:
             logger.warning(f"Session ID does not match {request.client.host}")
-            return RedirectResponse(url="/shop_art_menu")                        
+            return RedirectResponse(url="/shop_art_menu")       
+                         
         img_quant_list = noco_db.get_cookie_from_session_id(sessionid)
         art_uris = noco_db.get_artwork_data().data_uris
         titles = noco_db.get_artwork_data().titles
@@ -265,7 +232,7 @@ async def shop_art(request: Request, sessionid: str, noco_db: Noco = Depends(get
         raise HTTPException(status_code=500, detail="Internal server error")
     
 @app.get("/shop_art_menu", response_class=HTMLResponse)
-@limiter.limit("100/minute")  # Public data fetching
+@limiter.limit("100/minute") 
 async def shop_art_menu(request: Request, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Shop art menu page accessed by {request.client.host}")
     try:
@@ -283,7 +250,7 @@ async def shop_art_menu(request: Request, noco_db: Noco = Depends(get_noco_db)):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/giclee_prints", response_class=HTMLResponse)
-@limiter.limit("100/minute")  # Public data fetching
+@limiter.limit("100/minute") 
 async def shop_giclee_prints(request: Request, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Giclee prints page accessed by {request.client.host}")
     try:
@@ -298,7 +265,7 @@ async def shop_giclee_prints(request: Request, noco_db: Noco = Depends(get_noco_
         raise HTTPException(status_code=500, detail="Internal server error")
     
 @app.post("/post_total_price")
-@limiter.limit("100/minute")  # Public data fetching
+@limiter.limit("100/minute") 
 async def post_total_price(request: Request, total_price: TotalPrice, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Post total price {total_price.totalPrice} by {request.client.host}")
     try:
@@ -314,7 +281,7 @@ async def post_total_price(request: Request, total_price: TotalPrice, noco_db: N
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/increase_quantity")
-@limiter.limit("100/minute")  # Public data fetching
+@limiter.limit("100/minute") 
 async def increase_quantity(request: Request, title: Title, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Increase quantity for {title.title} by {request.client.host}")
     try:
@@ -351,7 +318,7 @@ async def increase_quantity(request: Request, title: Title, noco_db: Noco = Depe
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @app.post("/decrease_quantity")
-@limiter.limit("100/minute")  # Public data fetching
+@limiter.limit("100/minute") 
 async def decrease_quantity(request: Request, title: Title, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Decrease quantity for {title.title} by {request.client.host}")
     try:
@@ -415,12 +382,9 @@ async def delete_item(request: Request, title: Title, noco_db: Noco = Depends(ge
         if not session_id:
             raise HTTPException(status_code=400, detail="Session ID not found")
 
-
-
         img_quant_list = noco_db.get_cookie_from_session_id(session_id)
         matched_price = None
 
-        
         for each in img_quant_list:
             if title.title == each["title"]:
                 img_quant_list.remove(each)
@@ -448,9 +412,8 @@ async def delete_item(request: Request, title: Title, noco_db: Noco = Depends(ge
         logger.error(f"Error in delete_item: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-# Change checkout to be a payment link creation and then redirect to that payment link with the correct products
 @app.get("/checkout/{sessionid}", response_class=HTMLResponse)
-@limiter.limit("100/minute")  # Public data fetching
+@limiter.limit("100/minute") 
 async def shop_checkout(request: Request, sessionid: str, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Checkout page accessed by {request.client.host}")
     try:
@@ -510,229 +473,14 @@ async def get_session_id(request: Request):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-# @app.get("/portal", response_class=HTMLResponse)
-# @limiter.limit("100/minute")  # Public data fetching
-# async def portal(request: Request, noco_db: Noco = Depends(get_noco_db)):
-#     logger.info(f"Portal page accessed by {request.client.host}")
-#     try:
-#         context = {
-#             "brig_logo_url": noco_db.get_icon_uri_from_title("brig_logo"),
-#             "version": noco_db.get_version()
-#         }
-#         return templates.TemplateResponse(request=request, name="login.html", context=context)
-#     except Exception as e:
-#         logger.error(f"Error in portal: {e}")
-#         raise HTTPException(status_code=500, detail="Internal server error")
-
-# @app.post("/credentials_check")
-# @limiter.limit("100/minute")  # Public data fetching
-# async def credentials_check(request: Request, credentials: Credentials, noco_db: Noco = Depends(get_noco_db)):
-#     logger.info(f"Credentials check for {credentials.username} by {request.client.host}")
-#     try:
-#         if credentials.username == BRIG_USERNAME and credentials.password == BRIG_PASSWORD:
-#             request.session['logged_in'] = True
-#             return RedirectResponse(url='/brig_portal', status_code=200)
-#         if credentials.username == BEN_USERNAME and credentials.password == BEN_PASSWORD:
-#             request.session['ben_logged_in'] = True
-#             return RedirectResponse(url='/logs', status_code=201)
-#         else:
-#             logger.warning(f"Invalid credentials for {credentials.username}")
-#             raise HTTPException(status_code=401, detail="Invalid Credentials")
-#     except Exception as e:
-#         logger.error(f"Error in credentials_check: {e}")
-#         raise HTTPException(status_code=500, detail="Internal server error")
-
-# @app.get("/logs", response_class=HTMLResponse)
-# @limiter.limit("100/minute")  # Public data fetching
-# async def get_log_file(request: Request, noco_db: Noco = Depends(get_noco_db)):
-#     logger.info(f"Logs page accessed: {request.client.host}")
-#     try:
-#         if not request.session.get('ben_logged_in'):
-#             return RedirectResponse(url='/portal')
-#         logs = get_logs()
-#         context = {
-#             "logs": logs,
-#             "version": noco_db.get_version()
-#         }
-#         return templates.TemplateResponse(request=request, name="logs.html", context=context)
-#     except Exception as e:
-#         logger.error(f"Error in get_log_file: {e}")
-#         raise HTTPException(status_code=500, detail="Internal server error")
-
-# @app.get("/brig_portal", response_class=HTMLResponse)
-# @limiter.limit("100/minute")  # Public data fetching
-# async def brig_portal(request: Request, noco_db: Noco = Depends(get_noco_db)):
-#     logger.info(f"Brig portal page accessed by {request.client.host}")
-#     try: 
-#         if not request.session.get('logged_in'):
-#             return RedirectResponse(url='/portal')
-#         context = {
-#             "brig_logo_url": noco_db.get_icon_uri_from_title("brig_logo"),
-#             "version": noco_db.get_version()
-#         }
-#         return templates.TemplateResponse(request=request, name="brig_portal.html", context=context)
-#     except Exception as e:
-#         logger.error(f"Error in brig_portal: {e}")
-#         raise HTTPException(status_code=500, detail="Internal server error")
-
-# @app.post("/add_images")
-# @limiter.limit("100/minute")  # Public data fetching
-# async def add_images(request : Request, titles: List[str] = Form(...), files: List[UploadFile] = File(...), prices: List[int] = Form(...), noco_db: Noco = Depends(get_noco_db)):
-#     logger.info(f"Add images for titles: {titles}")
-#     if len(titles) != len(files):
-#         logger.warning("Number of titles does not match number of files")
-#         return {"message": "Number of titles doesn't match number of files"}
-#     return_list = []
-#     temp_file_paths = []
-#     try:
-#         for title, file in zip(titles, files):
-#             try:
-#                 id = noco_db.get_last_art_Id() + 1
-#             except IndexError:
-#                 id = 1
-#             with tempfile.NamedTemporaryFile(suffix=".PNG", delete=False) as temp_file:
-#                 temp_file_path = temp_file.name
-#                 temp_file_paths.append(temp_file_path)
-#                 temp_file.write(await file.read())
-#                 temp_file.flush()
-#             with open(temp_file_path, "rb") as f:
-#                 files_to_upload = {"file": f}
-#                 path = os.path.basename(temp_file_path)
-#                 data = noco_db.upload_image(files_to_upload, path)
-#                 new_file_info = data[0]
-#                 new_file_path = new_file_info.get('path')
-#                 new_signed_path = new_file_info.get('signedPath')
-#                 new_title = title.replace(" ", "+")
-#                 path_title = new_title + ".png"
-#                 update_data = {
-#                     "Id": id,
-#                     "img_label": title,
-#                     "price": prices[titles.index(title)],
-#                     "img": [{
-#                         "title": path_title,
-#                         "mimetype": file.content_type,
-#                         "path": new_file_path,
-#                         "signedPath": new_signed_path
-#                     }]
-#                 }
-#                 noco_db.post_image(update_data)
-#                 return_message = {"message": "Image(s) added successfully"}
-#                 return_list.append(return_message)
-#     except Exception as e:
-#         logger.error(f"Failed to add images: {e}")
-#         return {"message": "Image(s) not added successfully"}
-#     finally:
-#         for each in temp_file_paths:
-#             if each and os.path.exists(each):
-#                 os.remove(each)
-
-#         noco_db.refresh_artwork_cache()
-#         return return_list[0] if return_list else {"message": "No images added"}
-
-
-# @app.post("/swap_image")
-# @limiter.limit("100/minute")  # Public data fetching
-# async def swap_image(request : Request, title: str = Form(...), new_title: str = Form(...), file: UploadFile = File(...), noco_db: Noco = Depends(get_noco_db)):
-#     logger.info(f"Swap image for {title} to {new_title} ")
-    
-#     try:
-#         Id = noco_db.get_artwork_Id_from_title(title)
-#         if not Id:
-#             logger.warning(f"Image not found for title {title}")
-#             return {"message": "Image not found"}
-#         with tempfile.NamedTemporaryFile(suffix=".PNG", delete=False) as temp_file:
-#             temp_file_path = temp_file.name
-#             temp_file.write(await file.read())
-#             temp_file.flush()
-#         with open(temp_file_path, "rb") as f:
-#             files_to_upload = {"file": f}
-#             path = os.path.basename(temp_file_path)
-#             data = noco_db.upload_image(files_to_upload, path)
-#             new_file_info = data[0]
-#             new_file_path = new_file_info.get('path')
-#             new_signed_path = new_file_info.get('signedPath')
-#             title = new_title.replace(" ", "+")
-#             title = title + ".png"
-#             update_data = {
-#                 "Id": Id,
-#                 "img_label": new_title,
-#                 "img": [{
-#                     "title": title,
-#                     "mimetype": file.content_type,
-#                     "path": new_file_path,
-#                     "signedPath": new_signed_path
-#                 }]
-#             }
-#             noco_db.patch_image(update_data)
-#             logger.info(f"Successfully swapped image for {title} to {new_title}")
-#             return {"message": "Image swapped successfully"}
-#     except Exception as e:
-#         logger.error(f"Failed to swap image: {e}")
-#         return {"message": "Image not swapped successfully"}
-#     finally:
-#         if temp_file_path and os.path.exists(temp_file_path):
-#             os.remove(temp_file_path)
-
-#         noco_db.refresh_artwork_cache()
-
 @app.get("/favicon.ico")
-@limiter.limit("100/minute")  # Public data fetching
+@limiter.limit("100/minute") 
 async def favicon(request: Request):
     return RedirectResponse(url="/static/favicon.ico")
 
-# # Also creates a file in Stripe
-# @app.get("/download_image/{title}")
-# @limiter.limit("100/minute")  # Public data fetching
-# async def get_image(request : Request, title: str, background_tasks: BackgroundTasks, noco_db: Noco = Depends(get_noco_db)):
-#     logger.info(f"Get image for {title}")
-#     try:
-#         # Replace this with your actual method to get the URI
-#         uri = noco_db.get_art_uri_from_title(title)
-#         if not uri:
-#             logger.warning(f"Image not found for title {title}")
-#             raise HTTPException(status_code=404, detail="Image not found")
-        
-#         # Decode the data URI and get the temp file path
-#         temp_file_path = noco_db.decode_data_uri(uri, title)
-
-#         # Schedule the file to be deleted after the response is sent
-#         background_tasks.add_task(noco_db.delete_temp_file, temp_file_path)
-
-#         # Create a file in Stripe
-#         with open(temp_file_path, "rb") as fp:
-#             stripe.File.create(
-#                 purpose="product_image",
-#                 file=fp
-#             )
-
-#         return FileResponse(temp_file_path, media_type="image/png", filename=f"{title}.png", background=background_tasks)
-#     except HTTPException as http_exc:
-#         raise http_exc
-#     except Exception as e:
-#         logger.error(f"Failed to get image: {e}")
-#         raise HTTPException(status_code=500, detail="Failed to retrieve image")
-
-# @app.get("/stream_image/{title}")
-# async def get_image(title: str, noco_db: Noco = Depends(get_noco_db)):
-#     logger.info(f"Get image for {title}")
-#     try:
-#         # Replace this with your actual method to get the URI
-#         uri = noco_db.get_art_uri_from_title(title)
-#         if not uri:
-#             logger.warning(f"Image not found for title {title}")
-#             raise HTTPException(status_code=404, detail="Image not found")
-#         # Decode the data URI and get the BytesIO stream
-#         image_stream = noco_db.decode_data_uri_to_BytesIO(uri)
-#         return StreamingResponse(image_stream, media_type="image/png")
-#     except HTTPException as http_exc:
-#         raise http_exc
-#     except Exception as e:
-#         logger.error(f"Failed to get image: {e}")
-#         raise HTTPException(status_code=500, detail="Failed to retrieve image")
-
 
 @app.get("/return_policy", response_class=HTMLResponse)
-@limiter.limit("100/minute")  # Public data fetching
+@limiter.limit("100/minute") 
 async def return_policy(request: Request, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Return policy page accessed by {request.client.host}")
     try:
@@ -746,7 +494,7 @@ async def return_policy(request: Request, noco_db: Noco = Depends(get_noco_db)):
         raise HTTPException(status_code=500, detail="Internal server error")
     
 @app.get("/get_session_time")
-@limiter.limit("100/minute")  # Public data fetching
+@limiter.limit("100/minute") 
 async def get_session_time(request: Request, noco_db: Noco = Depends(get_noco_db)):
     session_id = request.session.get("session_id")
     if not session_id:
@@ -768,7 +516,7 @@ async def get_session_time(request: Request, noco_db: Noco = Depends(get_noco_db
     
 
 @app.post("/delete_session")
-@limiter.limit("100/minute")  # Public data fetching
+@limiter.limit("100/minute") 
 async def delete_session(request: Request, noco_db: Noco = Depends(get_noco_db)):
     session_id = request.session.get("session_id")
     if not session_id:
