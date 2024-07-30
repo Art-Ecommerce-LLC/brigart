@@ -1,13 +1,73 @@
+import time
 from src.artapi.noco import Noco
+from requests.exceptions import ConnectionError
+from src.artapi.logger import logger
 
 class NocoDBManager:
+    MAX_RETRIES = 3
+    RETRY_DELAY = 5  # seconds
+
     def __init__(self):
-        self.noco_db = Noco()
+        self.noco_db = self._create_noco_instance()
+
+    def _create_noco_instance(self):
+        """
+        Create a new instance of NocoDB and return it.
+        """
+        try:
+            noco_instance = Noco()
+            # Test connection to ensure it's valid
+            self._test_connection(noco_instance)
+            return noco_instance
+        except ConnectionError as e:
+            logger.error(f"Failed to create Noco instance: {e}")
+            raise
+
+    def _test_connection(self, noco_instance : Noco):
+        """
+        Perform a simple query to test if the connection is valid.
+        """
+        # Example test query - adjust according to your actual use case
+        noco_instance.get_artwork_data()
+
+    def _handle_connection_error(self):
+        """
+        Handle connection errors by retrying the connection.
+        """
+        for attempt in range(self.MAX_RETRIES):
+            try:
+                self.noco_db = self._create_noco_instance()
+                return
+            except ConnectionError as e:
+                logger.error(f"Connection attempt {attempt + 1} failed: {e}")
+                if attempt < self.MAX_RETRIES - 1:
+                    time.sleep(self.RETRY_DELAY)
+                else:
+                    raise
+
+    def _ensure_valid_session(self):
+        """
+        Ensure that the NocoDB session is valid. If not, recreate the NocoDB instance.
+        """
+        try:
+            # Example of testing the session validity
+            self.noco_db.get_artwork_data_no_cache_no_datauri()
+        except ConnectionError:
+            logger.error("Session invalid. Reconnecting...")
+            self._handle_connection_error()
 
     def get_noco_db(self):
+        """
+        Get the NocoDB instance, ensuring the session is valid.
+        """
+        self._ensure_valid_session()
         return self.noco_db
 
+# Instantiate NocoDBManager
 noco_db_manager = NocoDBManager()
 
 def get_noco_db():
+    """
+    Get the NocoDB instance from the manager.
+    """
     return noco_db_manager.get_noco_db()

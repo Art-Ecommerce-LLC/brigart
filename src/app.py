@@ -492,7 +492,35 @@ async def return_policy(request: Request, noco_db: Noco = Depends(get_noco_db)):
     except Exception as e:
         logger.error(f"Error in return_policy: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+@app.get("/privacy_policy", response_class=HTMLResponse)
+@limiter.limit("100/minute") 
+async def return_policy(request: Request, noco_db: Noco = Depends(get_noco_db)):
+    logger.info(f"Return policy page accessed by {request.client.host}")
+    try:
+        context = {
+            "brig_logo": noco_db.get_icon_uri_from_title("brig_logo"),
+            "version": noco_db.get_version()
+        }
+        return templates.TemplateResponse(request=request, name="privacy_policy.html", context=context)
+    except Exception as e:
+        logger.error(f"Error in return_policy: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
     
+@app.get("/terms_and_conditions", response_class=HTMLResponse)
+@limiter.limit("100/minute")
+async def terms_and_conditions(request: Request, noco_db: Noco = Depends(get_noco_db)):
+    logger.info(f"Terms and conditions page accessed by {request.client.host}")
+    try:
+        context = {
+            "brig_logo": noco_db.get_icon_uri_from_title("brig_logo"),
+            "version": noco_db.get_version()
+        }
+        return templates.TemplateResponse(request=request, name="terms_and_conditions.html", context=context)
+    except Exception as e:
+        logger.error(f"Error in terms_and_conditions: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 @app.get("/get_session_time")
 @limiter.limit("100/minute") 
 async def get_session_time(request: Request, noco_db: Noco = Depends(get_noco_db)):
