@@ -39,6 +39,7 @@ class Noco:
         self.session = requests.Session()
         self.session.headers.update(self.headers)
         stripe.api_key = STRIPE_SECRET_KEY 
+        self.stripe_connector = StripeAPI()
 
     def __del__(self):
         # Ensure the session is closed when the object is deleted
@@ -239,13 +240,16 @@ class Noco:
             # Watch for changes to the Id's, img_label, art_paths, and prices
             old_data = self.previous_data.artwork
             new_data = self.get_artwork_data_no_cache_no_datauri()
-            key_columns = ["Ids", "titles", "prices", "art_paths"]
+            # Grab a list of the model's attributes to compare
+            key_columns = ["Ids", "titles", "prices", "art_paths", "created_ats", "updated_ats"]
             df_old = pd.DataFrame(
                 {
                     "Ids": old_data.Ids,
                     "titles": old_data.titles,
                     "prices": old_data.prices,
-                    "art_paths": old_data.art_paths
+                    "art_paths": old_data.art_paths,
+                    "created_ats": old_data.created_ats,
+                    "updated_ats": old_data.updated_ats
                 },
                 columns=key_columns
             )
@@ -254,7 +258,9 @@ class Noco:
                     "Ids": new_data.Ids,
                     "titles": new_data.titles,
                     "prices": new_data.prices,
-                    "art_paths": new_data.art_paths
+                    "art_paths": new_data.art_paths,
+                    "created_ats": new_data.created_ats,
+                    "updated_ats": new_data.updated_ats
                 },
                 columns=key_columns
             )
@@ -345,11 +351,36 @@ class Noco:
                     new_title = row['titles']
                     new_price = row['prices']
                     new_art_path = row['art_paths']
+                    new_created_ats = row['created_ats']
+                    new_updated_ats = row['updated_ats']
                     self.previous_data.artwork.Ids.append(new_id)
                     self.previous_data.artwork.titles.append(new_title)
                     self.previous_data.artwork.prices.append(new_price)
                     self.previous_data.artwork.art_paths.append(new_art_path)
                     self.previous_data.artwork.data_uris.append(self.convert_paths_to_data_uris([new_art_path])[0])
+                    self.previous_data.artwork.created_ats.append(new_created_ats)
+                    self.previous_data.artwork.updated_ats.append(new_updated_ats)
+
+                    # # Create a new product in stripe since a new product was added
+                    # file_url = f"{NOCODB_PATH}/{new_art_path}"
+                    # file_link = self.stripe_connector.upload_image_to_stripe(file_url = file_url)
+                    # product = self.stripe_connector.create_product(title = new_title, price = new_price, image_url=file_link.url)
+
+                    # # Post new mapping data to NocoDB
+                    # try:
+                    #     logger.info(f"Posting new data for title {new_title}")
+                    #     self.post_nocodb_table_data(
+                    #         NOCODB_TABLE_MAP.product_map_table,
+                    #         {
+                    #             "noco_product_Id": new_id,
+                    #             "stripe_product_id": product.id,
+                    #             "default_price": product.default_price
+                    #         }
+                    #     )
+                    #     logger.info(f"Posted new data for title {new_title}")
+                    # except Exception as e:
+                    #     logger.error(f"Error posting new product mapping data to NocoDB: {e}")
+                    #     raise
                     logger.info(f"Patched new data for title {new_title}")
             
             if deleted.shape[0] > 0:
@@ -362,10 +393,12 @@ class Noco:
                         self.previous_data.artwork.prices.pop(idx)
                         self.previous_data.artwork.art_paths.pop(idx)
                         self.previous_data.artwork.data_uris.pop(idx)
+                        self.previous_data.artwork.created_ats.pop(idx)
+                        self.previous_data.artwork.updated_ats.pop(idx)
                         logger.info(f"Deleted data for ID {old_id}")
                         # Update the mapping since we modified the lists
                         id_to_index = {id: index for index, id in enumerate(self.previous_data.artwork.Ids)}
-            
+
             if changed.shape[0] > 0:
                 for index, row in changed.iterrows():
                     old_id = row['Ids_old']
@@ -373,6 +406,9 @@ class Noco:
                     new_title = row['titles_new']
                     new_price = row['prices_new']
                     new_art_path = row['art_paths_new']
+                    new_created_ats = row['created_ats_new']
+                    new_updated_ats = row['updated_ats_new']
+
                     if old_id in id_to_index:
                         idx = id_to_index[old_id]
                         self.previous_data.artwork.Ids[idx] = new_id
@@ -380,6 +416,8 @@ class Noco:
                         self.previous_data.artwork.prices[idx] = new_price
                         self.previous_data.artwork.art_paths[idx] = new_art_path
                         self.previous_data.artwork.data_uris[idx] = self.convert_paths_to_data_uris([new_art_path])[0]
+                        self.previous_data.artwork.updated_ats[idx] = new_updated_ats
+                        self.previous_data.artwork.created_ats[idx] = new_created_ats
                         logger.info(f"Patched changed data for title {new_title}")
                         # Update the mapping since we modified the lists
                         id_to_index[new_id] = id_to_index.pop(old_id)
