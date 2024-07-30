@@ -46,6 +46,22 @@ class StripeAPI:
             logger.error(f"Error unarchiving price ID {price_id}: {e}")
             raise
 
+    def archive_product(self, product_id: str) -> None:
+        try:
+            stripe.Product.modify(product_id, active=False)
+            logger.info(f"Archived product ID {product_id}")
+        except Exception as e:
+            logger.error(f"Error archiving product ID {product_id}: {e}")
+            raise
+
+    def unarchive_product(self, product_id: str) -> None:
+        try:
+            stripe.Product.modify(product_id, active=True)
+            logger.info(f"Unarchived product ID {product_id}")
+        except Exception as e:
+            logger.error(f"Error unarchiving product ID {product_id}: {e}")
+            raise
+
     def list_prices(self):
         return stripe.Price.list()
 
@@ -102,19 +118,7 @@ class StripeAPI:
             logger.error(f"Error uploading image to Stripe from {file_url}: {e}")
             raise
 
-    def create_or_update_product(self, title: str, price: int, image_url: str) -> None:
-        try:
-            products = self.list_products()
-            product = next((p for p in products.data if p.name == title), None)
-
-            if product:
-                self.update_product(product.id, price, image_url)
-            else:
-                self.create_product(title, price, image_url)
-        except Exception as e:
-            logger.error(f"Error creating or updating product {title}: {e}")
-            raise
-
+    # Working on updating functions
     def update_product(self, product_id: str, price: int, image_url: str) -> None:
         try:
             self.update_product_image(product_id, image_url)
@@ -167,7 +171,7 @@ class StripeAPI:
                 tax_code="txcd_99999999",
                 default_price_data={
                     'currency': 'usd',
-                    'unit_amount': price * 100,
+                    'unit_amount': int(price) * 100,
                     'tax_behavior': 'exclusive'
                 },
                 images=[image_url],

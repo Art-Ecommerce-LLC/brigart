@@ -222,8 +222,10 @@ class Noco:
                 old_data = self.previous_data.artwork.updated_ats
                 new_data = self.get_current_artwork_data_timestamps()
                 if self.compare_updated_at_timestamps(old_data, new_data):
-                    # self.previous_data.artwork = self.get_artwork_data_no_cache()
-                    self.update_previous_data()
+                    # Sync data with new artork data
+                    self.previous_data.artwork = self.get_artwork_data_no_cache()
+                    # Sync stripe products with new artwork data
+                    # self.sync_stripe_products()
                     return self.previous_data.artwork
                 return self.previous_data.artwork
             else:
@@ -232,217 +234,72 @@ class Noco:
         except Exception as e:
             logger.error(f"Error getting artwork data: {e}")
             raise
+    # Stripe sync functions being developed
+    # def sync_stripe_products(self):
+    #     """
+    #         Sync the stripe products with the artwork data
+    #     """
+    #     try:
+    #         artwork_data = self.get_artwork_data_no_cache_no_datauri()
+    #         product_map_data = self.get_product_map_data_no_cache()
+    #         for i in range(len(artwork_data.titles)):
+    #             title = artwork_data.titles[i]
+    #             price = artwork_data.prices[i]
+    #             product_id = self.get_product_id_from_title(title, product_map_data)
+    #             if product_id:
+    #                 self.sync_stripe_product(product_id, title, price)
+    #             else:
+    #                 self.stripe_connector.create_product(title, price, f"{NOCODB_PATH}/{artwork_data.art_paths[i]}")
+    #     except Exception as e:
+    #         logger.error(f"Error syncing stripe products: {e}")
+    #         raise
 
-
-
-    def update_previous_data(self) -> Dict[str, pd.DataFrame]:
-        try:
-            # Watch for changes to the Id's, img_label, art_paths, and prices
-            old_data = self.previous_data.artwork
-            new_data = self.get_artwork_data_no_cache_no_datauri()
-            # Grab a list of the model's attributes to compare
-            key_columns = ["Ids", "titles", "prices", "art_paths", "created_ats", "updated_ats"]
-            df_old = pd.DataFrame(
-                {
-                    "Ids": old_data.Ids,
-                    "titles": old_data.titles,
-                    "prices": old_data.prices,
-                    "art_paths": old_data.art_paths,
-                    "created_ats": old_data.created_ats,
-                    "updated_ats": old_data.updated_ats
-                },
-                columns=key_columns
-            )
-            df_new = pd.DataFrame(
-                {
-                    "Ids": new_data.Ids,
-                    "titles": new_data.titles,
-                    "prices": new_data.prices,
-                    "art_paths": new_data.art_paths,
-                    "created_ats": new_data.created_ats,
-                    "updated_ats": new_data.updated_ats
-                },
-                columns=key_columns
-            )
-            
-            # Compare the two dataframes
-
-            # Check for added and deleted columns
-            old_columns: Set[str] = set(df_old.columns)
-            new_columns: Set[str] = set(df_new.columns)
-            
-            added_columns: Set[str] = new_columns - old_columns
-            deleted_columns: Set[str] = old_columns - new_columns
-
-            # Check for duplicates
-            duplicates_old: pd.DataFrame = df_old[df_old.duplicated(subset=key_columns, keep=False)]
-            duplicates_new: pd.DataFrame = df_new[df_new.duplicated(subset=key_columns, keep=False)]
-            
-            # Merge datasets on key columns
-            df_merged: pd.DataFrame = pd.merge(df_old, df_new, on=key_columns, how='outer', suffixes=('_old', '_new'), indicator=True)
-
-            # Identify added, deleted, and changed rows
-            added: pd.DataFrame = df_merged[df_merged['_merge'] == 'right_only']
-            deleted: pd.DataFrame = df_merged[df_merged['_merge'] == 'left_only']
-            
-            # For changed rows, we need to check if any column values (other than the key columns) have changed
-            changes: pd.DataFrame = df_merged[df_merged['_merge'] == 'both']
-            changed: pd.DataFrame = changes[
-                (changes.filter(regex='_old$') != changes.filter(regex='_new$')).any(axis=1)
-            ]
-
-            # Check for null value changes
-            null_changes: Dict[str, Tuple[int, int]] = {}
-            for col in old_columns.intersection(new_columns):
-                old_nulls: int = df_old[col].isnull().sum()
-                new_nulls: int = df_new[col].isnull().sum()
-                if old_nulls != new_nulls:
-                    null_changes[col] = (old_nulls, new_nulls)
-
-            # Check for row order changes
-            row_order_changed: bool = not df_old.equals(df_new)
-
-            data_changes = {
-                'added': added,
-                'deleted': deleted,
-                'changed': changed,
-                'added_columns': added_columns,
-                'deleted_columns': deleted_columns,
-                'null_changes': null_changes,
-                'duplicates_old': duplicates_old,
-                'duplicates_new': duplicates_new,
-                'row_order_changed': row_order_changed
-            }
-            
-            # Patch the data
-            self.patch_inconsistent_artwork_data(data_changes)
-
-        except Exception as e:
-            logger.error(f"Error updating previous data: {e}")
-            raise
-
-    def patch_inconsistent_artwork_data(self, data: Dict[str, pd.DataFrame]) -> None:
+    def get_product_id_from_title(self, title: str, product_map_data: ProductMapObject) -> Union[str, None]:
         """
-            Patch the inconsistent artwork data in the cache from the new data
+            Get the product ID from the title
 
             Arguments:
-                data (dict): A dictionary containing the data to patch
+                title (str): The title of the product
+                product_map_data (ProductMapObject): The product map data
             
-            Raises:
-                Exception: If there is an error patching the inconsistent artwork data
+            Returns:
+                str: The product ID for the title
         """
         try:
-            added: pd.DataFrame = data['added']
-            deleted: pd.DataFrame = data['deleted']
-            changed: pd.DataFrame = data['changed']
-            added_columns: Set[str] = data['added_columns']
-            deleted_columns: Set[str] = data['deleted_columns']
-            null_changes: Dict[str, Tuple[int, int]] = data['null_changes']
-            duplicates_old: pd.DataFrame = data['duplicates_old']
-            duplicates_new: pd.DataFrame = data['duplicates_new']
-            row_order_changed: bool = data['row_order_changed']
+            index = product_map_data.noco_product_Ids.index(self.get_artwork_Id_from_title(title))
+            logger.info(f"Fetched product ID for title {title}")
+            return product_map_data.stripe_product_ids[index]
+        except ValueError:
+            logger.error(f"Product with title {title} not found")
+            return None
+        
+    # def sync_stripe_product(self, product_id: str, title: str, price: str):
+    #     """
+    #         Sync a stripe product with the artwork data
 
-            # Create a mapping from IDs to their indices
-            id_to_index = {id: index for index, id in enumerate(self.previous_data.artwork.Ids)}
-
-            if added.shape[0] > 0:
-                for index, row in added.iterrows():
-                    new_id = row['Ids']
-                    new_title = row['titles']
-                    new_price = row['prices']
-                    new_art_path = row['art_paths']
-                    new_created_ats = row['created_ats']
-                    new_updated_ats = row['updated_ats']
-                    self.previous_data.artwork.Ids.append(new_id)
-                    self.previous_data.artwork.titles.append(new_title)
-                    self.previous_data.artwork.prices.append(new_price)
-                    self.previous_data.artwork.art_paths.append(new_art_path)
-                    self.previous_data.artwork.data_uris.append(self.convert_paths_to_data_uris([new_art_path])[0])
-                    self.previous_data.artwork.created_ats.append(new_created_ats)
-                    self.previous_data.artwork.updated_ats.append(new_updated_ats)
-
-                    # # Create a new product in stripe since a new product was added
-                    # file_url = f"{NOCODB_PATH}/{new_art_path}"
-                    # file_link = self.stripe_connector.upload_image_to_stripe(file_url = file_url)
-                    # product = self.stripe_connector.create_product(title = new_title, price = new_price, image_url=file_link.url)
-
-                    # # Post new mapping data to NocoDB
-                    # try:
-                    #     logger.info(f"Posting new data for title {new_title}")
-                    #     self.post_nocodb_table_data(
-                    #         NOCODB_TABLE_MAP.product_map_table,
-                    #         {
-                    #             "noco_product_Id": new_id,
-                    #             "stripe_product_id": product.id,
-                    #             "default_price": product.default_price
-                    #         }
-                    #     )
-                    #     logger.info(f"Posted new data for title {new_title}")
-                    # except Exception as e:
-                    #     logger.error(f"Error posting new product mapping data to NocoDB: {e}")
-                    #     raise
-                    logger.info(f"Patched new data for title {new_title}")
-            
-            if deleted.shape[0] > 0:
-                for index, row in deleted.iterrows():
-                    old_id = row['Ids']
-                    if old_id in id_to_index:
-                        idx = id_to_index[old_id]
-                        self.previous_data.artwork.Ids.pop(idx)
-                        self.previous_data.artwork.titles.pop(idx)
-                        self.previous_data.artwork.prices.pop(idx)
-                        self.previous_data.artwork.art_paths.pop(idx)
-                        self.previous_data.artwork.data_uris.pop(idx)
-                        self.previous_data.artwork.created_ats.pop(idx)
-                        self.previous_data.artwork.updated_ats.pop(idx)
-                        logger.info(f"Deleted data for ID {old_id}")
-                        # Update the mapping since we modified the lists
-                        id_to_index = {id: index for index, id in enumerate(self.previous_data.artwork.Ids)}
-
-            if changed.shape[0] > 0:
-                for index, row in changed.iterrows():
-                    old_id = row['Ids_old']
-                    new_id = row['Ids_new']
-                    new_title = row['titles_new']
-                    new_price = row['prices_new']
-                    new_art_path = row['art_paths_new']
-                    new_created_ats = row['created_ats_new']
-                    new_updated_ats = row['updated_ats_new']
-
-                    if old_id in id_to_index:
-                        idx = id_to_index[old_id]
-                        self.previous_data.artwork.Ids[idx] = new_id
-                        self.previous_data.artwork.titles[idx] = new_title
-                        self.previous_data.artwork.prices[idx] = new_price
-                        self.previous_data.artwork.art_paths[idx] = new_art_path
-                        self.previous_data.artwork.data_uris[idx] = self.convert_paths_to_data_uris([new_art_path])[0]
-                        self.previous_data.artwork.updated_ats[idx] = new_updated_ats
-                        self.previous_data.artwork.created_ats[idx] = new_created_ats
-                        logger.info(f"Patched changed data for title {new_title}")
-                        # Update the mapping since we modified the lists
-                        id_to_index[new_id] = id_to_index.pop(old_id)
-
-            if len(added_columns) > 0:
-                for col in added_columns:
-                    logger.info(f"Added column {col}")
-            if len(deleted_columns) > 0:
-                for col in deleted_columns:
-                    logger.info(f"Deleted column {col}")
-            if len(null_changes) > 0:
-                for col, values in null_changes.items():
-                    logger.info(f"Changed null values for column {col} from {values[0]} to {values[1]}")
-            if duplicates_old.shape[0] > 0:
-                for index, row in duplicates_old.iterrows():
-                    logger.info(f"Found duplicate in old data: {row}")
-            if duplicates_new.shape[0] > 0:
-                for index, row in duplicates_new.iterrows():
-                    logger.info(f"Found duplicate in new data: {row}")
-            if row_order_changed:
-                logger.info(f"Row order has changed between the datasets")
-        except Exception as e:
-            logger.error(f"Error patching inconsistent artwork data: {e}")
-            raise
-
+    #         Arguments:
+    #             product_id (str): The product ID to sync
+    #             title (str): The title of the product
+    #             price (str): The price of the product
+    #     """
+    #     try:
+    #         stripe_product = self.stripe_connector.retrieve_product(product_id)
+    #         stripe_price = self.stripe_connector.retrieve_price(stripe_product['prices']['data'][0]['id'])
+    #         if str(stripe_price['unit_amount']) != price:
+    #             self.stripe_connector.update_price(stripe_price['id'], price)
+    #         if stripe_product['name'] != title:
+    #             self.stripe_connector.update_product(product_id, title)
+    #         if not stripe_product['active']:
+    #             self.stripe_connector.unarchive_product(product_id)
+    #         if not stripe_price['active']:
+    #             self.stripe_connector.unarchive_price(stripe_price['id'])
+    #         stripe_image_url = stripe_product['images'][0]
+    #         stripe_image_to_uri = self.convert_to_data_uri(requests.get(stripe_image_url).content)
+    #         if stripe_image_to_uri != self.get_art_uri_from_title(title):
+    #             self.stripe_connector.update_product_image(product_id, f"{NOCODB_PATH}/{self.get_art_uri_from_title(title)}")
+    #     except Exception as e:
+    #         logger.error(f"Error syncing stripe product {product_id}: {e}")
+    #         raise
 
     def get_artwork_data_no_cache(self) -> ArtObject:
         """
