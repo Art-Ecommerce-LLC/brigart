@@ -17,6 +17,7 @@ import time
 from datetime import datetime, timezone
 import pandas as pd
 from typing import Dict, Set, Tuple
+from functools import lru_cache
 
 class PreviousData:
     def __init__(self):
@@ -194,7 +195,7 @@ class Noco:
                 if img.mode == 'RGBA':
                     img = img.convert('RGB')
                 width, height = img.size
-                new_size = (int(width * 0.4), int(height * 0.4))
+                new_size = (int(width * 0.8), int(height * 0.8))
                 resized_img = img.resize(new_size, Image.ANTIALIAS)
                 buffer = BytesIO()
                 resized_img.save(buffer, format="JPEG")
@@ -205,7 +206,8 @@ class Noco:
         except Exception as e:
             logger.error(f"Error converting image data to data URI: {e}")
             raise
-
+    
+    @lru_cache(maxsize=200)
     def get_artwork_data(self) -> ArtObject:
         """
             Get the artwork data from NocoDB

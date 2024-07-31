@@ -16,6 +16,19 @@
     --hamburger-menu-icon-width: 32px;
 }
 
+/* Reset link styling */
+.page_links {
+    color: white; /* Keep the links white */
+    text-decoration: none; /* Remove default underline */
+}
+
+/* Add underline on hover */
+.page_links:hover {
+    text-decoration: underline; /* Add underline on hover */
+}
+
+
+
 .shopping_cart_icon{
     display: flex;
     justify-content: center;

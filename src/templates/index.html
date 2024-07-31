@@ -80,7 +80,6 @@
 <form method = "post" id="myForm" class = "artwork-display">
     <div class="content">
         {% for art_uri in art_uris %}   
-        <!-- Title is the same index as the art_uri from the art_titles list in the backend -->
             <a href="#" onclick="submitForm('{{art_titles[loop.index0]}}', 'GET'); return false;">
                 <div class = "artwork-wrapper">
                     <div class="artwork" style="background-image: url('{{ art_uri }}')" oncontextmenu="return false;" draggable="false"></div>
