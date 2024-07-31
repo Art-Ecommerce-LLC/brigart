@@ -8,7 +8,7 @@ from fastapi.responses import (
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import os
-from src.artapi.config import STRIPE_SECRET_KEY
+from src.artapi.config import STRIPE_SECRET_KEY, NOCODB_PATH
 from src.artapi.logger import logger
 from src.artapi.middleware import add_middleware, limiter
 from src.artapi.models import (
@@ -17,11 +17,12 @@ from src.artapi.models import (
 from src.artapi.noco import Noco
 import os
 import uuid
-from src.artapi.noco_config import OPENAPI_URL
+from src.artapi.noco_config import OPENAPI_URL, SHIPPING_RATE
 import datetime
 import stripe
 from datetime import datetime, timezone
 from src.artapi.nocodb_connector import get_noco_db
+from src.artapi.stripe_connector import get_stripe_api, StripeAPI
 
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
@@ -412,49 +413,6 @@ async def delete_item(request: Request, title: Title, noco_db: Noco = Depends(ge
         logger.error(f"Error in delete_item: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-@app.get("/checkout/{sessionid}", response_class=HTMLResponse)
-@limiter.limit("100/minute") 
-async def shop_checkout(request: Request, sessionid: str, noco_db: Noco = Depends(get_noco_db)):
-    logger.info(f"Checkout page accessed by {request.client.host}")
-    try:
-        # Create payment link with the items in the cart
-        if request.session.get("session_id") != sessionid:
-            logger.warning(f"Session ID does not match {request.client.host}")
-            return RedirectResponse(url="/shop_art_menu")
-               
-        img_quant_list = noco_db.get_cookie_from_session_id(sessionid)
-        products = stripe.Product.list(limit=300)
-        line_items = []
-        for product in products:
-            for item in img_quant_list:
-                if product.name == item["title"]:
-                    line_items.append({
-                        'price': product.default_price,
-                        'quantity': item["quantity"],
-                    })
-        if line_items == []:
-            logger.info("Cart is empty")
-            return RedirectResponse(url="/shop_art_menu")
-        
-        payment_link = stripe.PaymentLink.create(
-            line_items=line_items,
-            automatic_tax = {
-                'enabled': True,
-                'liability' : {
-                    'type' : 'self',
-                }
-            },
-            shipping_address_collection={
-                'allowed_countries': ['US'],
-            },
-            shipping_options = [{
-                'shipping_rate' : "shr_1PbZ0yP7gcDRwQa3LoqgQqbK",
-            }],
-        )
-        return RedirectResponse(url=payment_link.url)
-    except Exception as e:
-        logger.error(f"Error in shop_checkout: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.get("/get_session_id")
@@ -556,3 +514,65 @@ async def delete_session(request: Request, noco_db: Noco = Depends(get_noco_db))
         return JSONResponse({"message": "Session deleted"})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/checkout/{sessionid}", response_class=HTMLResponse)
+@limiter.limit("100/minute") 
+async def shop_checkout(request: Request, sessionid: str, noco_db: Noco = Depends(get_noco_db), stripe_api: StripeAPI = Depends(get_stripe_api)):
+    logger.info(f"Checkout page accessed by {request.client.host}")
+    try:
+        # Create payment link with the items in the cart
+        if request.session.get("session_id") != sessionid:
+            logger.warning(f"Session ID does not match {request.client.host}")
+            return RedirectResponse(url="/shop_art_menu")
+        
+        img_quant_list = noco_db.get_cookie_from_session_id(sessionid)
+
+        # Sync with stripe products
+        # Search product list for title, only the active products
+
+        img_path = noco_db.get_artwork_data_with_cache().art_paths
+        titles = noco_db.get_artwork_data_with_cache().titles
+        path_list = []
+        for item in img_quant_list:
+            if item["title"] not in titles:
+                logger.warning(f"Title {item['title']} not found in titles")
+                raise HTTPException(status_code=404, detail="Title not found")
+            else: 
+                full_path = f"{NOCODB_PATH}/{img_path[titles.index(item['title'])]}"
+                path_list.append(full_path)
+
+
+        line_items= stripe_api.sync_products(img_quant_list, path_list)
+
+        # products = stripe.Product.list(limit=300)
+        # line_items = []
+        # for product in products:
+        #     for item in img_quant_list:
+        #         if product.name == item["title"]:
+        #             line_items.append({
+        #                 'price': product.default_price,
+        #                 'quantity': item["quantity"],
+        #             })
+        if line_items == []:
+            logger.info("Cart is empty")
+            return RedirectResponse(url="/shop_art_menu")
+        
+        payment_link = stripe.PaymentLink.create(
+            line_items=line_items,
+            automatic_tax = {
+                'enabled': True,
+                'liability' : {
+                    'type' : 'self',
+                }
+            },
+            shipping_address_collection={
+                'allowed_countries': ['US'],
+            },
+            shipping_options = [{
+                'shipping_rate' : SHIPPING_RATE,
+            }],
+        )
+        return RedirectResponse(url=payment_link.url)
+    except Exception as e:
+        logger.error(f"Error in shop_checkout: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")

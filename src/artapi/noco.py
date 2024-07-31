@@ -210,64 +210,57 @@ class Noco:
             logger.error(f"Error converting image data to data URI: {e}")
             raise
     
-    # def get_artwork_data(self) -> ArtObject:
-    #     """
-    #         Get the artwork data from NocoDB
-
-    #         Returns:
-    #             ArtObject: An object containing the artwork data
-            
-    #         Raises:
-    #             Exception: If there is an error getting the artwork data
-    #     """
-    #     try:
-    #         # Do a check to see if there is specific data in the ArtObject that needs to be updated
-    #         logger.info("Getting artwork data")
-    #         old_data = self.get_used_artwork_data_timestamps()
-    #         new_data = self.get_current_artwork_data_timestamps()
-    #         if self.compare_updated_at_timestamps(old_data, new_data):
-    #             # Sync data with new artork data
-    #             self.clear_artwork_data_cache()
-    #             self.previous_data.artwork = self.get_artwork_data_with_cache()
-    #             # Sync stripe products with new artwork data
-    #             # self.sync_stripe_products()
-    #             return self.previous_data.artwork
-    #         else:
-    #             return self.get_artwork_data_with_cache()
-    #     except Exception as e:
-    #         logger.error(f"Error getting artwork data: {e}")
-    #         raise
     
-    @lru_cache(maxsize=200)
+    
     def get_artwork_data_with_cache(self) -> ArtObject:
         """
-            Get the artwork data from NocoDB without caching
+        Get the artwork data from NocoDB with caching.
 
-            Returns:
-                ArtObject: An object containing the artwork data
+        Returns:
+            ArtObject: An object containing the artwork data
 
-            Raises:
-                Exception: If there is an error getting the artwork data without cache
+        Raises:
+            Exception: If there is an error getting the artwork data
         """
         try:
             if self.compare_timestamps():
+                # Clear the cache and update previous_data.artwork if timestamps are different
+                self.clear_artwork_data_cache()
                 self.previous_data.artwork = self.get_artwork_data_no_cache()
-                return self.previous_data.artwork
-            return self.previous_data.artwork
+            return self._get_artwork_data_cached()
         except Exception as e:
-            logger.error(f"Error getting artwork data without cache: {e}")
+            logger.error(f"Error getting artwork data with cache: {e}")
             raise
+
+    @lru_cache(maxsize=1)
+    def _get_artwork_data_cached(self) -> ArtObject:
+        """
+        Get the artwork data from NocoDB, this method is cached.
+
+        Returns:
+            ArtObject: An object containing the artwork data
+        """
+        return self.previous_data.artwork
+
+    def clear_artwork_data_cache(self):
+        """
+        Clear the cache for artwork data.
+        """
+        self._get_artwork_data_cached.cache_clear()
+        logger.info("Cleared artwork data cache")
 
     def compare_timestamps(self) -> bool:
         """
-            Compare the timestamps of the current artwork data with the previous artwork data
+        Compare the timestamps of the current artwork data with the previous artwork data.
 
-            Returns:
-                bool: True if the timestamps are different, False otherwise
+        Returns:
+            bool: True if the timestamps are different, False otherwise
         """
         try:
             if self.previous_data.artwork is None:
+                logger.info("No previous artwork data found")
                 self.previous_data.artwork = self.get_artwork_data_no_cache()
+                return False
             old_data = self.previous_data.artwork.updated_ats
             new_data = self.get_artwork_data_no_cache_no_datauri().updated_ats
             if new_data != old_data:
@@ -278,30 +271,61 @@ class Noco:
             logger.error(f"Error comparing timestamps: {e}")
             raise
 
-    def clear_artwork_data_cache(self):
+    def get_artwork_data_no_cache(self) -> ArtObject:
         """
-            Clear the cache for artwork data
+        Get the artwork data from NocoDB without caching.
+
+        Returns:
+            ArtObject: An object containing the artwork data
+
+        Raises:
+            Exception: If there is an error getting the artwork data without cache
         """
-        self.get_artwork_data_with_cache.cache_clear()
-    # Stripe sync functions being developed
-    # def sync_stripe_products(self):
-    #     """
-    #         Sync the stripe products with the artwork data
-    #     """
-    #     try:
-    #         artwork_data = self.get_artwork_data_no_cache_no_datauri()
-    #         product_map_data = self.get_product_map_data_no_cache()
-    #         for i in range(len(artwork_data.titles)):
-    #             title = artwork_data.titles[i]
-    #             price = artwork_data.prices[i]
-    #             product_id = self.get_product_id_from_title(title, product_map_data)
-    #             if product_id:
-    #                 self.sync_stripe_product(product_id, title, price)
-    #             else:
-    #                 self.stripe_connector.create_product(title, price, f"{NOCODB_PATH}/{artwork_data.art_paths[i]}")
-    #     except Exception as e:
-    #         logger.error(f"Error syncing stripe products: {e}")
-    #         raise
+        try:
+            data = self.get_nocodb_table_data(NOCODB_TABLE_MAP.img_table)
+            art_paths = [item['img'][0]['signedPath'] for item in data['list']]
+            data_uris = self.convert_paths_to_data_uris(art_paths)
+            artwork_data = ArtObject(
+                art_paths=art_paths,
+                titles=[item['img_label'] for item in data['list']],
+                prices=[item['price'] for item in data['list']],
+                data_uris=data_uris,
+                created_ats=[item['CreatedAt'] for item in data['list']],
+                updated_ats=[item['UpdatedAt'] for item in data['list']],
+                Ids=[item['Id'] for item in data['list']]
+            )
+            logger.info("Fetched and parsed artwork data from NocoDB without cache")
+            return artwork_data
+        except Exception as e:
+            logger.error(f"Error getting artwork data without cache: {e}")
+            raise
+
+    def get_artwork_data_no_cache_no_datauri(self) -> ArtObject:
+        """
+        Get the artwork data from NocoDB without caching and without data URIs.
+
+        Returns:
+            ArtObject: An object containing the artwork data without data URIs
+
+        Raises:
+            Exception: If there is an error getting the artwork data without cache and without data URIs
+        """
+        try:
+            data = self.get_nocodb_table_data(NOCODB_TABLE_MAP.img_table)
+            art_paths = [item['img'][0]['signedPath'] for item in data['list']]
+            artwork_data = ArtObject(
+                art_paths=art_paths,
+                titles=[item['img_label'] for item in data['list']],
+                prices=[item['price'] for item in data['list']],
+                created_ats=[item['CreatedAt'] for item in data['list']],
+                updated_ats=[item['UpdatedAt'] for item in data['list']],
+                Ids=[item['Id'] for item in data['list']]
+            )
+            logger.info("Fetched and parsed artwork data from NocoDB without cache and without data URIs")
+            return artwork_data
+        except Exception as e:
+            logger.error(f"Error getting artwork data without cache and without data URIs: {e}")
+            raise
 
     def get_product_id_from_title(self, title: str, product_map_data: ProductMapObject) -> Union[str, None]:
         """
@@ -350,34 +374,7 @@ class Noco:
     #         logger.error(f"Error syncing stripe product {product_id}: {e}")
     #         raise
 
-    def get_artwork_data_no_cache(self) -> ArtObject:
-        """
-            Get the artwork data from NocoDB without caching
 
-            Returns:
-                ArtObject: An object containing the artwork data
-
-            Raises:
-                Exception: If there is an error getting the artwork data without cache
-        """
-        try:
-            data = self.get_nocodb_table_data(NOCODB_TABLE_MAP.img_table)
-            art_paths = [item['img'][0]['signedPath'] for item in data['list']]
-            data_uris = self.convert_paths_to_data_uris(art_paths)
-            artwork_data = ArtObject(
-                art_paths=art_paths,
-                titles=[item['img_label'] for item in data['list']],
-                prices=[item['price'] for item in data['list']],
-                data_uris=data_uris,
-                created_ats=[item['CreatedAt'] for item in data['list']],
-                updated_ats=[item['UpdatedAt'] for item in data['list']],
-                Ids=[item['Id'] for item in data['list']]
-            )
-            logger.info("Fetched and parsed artwork data from NocoDB without cache")
-            return artwork_data
-        except Exception as e:
-            logger.error(f"Error getting artwork data without cache: {e}")
-            raise
 
     def get_product_map_data_no_cache(self) -> ProductMapObject:
         """
@@ -404,32 +401,7 @@ class Noco:
             logger.error(f"Error getting product map data: {e}")
             raise
 
-    def get_artwork_data_no_cache_no_datauri(self) -> ArtObject:
-        """
-            Get the artwork data from NocoDB without caching and without data URIs
-
-            Returns:
-                ArtObject: An object containing the artwork data without data URIs
-
-            Raises:
-                Exception: If there is an error getting the artwork data without cache and without data URIs
-        """
-        try:
-            data = self.get_nocodb_table_data(NOCODB_TABLE_MAP.img_table)
-            art_paths = [item['img'][0]['signedPath'] for item in data['list']]
-            artwork_data = ArtObject(
-                art_paths=art_paths,
-                titles=[item['img_label'] for item in data['list']],
-                prices=[item['price'] for item in data['list']],
-                created_ats=[item['CreatedAt'] for item in data['list']],
-                updated_ats=[item['UpdatedAt'] for item in data['list']],
-                Ids=[item['Id'] for item in data['list']]
-            )
-            logger.info("Fetched and parsed artwork data from NocoDB without cache and without data URIs")
-            return artwork_data
-        except Exception as e:
-            logger.error(f"Error getting artwork data without cache and without data URIs: {e}")
-            raise
+  
 
     def get_used_artwork_data_timestamps(self) -> list:
         """
@@ -643,7 +615,7 @@ class Noco:
                 ValueError: If the artwork with the title is not found
         """
         try:
-            artwork_data = self.get_artwork_data()
+            artwork_data = self.get_artwork_data_with_cache()
             index = artwork_data.titles.index(title)
             logger.info(f"Fetched artwork URI for title {title}")
             return artwork_data.data_uris[index]
@@ -665,7 +637,7 @@ class Noco:
                 ValueError: If the artwork with the title is not found
         """
         try:
-            artwork_data = self.get_artwork_data()
+            artwork_data = self.get_artwork_data_with_cache()
             index = artwork_data.titles.index(title)
             logger.info(f"Fetched price for artwork title {title}")
             return artwork_data.prices[index]
@@ -829,7 +801,7 @@ class Noco:
                 ValueError: If the artwork with the title is not found
         """
         try:
-            artwork_data = self.get_artwork_data()
+            artwork_data = self.get_artwork_data_with_cache()
             index = artwork_data.titles.index(title)
             logger.info(f"Fetched artwork ID for title {title}")
             return artwork_data.Ids[index]
