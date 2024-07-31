@@ -2,6 +2,7 @@
 from fastapi import (
     FastAPI, Request, HTTPException, Depends
 )
+from contextlib import asynccontextmanager
 from fastapi.responses import ( 
     HTMLResponse, JSONResponse, RedirectResponse
 )
@@ -23,17 +24,39 @@ import stripe
 from datetime import datetime, timezone
 from src.artapi.nocodb_connector import get_noco_db
 from src.artapi.stripe_connector import get_stripe_api, StripeAPI
-
+import asyncio
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
 
 if OPENAPI_URL == "None":
     OPENAPI_URL = None
 
+noco_db = get_noco_db()
+
+async def delete_expired_sessions_task():
+    while True:
+        try:
+            await noco_db.delete_expired_sessions()
+        except Exception as e:
+            logger.error(f"Error in lifespan: {e}")
+        await asyncio.sleep(60)
+        
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+      # Create an instance of Noco
+    task = asyncio.create_task(delete_expired_sessions_task())
+    yield
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        logger.info("Background task was cancelled")
+    
 app = FastAPI(
     title="Brig API",
     description=desc,
-    openapi_url=OPENAPI_URL
+    openapi_url=OPENAPI_URL,
+    lifespan=lifespan
 )
 
 stripe.api_key = STRIPE_SECRET_KEY

@@ -51,3 +51,5 @@ src/artapi/stripe_secret.py
 artstorage/*
 
 sync.py
+
+archive_all_products.py

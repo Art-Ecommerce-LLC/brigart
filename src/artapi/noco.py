@@ -42,6 +42,7 @@ class Noco:
         stripe.api_key = STRIPE_SECRET_KEY 
         self.stripe_connector = StripeAPI()
         self.resolution_factor = 0.8
+        self.cookie_session_time_limit = 60 * 15
 
     def __del__(self):
         # Ensure the session is closed when the object is deleted
@@ -892,12 +893,12 @@ class Noco:
     def get_version():
         return str(int(time.time()))
 
-    def delete_expired_sessions(self):
+    async def delete_expired_sessions(self):
         """
-            Delete expired sessions every 15 minutes
-            
-            Raises:
-                Exception: If there is an error deleting expired sessions
+        Delete expired sessions every 15 minutes
+
+        Raises:
+            Exception: If there is an error deleting expired sessions
         """
         try:
             cookie_data = self.get_cookie_data()
@@ -907,11 +908,9 @@ class Noco:
 
             for session_id, creation_time_str in zip(sessions, created_ats):
                 session_creation_time = datetime.fromisoformat(creation_time_str.replace('Z', '+00:00'))
-
                 elapsed_time = (current_time - session_creation_time).total_seconds()
-                if elapsed_time > 900:  # 15 minutes = 900 seconds
+                if elapsed_time > self.cookie_session_time_limit:
                     self.delete_session_cookie(session_id)
                     logger.info(f"Deleted expired session {session_id}")
-
         except Exception as e:
             logger.error(f"Error deleting expired sessions: {e}")

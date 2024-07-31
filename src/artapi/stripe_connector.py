@@ -5,10 +5,13 @@ import tempfile
 import requests
 import os
 from typing import List
+from PIL import Image
+from io import BytesIO
 
 class StripeAPI:
     def __init__(self):
         stripe.api_key = STRIPE_SECRET_KEY
+        self.resolution_factor = 0.8
 
     def update_price(self, price_id: str, new_price: int) -> None:
         try:
@@ -69,18 +72,18 @@ class StripeAPI:
     def retrieve_product(self, product_id: str):
         return stripe.Product.retrieve(product_id)
 
-    def retrieve_price(self, price_id: str):
-        return stripe.Price.retrieve(price_id)
-
     def create_file(self, image_url: str) -> stripe.File:
         try:
             # Download the image from the URL
             response = requests.get(image_url)
             response.raise_for_status()
 
+            # Convert image bytes to processed image bytes
+            image_data = self.process_image(response.content)
+
             # Create a temporary file
-            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-                temp_file.write(response.content)
+            with tempfile.NamedTemporaryFile(delete=False, mode='wb') as temp_file:
+                temp_file.write(image_data)
                 temp_file_path = temp_file.name
 
             # Open the temporary file and upload it to Stripe
@@ -95,6 +98,35 @@ class StripeAPI:
             return file
         except Exception as e:
             logger.error(f"Error uploading file from {image_url}: {e}")
+            raise
+
+    def process_image(self, image_data: bytes) -> bytes:
+        """
+        Process image data and return the processed image bytes
+        
+        Arguments:
+            image_data (bytes): The image data to process
+        
+        Returns:
+            bytes: The processed image data
+        
+        Raises:
+            Exception: If there is an error processing the image data
+        """
+        try:
+            with Image.open(BytesIO(image_data)) as img:
+                if img.mode == 'RGBA':
+                    img = img.convert('RGB')
+                width, height = img.size
+                new_size = (int(width * self.resolution_factor), int(height * self.resolution_factor))
+                resized_img = img.resize(new_size, Image.ANTIALIAS)
+                buffer = BytesIO()
+                resized_img.save(buffer, format="JPEG")
+                processed_img_data = buffer.getvalue()
+            logger.info("Processed image data")
+            return processed_img_data
+        except Exception as e:
+            logger.error(f"Error processing image data: {e}")
             raise
 
     def create_file_link(self, file_id: str) -> stripe.FileLink:
