@@ -15,8 +15,6 @@ from src.artapi.config import STRIPE_SECRET_KEY
 from src.artapi.stripe_connector import StripeAPI
 import time
 from datetime import datetime, timezone
-import pandas as pd
-from typing import Dict, Set, Tuple
 from functools import lru_cache
 
 class CachedData:
