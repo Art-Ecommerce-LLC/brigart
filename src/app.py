@@ -85,8 +85,8 @@ async def homepage(request: Request, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Homepage accessed by: {request.client.host}")
     try:
         context = {
-            "art_uris": noco_db.get_artwork_data().data_uris,
-            "art_titles": noco_db.get_artwork_data().titles,
+            "art_uris": noco_db.get_artwork_data_with_cache().data_uris,
+            "art_titles": noco_db.get_artwork_data_with_cache().titles,
             "brig_logo": noco_db.get_icon_uri_from_title("brig_logo"),
             "version": noco_db.get_version()
         }
@@ -206,8 +206,8 @@ async def shop_art(request: Request, sessionid: str, noco_db: Noco = Depends(get
             return RedirectResponse(url="/shop_art_menu")       
                          
         img_quant_list = noco_db.get_cookie_from_session_id(sessionid)
-        art_uris = noco_db.get_artwork_data().data_uris
-        titles = noco_db.get_artwork_data().titles
+        art_uris = noco_db.get_artwork_data_with_cache().data_uris
+        titles = noco_db.get_artwork_data_with_cache().titles
         # Check if the title is in the cart if so, get the image url
         img_data_list = []
         for item in img_quant_list: 
@@ -238,9 +238,9 @@ async def shop_art_menu(request: Request, noco_db: Noco = Depends(get_noco_db)):
     try:
         
         context = {
-            "art_uris":noco_db.get_artwork_data().data_uris,
-            "titles": noco_db.get_artwork_data().titles,
-            "price_list": noco_db.get_artwork_data().prices,
+            "art_uris":noco_db.get_artwork_data_with_cache().data_uris,
+            "titles": noco_db.get_artwork_data_with_cache().titles,
+            "price_list": noco_db.get_artwork_data_with_cache().prices,
             "brig_logo": noco_db.get_icon_uri_from_title("brig_logo"),
             "version" : noco_db.get_version()
         }
@@ -255,7 +255,7 @@ async def shop_giclee_prints(request: Request, noco_db: Noco = Depends(get_noco_
     logger.info(f"Giclee prints page accessed by {request.client.host}")
     try:
         context = {
-            "giclee_prints": noco_db.get_artwork_data().data_uris,
+            "giclee_prints": noco_db.get_artwork_data_with_cache().data_uris,
             "brig_logo_url": noco_db.get_icon_uri_from_title("brig_logo"),
             "version": noco_db.get_version()
         }
@@ -373,7 +373,7 @@ async def delete_item(request: Request, title: Title, noco_db: Noco = Depends(ge
     try:
 
         # Get list of artwork titles
-        titles = noco_db.get_artwork_data().titles
+        titles = noco_db.get_artwork_data_with_cache().titles
         if title.title not in titles:
             logger.warning(f"Title {title.title} not found")
             raise HTTPException(status_code=404, detail="Title not found")

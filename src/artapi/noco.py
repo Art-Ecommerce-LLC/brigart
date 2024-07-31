@@ -19,7 +19,8 @@ import pandas as pd
 from typing import Dict, Set, Tuple
 from functools import lru_cache
 
-class PreviousData:
+class CachedData:
+
     def __init__(self):
         self.artwork: Union[ArtObject, None] = None
         self.icon: Union[IconObject, None] = None
@@ -33,14 +34,16 @@ class Noco:
     """
     _instance = None
 
+
     def __init__(self):
         self.headers = {'xc-token': NOCODB_XC_TOKEN}
         self.base_url = NOCODB_PATH
-        self.previous_data = PreviousData()
+        self.previous_data = CachedData()
         self.session = requests.Session()
         self.session.headers.update(self.headers)
         stripe.api_key = STRIPE_SECRET_KEY 
         self.stripe_connector = StripeAPI()
+        self.resolution_factor = 0.8
 
     def __del__(self):
         # Ensure the session is closed when the object is deleted
@@ -195,7 +198,7 @@ class Noco:
                 if img.mode == 'RGBA':
                     img = img.convert('RGB')
                 width, height = img.size
-                new_size = (int(width * 0.8), int(height * 0.8))
+                new_size = (int(width * self.resolution_factor), int(height * self.resolution_factor))
                 resized_img = img.resize(new_size, Image.ANTIALIAS)
                 buffer = BytesIO()
                 resized_img.save(buffer, format="JPEG")
@@ -207,35 +210,79 @@ class Noco:
             logger.error(f"Error converting image data to data URI: {e}")
             raise
     
+    # def get_artwork_data(self) -> ArtObject:
+    #     """
+    #         Get the artwork data from NocoDB
+
+    #         Returns:
+    #             ArtObject: An object containing the artwork data
+            
+    #         Raises:
+    #             Exception: If there is an error getting the artwork data
+    #     """
+    #     try:
+    #         # Do a check to see if there is specific data in the ArtObject that needs to be updated
+    #         logger.info("Getting artwork data")
+    #         old_data = self.get_used_artwork_data_timestamps()
+    #         new_data = self.get_current_artwork_data_timestamps()
+    #         if self.compare_updated_at_timestamps(old_data, new_data):
+    #             # Sync data with new artork data
+    #             self.clear_artwork_data_cache()
+    #             self.previous_data.artwork = self.get_artwork_data_with_cache()
+    #             # Sync stripe products with new artwork data
+    #             # self.sync_stripe_products()
+    #             return self.previous_data.artwork
+    #         else:
+    #             return self.get_artwork_data_with_cache()
+    #     except Exception as e:
+    #         logger.error(f"Error getting artwork data: {e}")
+    #         raise
+    
     @lru_cache(maxsize=200)
-    def get_artwork_data(self) -> ArtObject:
+    def get_artwork_data_with_cache(self) -> ArtObject:
         """
-            Get the artwork data from NocoDB
+            Get the artwork data from NocoDB without caching
 
             Returns:
                 ArtObject: An object containing the artwork data
-            
+
             Raises:
-                Exception: If there is an error getting the artwork data
+                Exception: If there is an error getting the artwork data without cache
         """
         try:
-            # Do a check to see if there is specific data in the ArtObject that needs to be updated
-            if self.previous_data.artwork:
-                old_data = self.previous_data.artwork.updated_ats
-                new_data = self.get_current_artwork_data_timestamps()
-                if self.compare_updated_at_timestamps(old_data, new_data):
-                    # Sync data with new artork data
-                    self.previous_data.artwork = self.get_artwork_data_no_cache()
-                    # Sync stripe products with new artwork data
-                    # self.sync_stripe_products()
-                    return self.previous_data.artwork
-                return self.previous_data.artwork
-            else:
+            if self.compare_timestamps():
                 self.previous_data.artwork = self.get_artwork_data_no_cache()
                 return self.previous_data.artwork
+            return self.previous_data.artwork
         except Exception as e:
-            logger.error(f"Error getting artwork data: {e}")
+            logger.error(f"Error getting artwork data without cache: {e}")
             raise
+
+    def compare_timestamps(self) -> bool:
+        """
+            Compare the timestamps of the current artwork data with the previous artwork data
+
+            Returns:
+                bool: True if the timestamps are different, False otherwise
+        """
+        try:
+            if self.previous_data.artwork is None:
+                self.previous_data.artwork = self.get_artwork_data_no_cache()
+            old_data = self.previous_data.artwork.updated_ats
+            new_data = self.get_artwork_data_no_cache_no_datauri().updated_ats
+            if new_data != old_data:
+                logger.info("Detected change in updated_at timestamps")
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Error comparing timestamps: {e}")
+            raise
+
+    def clear_artwork_data_cache(self):
+        """
+            Clear the cache for artwork data
+        """
+        self.get_artwork_data_with_cache.cache_clear()
     # Stripe sync functions being developed
     # def sync_stripe_products(self):
     #     """
@@ -396,7 +443,7 @@ class Noco:
             
         """
         try:
-            artwork_data = self.get_artwork_data()
+            artwork_data = self.previous_data.artwork
             return artwork_data.updated_ats
         except Exception as e:
             logger.error(f"Error getting updated_at timestamps for artwork data: {e}")

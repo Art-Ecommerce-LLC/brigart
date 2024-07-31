@@ -47,3 +47,7 @@ git-filter-repo.py
 src/artapi/stripetest.py
 
 src/artapi/stripe_secret.py
+
+artstorage/*
+
+sync.py
