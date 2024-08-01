@@ -124,7 +124,7 @@ function toggleMenu() {
     // Toggle the 'show' class to control visibility
 
     // Toggle the mobile menu
-    if (window.innerWidth <= 827) {
+    if (window.innerWidth <= 846) {
         navbar.style.display = 'none';
         mobileMenu.style.display = 'flex';
         document.body.style.overflow = 'auto';

@@ -568,11 +568,16 @@ body {
     }
 }
 
-@media (max-width: 827px) {
+@media (max-width: 862px) {
+    .cart-quantity {
+        font-size: 18px !important;
+    }
+}
+
+@media (max-width: 846px) {
     .cart-quantity-mobile {
         display:inline-block;
         color: white;
-        font-size: 26px;
         padding: 0 1px;
         margin-top: 23px;
         cursor: default;
