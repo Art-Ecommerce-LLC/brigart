@@ -385,4 +385,9 @@ input[type="number"] {
         margin-bottom: 5px;
     }
 
+    .quantity-container {
+        height: 30px;
+        margin-bottom: 5px;
+    }
+
 }
