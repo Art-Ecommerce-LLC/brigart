@@ -24,14 +24,27 @@ async function togglePageLockShop(title) {
     // Lock all buttons on the page
     toggleLockPageLinksButtons(true);
 
+    document.body.style.opacity = '0.5'; // Dim the background
 
+    // Create spinner wrapper
+    const spinnerWrapper = document.createElement('div');
+    spinnerWrapper.classList.add('spinner_wrapper');
 
-    document.body.style.opacity = '0.5';
-    
-    // Add a spinner to indicate loading
+    // Create spinner container
+    const spinnerContainer = document.createElement('div');
+    spinnerContainer.classList.add('spinner_container');
+
+    // Create spinner
     const spinner = document.createElement('div');
     spinner.classList.add('spinner');
-    document.body.appendChild(spinner);
+
+    // Append spinner to container, and container to wrapper
+    spinnerContainer.appendChild(spinner);
+    spinnerWrapper.appendChild(spinnerContainer);
+
+    // Append wrapper to body
+    document.body.appendChild(spinnerWrapper);
+
 
     quantityInputValue = document.getElementById('quantity-input').value;
 
@@ -42,7 +55,7 @@ async function togglePageLockShop(title) {
         // Change the opacity back to 1 once the addToCart function is done
         document.body.style.opacity = '1';
         // Remove the spinner once the addToCart function is done
-        spinner.remove();
+        spinnerWrapper.remove();
         // Unlock all buttons on the page
         toggleLockPageLinksButtons(false);
     }

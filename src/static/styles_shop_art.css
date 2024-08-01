@@ -348,3 +348,42 @@ input[type="number"] {
         justify-content: flex-end;
     }
 }
+
+@media (max-width: 437px) {
+    .title_container p {
+        font-size: 16px;
+    }
+
+    .quantity-controls {
+        font-size: 16px;
+        height: 30px;
+    }
+
+    .price-remove-wrapper {
+        margin-left: 0;
+    }
+
+    .quantity-container button {
+        width: 30px;
+    }
+
+    .quantity-input-wrapper input{
+        font-size: 13px;
+        min-width: 30px;
+    }
+
+    .price-remove-container button {
+        font-size: 14px;
+    }
+    .total {
+        font-size: 18px !important;
+    }
+    h1 {
+        font-size: 25px !important;
+        font-weight: 350;
+    }
+
+    .title_container {
+        margin-bottom: 5px;
+    }
+}

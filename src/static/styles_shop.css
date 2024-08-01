@@ -199,3 +199,9 @@
         height: calc(var(--image-height) * 2);
     }
 }
+@media (max-width: 437px) {
+
+    .title_container h2 {
+        font-size: 29px;
+    }
+}

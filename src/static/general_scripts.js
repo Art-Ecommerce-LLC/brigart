@@ -204,31 +204,44 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 async function togglePageLock(responsePromise) {
-    setButtonsState(true);
-    document.body.style.opacity = '0.5';
+    setButtonsState(true); // Disable buttons
+    document.body.style.opacity = '0.5'; // Dim the background
+
+    // Create spinner wrapper
+    const spinnerWrapper = document.createElement('div');
+    spinnerWrapper.classList.add('spinner_wrapper');
+
+    // Create spinner container
+    const spinnerContainer = document.createElement('div');
+    spinnerContainer.classList.add('spinner_container');
+
+    // Create spinner
     const spinner = document.createElement('div');
     spinner.classList.add('spinner');
-    document.body.appendChild(spinner);
+
+    // Append spinner to container, and container to wrapper
+    spinnerContainer.appendChild(spinner);
+    spinnerWrapper.appendChild(spinnerContainer);
+
+    // Append wrapper to body
+    document.body.appendChild(spinnerWrapper);
 
     try {
         const response = await responsePromise;
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
-        
-        return response
+        return response;
     } finally {
-        // await sleep(2000)
-        // Unlock the buttons and the page
-        
-        document.body.style.opacity = '1';
-        spinner.remove();
+        document.body.style.opacity = '1'; // Restore background opacity
+        spinnerWrapper.remove(); // Remove spinner from DOM
+        setButtonsState(false); // Re-enable buttons
     }
 }
+
 function setButtonsState(disabled) {
-    const buttons = document.querySelectorAll('.increase-quantity, .decrease-quantity, .remove-item'); // Adjust the selector to match your button classes
-    // Can you also disable any links on the page
+    const buttons = document.querySelectorAll('.increase-quantity, .decrease-quantity, .remove-item');
     const links = document.querySelectorAll('a');
-    links.forEach(link => link.disabled = disabled);
+    links.forEach(link => link.style.pointerEvents = disabled ? 'none' : 'auto'); // Disable/enable links
     buttons.forEach(button => button.disabled = disabled);
 }
