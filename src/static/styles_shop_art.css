@@ -88,6 +88,7 @@
 
 .content_cart h1 {
     color: white;
+    font-weight: 350;
 }
 
 .quantity-container {
@@ -337,13 +338,15 @@ input[type="number"] {
         margin-left: 0;
         width: 100%;
     }
-
     .quantity-control-wrapper {
         justify-content: flex-start;
     }
 
     .remove-item-wrapper {
         justify-content: flex-end;
+    }
+    .info_container {
+        padding-bottom: 3px;
     }
 }
 
@@ -378,7 +381,7 @@ input[type="number"] {
     }
     h1 {
         font-size: 25px !important;
-        font-weight: 350;
+        
     }
 
     .title_container {
@@ -388,6 +391,9 @@ input[type="number"] {
     .quantity-container {
         height: 30px;
         margin-bottom: 5px;
+    }
+    .info_container {
+        padding-bottom: 0px;
     }
 
 }
