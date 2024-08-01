@@ -203,4 +203,7 @@
     .title_container h2 {
         font-size: 29px;
     }
+    .info_container h3 {
+        font-size: 21px !important;
+    }
 }

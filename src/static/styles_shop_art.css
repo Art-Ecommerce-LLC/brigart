@@ -94,8 +94,6 @@
     display: flex;
     flex-direction: row;
     color: white;
-    margin-top: 5px;
-    margin-bottom: 5px;
     height: 40px;
     width: calc(100% - var(--image-width) - var(--title-container-width) - var(--image-container-margin-right));
 }
@@ -386,4 +384,5 @@ input[type="number"] {
     .title_container {
         margin-bottom: 5px;
     }
+
 }
