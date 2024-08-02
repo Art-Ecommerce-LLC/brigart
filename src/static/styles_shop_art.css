@@ -88,14 +88,13 @@
 
 .content_cart h1 {
     color: white;
+    font-weight: 350;
 }
 
 .quantity-container {
     display: flex;
     flex-direction: row;
     color: white;
-    margin-top: 5px;
-    margin-bottom: 5px;
     height: 40px;
     width: calc(100% - var(--image-width) - var(--title-container-width) - var(--image-container-margin-right));
 }
@@ -345,7 +344,6 @@ input[type="number"] {
         margin-left: 0;
         width: 100%;
     }
-
     .quantity-control-wrapper {
         justify-content: flex-start;
     }
@@ -391,10 +389,19 @@ input[type="number"] {
     }
     h1 {
         font-size: 25px !important;
-        font-weight: 350;
+        
     }
 
     .title_container {
         margin-bottom: 5px;
     }
+
+    .quantity-container {
+        height: 30px;
+        margin-bottom: 5px;
+    }
+    .info_container {
+        padding-bottom: 0px;
+    }
+
 }

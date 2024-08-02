@@ -23,6 +23,8 @@ The purpose of this project is to create a professional platform for the artist,
 - Migration of Pillow dependency to something more secure for artist portal creation
 - Create portal where artist can set up there own website instances with ease, connect there accounts with Stripe Connect
 - Add feature to portal that allows artists to easily change art, prices and titles on there instance
+- Implement cookie payload caching similar to artwork caching to optimize speed
+- Test singelton PostgreSQL connection on site speed and functionality to see if it is faster than singelton API connection to NocoDB
 
 ## Requirements
 - Git
