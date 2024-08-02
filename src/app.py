@@ -511,6 +511,9 @@ async def get_session_time(request: Request, noco_db: Noco = Depends(get_noco_db
 
     try:
         session_creation_time_str = noco_db.get_cookie_session_begginging_time(session_id)
+        if session_creation_time_str == "":
+            return JSONResponse({"remaining_time": 0})
+
         session_creation_time = datetime.fromisoformat(session_creation_time_str.replace('Z', '+00:00'))  # Convert to datetime object
         current_time = datetime.now(timezone.utc)
         elapsed_time = (current_time - session_creation_time).total_seconds()

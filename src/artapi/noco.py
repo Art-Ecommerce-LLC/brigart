@@ -885,6 +885,10 @@ class Noco:
             index = cookie_data.sessionids.index(sessionid)
             logger.info(f"Fetched session beginning time for session ID {sessionid}")
             return cookie_data.created_ats[index]
+        # Write exception for session id not being in list
+        except ValueError:
+            logger.error(f"Session ID {sessionid} not found")
+            return ""
         except Exception as e:
             logger.error(f"Error getting session beginning time for session ID {sessionid}: {e}")
             raise
