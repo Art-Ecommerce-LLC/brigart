@@ -134,7 +134,7 @@ function removeErrorMessage() {
 }
 function removeMaxQuantityErrorMessage() {
     // Check if there is an existing error message element for maximum quantity
-    const errorMessage = document.querySelector('.error-message');
+    const errorMessage = document.querySelector('.error-msg');
     if (errorMessage) {
         // Remove the error message
         errorMessage.remove();
@@ -150,11 +150,11 @@ function displayTotalQuantityError(message) {
     errorMessageElement.innerText = message;
     errorMessageElement.classList.add('error-msg');
 
-    // Get the parent element of the total price element
-    const totalElement = document.querySelector('.total');
+    // Get the parent element of the checkout button
+    const checkoutButton = document.querySelector('.checkout-btn');
 
-    // Insert the error message before the total price element
-    totalElement.parentNode.insertBefore(errorMessageElement, totalElement);
+    // Insert the error message before the checkout button
+    checkoutButton.parentNode.insertBefore(errorMessageElement, checkoutButton);
 
     // Scroll to the new message element
     errorMessageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
