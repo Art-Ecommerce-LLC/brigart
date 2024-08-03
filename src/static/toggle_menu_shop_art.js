@@ -140,6 +140,7 @@ function removeMaxQuantityErrorMessage() {
         errorMessage.remove();
     }
 }
+// Put element after price and before the checkout btn, format correctly
 function displayTotalQuantityError(message) {
     // Remove any existing error message
     removeErrorMessage();

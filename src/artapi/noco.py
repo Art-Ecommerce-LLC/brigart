@@ -270,6 +270,19 @@ class Noco:
             logger.error(f"Error comparing timestamps: {e}")
             raise
 
+    def pull_single_key_record(self) -> dict:
+        """
+            Pull a single key record using the functions from the Noco class
+        """
+        try:
+            # get Id = 1 from key record
+            key_data_1 = self.get_nocodb_table_data_record(NOCODB_TABLE_MAP.key_table, 1)
+            logger.info("Pulled single key record since connection was restored")
+            return key_data_1
+        except Exception as e:
+            logger.error(f"Failed to pull single key record: {e}")
+            raise
+    
     def get_artwork_data_no_cache(self) -> ArtObject:
         """
         Get the artwork data from NocoDB without caching.

@@ -61,6 +61,7 @@
 .title_container h2 {
     font-size: 50px;
     margin: 0;
+    font-weight: 460;
     text-align: left;
 }
 .info_container p {
@@ -74,7 +75,7 @@
 
 .info_container h3 {
     font-size: 40px;
-    font-weight: none;
+    font-weight: 350;
     margin-top: 0px;
     margin-bottom: 0px;
 }
@@ -126,6 +127,7 @@
     display: flex;
     justify-content: center;
     transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+    font-weight: 350 !important;
 }
 
 .add-to-cart-btn:hover,

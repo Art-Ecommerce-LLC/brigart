@@ -28,7 +28,7 @@ class NocoDBManager:
         Perform a simple query to test if the connection is valid.
         """
         # Example test query - adjust according to your actual use case
-        noco_instance.get_cookie_data()
+        noco_instance.pull_single_key_record()
 
     def _handle_connection_error(self):
         """
@@ -50,11 +50,10 @@ class NocoDBManager:
         Ensure that the NocoDB session is valid. If not, recreate the NocoDB instance.
         """
         try:
-            # Example of testing the session validity
-            self.noco_db.get_cookie_data()
-        except ConnectionError:
-            logger.error("Session invalid. Reconnecting...")
-            self._handle_connection_error()
+            self.noco_db.pull_single_key_record()   
+        except Exception as e:
+            logger.error(f"Session is invalid: {e}")
+            self._handle_connection_error() 
 
     def get_noco_db(self):
         """

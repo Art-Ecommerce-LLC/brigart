@@ -31,11 +31,10 @@ desc = "Backend platform for BRIG ART"
 if OPENAPI_URL == "None":
     OPENAPI_URL = None
 
-noco_db = get_noco_db()
-
 async def delete_expired_sessions_task():
     while True:
         try:
+            noco_db = get_noco_db()
             await noco_db.delete_expired_sessions()
         except Exception as e:
             logger.error(f"Error in lifespan: {e}")
