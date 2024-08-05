@@ -21,10 +21,11 @@ NOCODB_PRODUCT_MAP_TABLE = os.getenv("nocodb_product_map_table")
 
 STRIPE_SECRET_KEY = os.getenv("stripe_secret_key")
 
-
-ORIGIN = os.getenv("origin")
-HOST = os.getenv("host")
-WEBSOCKET = os.getenv("websocket")
+DEVELOPMENT_ORIGINS = os.getenv("development_origins")
+PRODUCTION_ORIGINS = os.getenv("production_origins")
+DEVELOPMENT_HOSTS = os.getenv("development_hosts")
+PRODUCTION_HOSTS = os.getenv("production_hosts")
+ENVIORNMENT = os.getenv("enviornment")
 
 # Create an instance of TableMap
 NOCODB_TABLE_MAP = TableMap(
@@ -35,5 +36,4 @@ NOCODB_TABLE_MAP = TableMap(
     product_map_table =NOCODB_PRODUCT_MAP_TABLE
 )
 
-
-
+CSP_POLICY = os.getenv("csp_policy")

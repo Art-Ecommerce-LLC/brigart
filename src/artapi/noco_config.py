@@ -1,7 +1,7 @@
 import os
-from src.artapi.noco import Noco
+from src.artapi.nocodb_connector import get_noco_db
 
-noco_db = Noco()
+noco_db = get_noco_db()
 
 key_data = noco_db.get_key_data()
 
