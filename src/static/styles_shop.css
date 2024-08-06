@@ -87,6 +87,18 @@
     margin-bottom:17px;
 }
 
+.page_location_wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+    
+}
+
+.page_location_container {
+    margin: auto;
+}
+
 .quantity-btn-left, .quantity-btn-right {
     width: 30px;
     height: 30px;
