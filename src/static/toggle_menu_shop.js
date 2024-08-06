@@ -124,6 +124,10 @@ async function addToCart(title, quantityInputValue) {
 
     try {
         const cart_quantity = await submitPostForm(quantityInputValue, title);
+        
+        if (cart_quantity === null) {
+            return; // Stop the flow if the error occurred in submitPostForm
+        }
 
         const messageDiv = document.querySelector('.message-container1');
         const messageDiv2 = document.querySelector('.message-container2');
@@ -217,7 +221,6 @@ function removeErrorMessage() {
 
 
 async function submitPostForm(quantity, title) {
-
     const requestData = {
         quantity: parseInt(quantity, 10), // Ensure quantity is an integer
         title: title
@@ -231,18 +234,54 @@ async function submitPostForm(quantity, title) {
             body: JSON.stringify(requestData)
         });
 
+        if (response.status === 405) {
+            displayTooManyItemsError();
+            return null; // Return null to indicate that the error occurred
+        }
+
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
+        
         const quantityData = await response.json();
         const cart_quantity = quantityData.quantity;
         return cart_quantity;
     } catch (error) {
         console.error('Error:', error);
-        // Display an error message to the user if needed
+        // Display a generic error message if needed
         displayTotalQuantityErrorMessage();
+        return null; // Return null to indicate that an error occurred
     }
 }
+
+// Write error message function for too many items in cart
+function displayTooManyItemsError() {
+    // Remove any existing error message
+    removeErrorMessage();
+
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message-container2'); // Add a class for styling
+
+    // Create the message element
+    const messageContainer = document.createElement('p');
+    messageContainer.textContent = 'You can only add up to 20 items in the cart.';
+    messageContainer.classList.add('error-msg'); // Add the specified CSS class
+
+    // Make the message appear between the quantity box div with id quantityBox and form id myForm
+    const quantityBox = document.getElementById('quantityBox');
+    const form = document.getElementById('myForm');
+    quantityBox.parentNode.insertBefore(messageDiv, form);
+
+    // Append the message to the message container div
+    messageDiv.appendChild(messageContainer);
+
+    // Set the flag to true to indicate that the message has been added
+    messageAdded2 = true;
+
+    // Store the error message element in the global variable
+    errorMessageElement = messageDiv;
+}
+
 
 //Create a second toggle for the mobile menu to be a dropdown menu when hamburger icon is clicked
 function toggleDropdown() {

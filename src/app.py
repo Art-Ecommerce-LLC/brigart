@@ -169,6 +169,8 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity, noco_db:
             return JSONResponse({"quantity": title_quantity.quantity})
         
 
+
+
         session_id = request.session.get("session_id")
         img_quant_list = noco_db.get_cookie_from_session_id(session_id)
 
@@ -188,7 +190,12 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity, noco_db:
                 noco_db.patch_cookies_data(data)
                 logger.info(f"Updated quantity for {title_quantity.title}, new quantity: {total_quantity}")
                 return JSONResponse({"quantity": total_quantity})
-            
+
+        max_items = len(img_quant_list) + 1
+        if max_items > 20:
+            logger.warning(f"Max items in cart reached: {max_items}")
+            raise ValueError("Max items in cart reached")
+
         img_quant_list.append(img_quant_dict)
         cookiesJson = {
             "img_quantity_list": img_quant_list
@@ -210,6 +217,10 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity, noco_db:
         total_quantity = sum(int(item["quantity"]) for item in img_quant_list)
         logger.info(f"Total cart quantity: {total_quantity}")
         return JSONResponse({"quantity": total_quantity})
+
+    except ValueError as e:
+        logger.error(f"Error in shop_art_url: {e}")
+        raise HTTPException(status_code=405, detail="Max items in cart reached")
 
     except Exception as e:
         logger.error(f"Error in shop_art_url: {e}")
