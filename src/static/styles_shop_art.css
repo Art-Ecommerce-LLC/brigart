@@ -367,7 +367,7 @@ input[type="number"] {
     }
 }
 
-@media (max-width: 381px) {
+@media (max-width: 398px) {
     .title_container p {
         font-size: 16px;
     }
