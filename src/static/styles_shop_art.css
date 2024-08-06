@@ -349,6 +349,10 @@ input[type="number"] {
         width: 100%;
     }
 
+    .info_container {
+        padding-bottom: 0;
+    }
+
     .quantity-controls {
         margin-left: 0;
         width: 100%;
@@ -411,7 +415,6 @@ input[type="number"] {
 
     .quantity-container {
         height: 30px;
-        margin-bottom: 5px;
     }
     .info_container {
         padding-bottom: 0px;
