@@ -186,6 +186,13 @@
         margin-left: 0;
         margin-right: 0;
     }
+    .title_container h2 {
+        margin-top: 20px;
+        font-size: 25px;
+    }
+    .info_container h3 {
+        font-size: 23px;
+    }
 }
 
 @media (min-width: 812px) {
@@ -214,12 +221,10 @@
         width: calc((var(--image-width) * 2) - 90px);
         height: calc(var(--image-height) * 2);
     }
+
 }
 @media (max-width: 437px) {
 
-    .title_container h2 {
-        font-size: 29px;
-    }
     .info_container h3 {
         font-size: 21px !important;
     }
