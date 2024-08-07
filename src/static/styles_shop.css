@@ -92,7 +92,10 @@
     justify-content: center;
     align-items: center;
     margin-top: 20px;
-    
+}
+
+.page_location_wrapper.hide {
+    display: none;
 }
 
 .page_location_container {
