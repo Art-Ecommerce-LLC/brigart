@@ -234,16 +234,15 @@ async function submitPostForm(quantity, title) {
             body: JSON.stringify(requestData)
         });
 
-        if (response.status === 405) {
-            displayTooManyItemsError();
-            return null; // Return null to indicate that the error occurred
-        }
-
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
         
         const quantityData = await response.json();
+        if (quantityData.quantity === "Max items in cart reached") {
+            displayTooManyItemsError();
+            return null; // Return null to indicate that the error occurred
+        }
         const cart_quantity = quantityData.quantity;
         return cart_quantity;
     } catch (error) {

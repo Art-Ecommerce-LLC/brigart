@@ -8,7 +8,8 @@ from fastapi.responses import (
 )
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-import os
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from src.artapi.config import STRIPE_SECRET_KEY, NOCODB_PATH
 from src.artapi.logger import logger
 from src.artapi.middleware import add_middleware, limiter
@@ -80,24 +81,20 @@ templates = Jinja2Templates(directory=templates_dir)
 
 
 
-@app.exception_handler(HTTPException)
-async def custom_http_exception_handler(request: Request, exc: HTTPException):
-    if exc.status_code == 500:
-        logger.error(f"Internal server error: {exc.detail}")
-        return templates.TemplateResponse("error_500.html", {"request": request}, status_code=500)
-    if exc.status_code == 401:
-        logger.warning(f"Unauthorized access: {exc.detail}")
-        return templates.TemplateResponse("error_500.html", {"request": request}, status_code=401)
-    if exc.status_code == 400:
-        logger.warning(f"Bad request: {exc.detail}")
-        return templates.TemplateResponse("error_500.html", {"request": request}, status_code=400)
-    if exc.status_code == 405:
-        logger.warning(f"Page not found: {exc.detail}")
-        return templates.TemplateResponse("error_500.html", {"request": request}, status_code=405)
-    if exc.status_code == 404:
-        logger.warning(f"Page not found: {exc.detail}")
-        return templates.TemplateResponse("error_405.html", {"request": request}, status_code=404)
-    return HTMLResponse(content=str(exc.detail), status_code=exc.status_code)
+@app.exception_handler(StarletteHTTPException)
+async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
+    logger.warning(f"HTTP Exception: {exc.detail}")
+    return templates.TemplateResponse("error_500.html", {"request": request}, status_code=exc.status_code)
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.warning(f"Validation Error: {exc.errors()}")
+    return templates.TemplateResponse("error_500.html", {"request": request}, status_code=400)
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled Exception: {exc}")
+    return templates.TemplateResponse("error_500.html", {"request": request}, status_code=500)
 
 @app.get("/", response_class=HTMLResponse)
 @limiter.limit("100/minute")
@@ -194,7 +191,7 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity, noco_db:
         max_items = len(img_quant_list) + 1
         if max_items > 20:
             logger.warning(f"Max items in cart reached: {max_items}")
-            raise ValueError("Max items in cart reached")
+            return JSONResponse({"quantity": "Max items in cart reached"})
 
         img_quant_list.append(img_quant_dict)
         cookiesJson = {
@@ -217,10 +214,6 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity, noco_db:
         total_quantity = sum(int(item["quantity"]) for item in img_quant_list)
         logger.info(f"Total cart quantity: {total_quantity}")
         return JSONResponse({"quantity": total_quantity})
-
-    except ValueError as e:
-        logger.error(f"Error in shop_art_url: {e}")
-        raise HTTPException(status_code=405, detail="Max items in cart reached")
 
     except Exception as e:
         logger.error(f"Error in shop_art_url: {e}")
@@ -301,9 +294,12 @@ async def post_total_price(request: Request, total_price: TotalPrice, noco_db: N
         cookie_price_total = sum(int(item["price"]) for item in img_quant_list)
         if cookie_price_total == total_price.totalPrice:
             return JSONResponse({"totalPrice": total_price.totalPrice})
+        # Explore this later, if you can get rid of the HTTPException and simulate this error, return a value
         else:
             logger.warning(f"Total price {total_price} does not match {cookie_price_total}")
-            raise HTTPException(status_code=400, detail="Total price does not match")
+            # Return a valid price to prevent the user from changing the price
+            return JSONResponse({"totalPrice": cookie_price_total})
+            # raise HTTPException(status_code=400, detail="Total price does not match")
         
     except Exception as e:
         logger.error(f"Error in post_total_price: {e}")
