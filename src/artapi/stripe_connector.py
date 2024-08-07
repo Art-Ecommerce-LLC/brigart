@@ -1,5 +1,5 @@
 from src.artapi.config import STRIPE_SECRET_KEY
-from src.artapi.logger import logger
+from src.artapi.logger_setup import logger
 import stripe
 import tempfile
 import requests

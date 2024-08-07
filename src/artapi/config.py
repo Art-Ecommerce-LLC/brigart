@@ -18,6 +18,7 @@ NOCODB_IMG_TABLE = os.getenv("nocodb_img_table")
 NOCODB_ICON_TABLE = os.getenv("nocodb_icon_table")
 NOCODB_COOKIES_TABLE = os.getenv("nocodb_cookies_table")
 NOCODB_PRODUCT_MAP_TABLE = os.getenv("nocodb_product_map_table")
+NOCODB_ERROR_TABLE = os.getenv("nocodb_error_table")
 
 STRIPE_SECRET_KEY = os.getenv("stripe_secret_key")
 
@@ -33,7 +34,8 @@ NOCODB_TABLE_MAP = TableMap(
     icon_table=NOCODB_ICON_TABLE,
     key_table=NOCODB_KEY_TABLE,
     cookies_table=NOCODB_COOKIES_TABLE,
-    product_map_table =NOCODB_PRODUCT_MAP_TABLE
+    product_map_table =NOCODB_PRODUCT_MAP_TABLE,
+    error_table = NOCODB_ERROR_TABLE
 )
 
 CSP_POLICY = os.getenv("csp_policy")

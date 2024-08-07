@@ -74,6 +74,15 @@ class ProductMapObject:
     created_ats: List[str] = None
     updated_ats: List[str] = None
 
+@dataclass()
+class ErrorObject:
+    Id: List[int]
+    error: List[dict] = None
+    ticket_assignment: List[str] = None
+    status: List[str] = None
+    created_ats: List[str] = None
+    updated_ats: List[str] = None
+    
 @dataclass
 class TableMap:
     img_table: str
@@ -81,3 +90,6 @@ class TableMap:
     key_table: str
     cookies_table: str
     product_map_table: str
+    error_table: str
+
+
