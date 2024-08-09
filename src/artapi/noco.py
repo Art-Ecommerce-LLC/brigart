@@ -1,21 +1,21 @@
 import base64
 import requests
 from src.artapi.config import (
-    NOCODB_XC_TOKEN, NOCODB_PATH, NOCODB_TABLE_MAP, STRIPE_SECRET_KEY
+    NOCODB_XC_TOKEN, NOCODB_PATH, NOCODB_TABLE_MAP
 )
 from src.artapi.models import (
     ArtObject, IconObject, KeyObject, CookieObject, ProductMapObject
 )
+from src.artapi.logger import logger
 from PIL import Image
 from io import BytesIO
 from typing import Union
 import stripe
+from src.artapi.config import STRIPE_SECRET_KEY
 from src.artapi.stripe_connector import StripeAPI
 import time
 from datetime import datetime, timezone
 from functools import lru_cache
-import asyncio
-from src.artapi.logger_setup import logger
 
 class CachedData:
 
@@ -24,6 +24,7 @@ class CachedData:
         self.icon: Union[IconObject, None] = None
         self.key: Union[KeyObject, None] = None
         self.cookie: Union[CookieObject, None] = None
+        self.product_map: Union[ProductMapObject, None] = None
 
 class Noco:
     """
@@ -275,7 +276,7 @@ class Noco:
         """
         try:
             # get Id = 1 from key record
-            key_data_1 = self.get_nocodb_table_data_record(NOCODB_TABLE_MAP.key_table, 6)
+            key_data_1 = self.get_nocodb_table_data_record(NOCODB_TABLE_MAP.key_table, 1)
             logger.info("Pulled single key record since connection was restored")
             return key_data_1
         except Exception as e:
@@ -337,6 +338,82 @@ class Noco:
         except Exception as e:
             logger.error(f"Error getting artwork data without cache and without data URIs: {e}")
             raise
+
+    def get_product_id_from_title(self, title: str, product_map_data: ProductMapObject) -> Union[str, None]:
+        """
+            Get the product ID from the title
+
+            Arguments:
+                title (str): The title of the product
+                product_map_data (ProductMapObject): The product map data
+            
+            Returns:
+                str: The product ID for the title
+        """
+        try:
+            index = product_map_data.noco_product_Ids.index(self.get_artwork_Id_from_title(title))
+            logger.info(f"Fetched product ID for title {title}")
+            return product_map_data.stripe_product_ids[index]
+        except ValueError:
+            logger.error(f"Product with title {title} not found")
+            return None
+        
+    # def sync_stripe_product(self, product_id: str, title: str, price: str):
+    #     """
+    #         Sync a stripe product with the artwork data
+
+    #         Arguments:
+    #             product_id (str): The product ID to sync
+    #             title (str): The title of the product
+    #             price (str): The price of the product
+    #     """
+    #     try:
+    #         stripe_product = self.stripe_connector.retrieve_product(product_id)
+    #         stripe_price = self.stripe_connector.retrieve_price(stripe_product['prices']['data'][0]['id'])
+    #         if str(stripe_price['unit_amount']) != price:
+    #             self.stripe_connector.update_price(stripe_price['id'], price)
+    #         if stripe_product['name'] != title:
+    #             self.stripe_connector.update_product(product_id, title)
+    #         if not stripe_product['active']:
+    #             self.stripe_connector.unarchive_product(product_id)
+    #         if not stripe_price['active']:
+    #             self.stripe_connector.unarchive_price(stripe_price['id'])
+    #         stripe_image_url = stripe_product['images'][0]
+    #         stripe_image_to_uri = self.convert_to_data_uri(requests.get(stripe_image_url).content)
+    #         if stripe_image_to_uri != self.get_art_uri_from_title(title):
+    #             self.stripe_connector.update_product_image(product_id, f"{NOCODB_PATH}/{self.get_art_uri_from_title(title)}")
+    #     except Exception as e:
+    #         logger.error(f"Error syncing stripe product {product_id}: {e}")
+    #         raise
+
+
+
+    def get_product_map_data_no_cache(self) -> ProductMapObject:
+        """
+            Get the product map data from NocoDB
+
+            Returns:
+                ProductMapObject: An object containing the product map data
+
+            Raises:
+                Exception: If there is an error getting the product map data
+        """
+        try:
+            data = self.get_nocodb_table_data(NOCODB_TABLE_MAP.product_map_table)
+            product_map_data = ProductMapObject(
+                Id=[item['Id'] for item in data['list']],
+                noco_product_Ids=[item['noco_product_Id'] for item in data['list']],
+                stripe_product_ids=[item['stripe_product_id'] for item in data['list']],
+                created_ats=[item['CreatedAt'] for item in data['list']],
+                updated_ats=[item['UpdatedAt'] for item in data['list']]
+            )
+            logger.info("Fetched and parsed product map data from NocoDB")
+            return product_map_data
+        except Exception as e:
+            logger.error(f"Error getting product map data: {e}")
+            raise
+
+  
 
     def get_used_artwork_data_timestamps(self) -> list:
         """
@@ -617,6 +694,7 @@ class Noco:
             logger.info(f"Fetched full cookie for session ID {session_id}")
             return cookie_data.cookies[index]
         except ValueError:
+            logger.error(f"Session ID {session_id} not found")
             return {}
 
     def get_cookie_from_session_id(self, session_id: str) -> list:
@@ -639,6 +717,7 @@ class Noco:
             logger.info(f"Fetched cookie for session ID {session_id}")
             return img_quant_list
         except ValueError:
+            logger.error(f"Session ID {session_id} not found")
             return []
 
     def delete_session_cookie(self, session_id: str) -> None:
@@ -821,6 +900,7 @@ class Noco:
             return cookie_data.created_ats[index]
         # Write exception for session id not being in list
         except ValueError:
+            logger.error(f"Session ID {sessionid} not found")
             return ""
         except Exception as e:
             logger.error(f"Error getting session beginning time for session ID {sessionid}: {e}")
@@ -851,30 +931,3 @@ class Noco:
                     logger.info(f"Deleted expired session {session_id}")
         except Exception as e:
             logger.error(f"Error deleting expired sessions: {e}")
-
-    async def delete_expired_sessions_task(self):
-        """
-        Task to delete expired sessions every 15 minutes
-        """
-        while True:
-            try:
-                await self.delete_expired_sessions()
-            except Exception as e:
-                logger.error(f"Error in lifespan: {e}")
-            await asyncio.sleep(60)
-
-
-    def post_error_message(self, error: dict) -> None:
-        """
-        Post an error message to the error table
-
-        Arguments:
-            error (str): The error message to post
-        """
-        try:
-            self.post_nocodb_table_data(NOCODB_TABLE_MAP.error_table, error)
-            logger.info("Posted error message")
-        except Exception as e:
-            logger.error(f"Error posting error message: {e}")
-            raise
-            

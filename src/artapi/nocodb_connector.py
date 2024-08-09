@@ -1,7 +1,7 @@
 import time
 from src.artapi.noco import Noco
 from requests.exceptions import ConnectionError
-from src.artapi.logger_setup import logger
+from src.artapi.logger import logger
 
 class NocoDBManager:
     MAX_RETRIES = 3

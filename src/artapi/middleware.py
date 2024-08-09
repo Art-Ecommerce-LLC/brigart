@@ -15,7 +15,7 @@ from slowapi.errors import RateLimitExceeded
 from src.artapi.noco_config import MIDDLEWARE_STRING
 from src.artapi.config import DEVELOPMENT_ORIGINS, PRODUCTION_ORIGINS, ENVIORNMENT, CSP_POLICY, DEVELOPMENT_HOSTS, PRODUCTION_HOSTS
 
-from src.artapi.logger_setup import logger # Import the custom logger
+from src.artapi.logger import logger # Import the custom logger
 
 # Initialize the Limiter
 limiter = Limiter(key_func=get_remote_address)

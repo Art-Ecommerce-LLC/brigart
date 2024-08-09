@@ -91,7 +91,6 @@ function toggleDropdown() {
     dropdown.classList.toggle('show');
     content.classList.toggle('hide');
     footer.classList.toggle('hide');
-    pageLocationWrapper.classList.toggle('hide');
     if (pageLocationWrapper) {
         pageLocationWrapper.classList.toggle('hide');
     }

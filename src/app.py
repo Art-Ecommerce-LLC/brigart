@@ -11,8 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from src.artapi.config import STRIPE_SECRET_KEY, NOCODB_PATH
-from src.artapi.logger_setup import logger
-from src.artapi.error_logging import ErrorLogger
+from src.artapi.logger import logger
 from src.artapi.middleware import add_middleware, limiter
 from src.artapi.models import (
     Title, TitleQuantity, TotalPrice
@@ -33,18 +32,19 @@ desc = "Backend platform for BRIG ART"
 if OPENAPI_URL == "None":
     OPENAPI_URL = None
 
-# Add ErrorLogger handler
-error_logger = ErrorLogger()
-error_logger.setFormatter(logger.handlers[0].formatter)
-logger.addHandler(error_logger)
-
-# Your application code
-logger.info("Application started")
-    
+async def delete_expired_sessions_task():
+    while True:
+        try:
+            noco_db = get_noco_db()
+            await noco_db.delete_expired_sessions()
+        except Exception as e:
+            logger.error(f"Error in lifespan: {e}")
+        await asyncio.sleep(60)
+        
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    noco_db = get_noco_db()
-    task = asyncio.create_task(noco_db.delete_expired_sessions_task())
+      # Create an instance of Noco
+    task = asyncio.create_task(delete_expired_sessions_task())
     yield
     task.cancel()
     try:
@@ -59,6 +59,8 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+stripe.api_key = STRIPE_SECRET_KEY
+
 # Middleware
 add_middleware(app)
 
@@ -71,8 +73,13 @@ script_dir = os.path.dirname(script_path)
 # Static files and templates
 static_dir = os.path.join(script_dir, "static")
 templates_dir = os.path.join(script_dir, "templates")
+
+
+# Static files and templates
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 templates = Jinja2Templates(directory=templates_dir)
+
+
 
 @app.exception_handler(StarletteHTTPException)
 async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
@@ -193,6 +200,7 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity, noco_db:
         cookie_id = noco_db.get_cookie_Id_from_session_id(session_id)
 
         if cookie_id == "" :
+            logger.warning("Cookie could not be found for the session id")
             noco_db.post_cookie_session_id_and_cookies(session_id, cookiesJson)
             return JSONResponse({"quantity": title_quantity.quantity})
 
@@ -217,6 +225,7 @@ async def shop_art(request: Request, sessionid: str, noco_db: Noco = Depends(get
     logger.info(f"Shop art page accessed by {request.client.host}")
     try:
         if request.session.get("session_id") != sessionid:
+            logger.warning(f"Session ID does not match {request.client.host}")
             return RedirectResponse(url="/shop_art_menu")       
                          
         img_quant_list = noco_db.get_cookie_from_session_id(sessionid)
@@ -285,9 +294,13 @@ async def post_total_price(request: Request, total_price: TotalPrice, noco_db: N
         cookie_price_total = sum(int(item["price"]) for item in img_quant_list)
         if cookie_price_total == total_price.totalPrice:
             return JSONResponse({"totalPrice": total_price.totalPrice})
+        # Explore this later, if you can get rid of the HTTPException and simulate this error, return a value
         else:
-            # Return cookie price since was already validated
+            logger.warning(f"Total price {total_price} does not match {cookie_price_total}")
+            # Return a valid price to prevent the user from changing the price
             return JSONResponse({"totalPrice": cookie_price_total})
+            # raise HTTPException(status_code=400, detail="Total price does not match")
+        
     except Exception as e:
         logger.error(f"Error in post_total_price: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -531,6 +544,7 @@ async def shop_checkout(request: Request, sessionid: str, noco_db: Noco = Depend
     logger.info(f"Checkout page accessed by {request.client.host}")
     try:
         if request.session.get("session_id") != sessionid:
+            logger.warning(f"Session ID does not match {request.client.host}")
             return RedirectResponse(url="/shop_art_menu")
         
         img_quant_list = noco_db.get_cookie_from_session_id(sessionid)
