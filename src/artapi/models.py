@@ -3,23 +3,10 @@ from pydantic import BaseModel
 from typing import List, Union, Dict, Any
 from dataclasses import dataclass
 
-class Url(BaseModel):
-    url: str
-    title1: str
-
-class UrlQuantity(BaseModel):
-    url: str
-    quantity: Union[int, str]
-    title2: str
 
 class TitleQuantity(BaseModel):
     quantity: Union[int, str]
     title: str
-
-
-class Credentials(BaseModel):
-    username: str
-    password: str
 
 class Title(BaseModel):
     title: str

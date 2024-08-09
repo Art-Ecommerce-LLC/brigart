@@ -53,3 +53,6 @@ artstorage/*
 sync.py
 
 archive_all_products.py
+
+
+sql_src/__pycache__/*
