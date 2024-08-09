@@ -1,0 +1,123 @@
+:root{
+    --image-width: 400px;
+    --image-height: 600px; 
+}
+
+.content {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(calc(var(--image-width) + 50px), 1fr));
+    grid-auto-rows: minmax(calc(var(--image-height)), auto);
+    grid-gap: var(--grid-gap);
+    justify-items: center;
+    padding-top: 20px;
+    padding-left: 70px;
+    padding-right: 70px;
+    padding-bottom: 20px;
+    overflow: hidden;
+    grid-auto-flow: dense; /* Pack items densely */
+    object-fit: contain;
+    justify-content: center;
+    height:100%;
+    text-align: center;
+    /* flex-wrap: wrap; */
+}
+.content a {
+    margin-top: 10px;
+    text-decoration: none !important;
+}
+
+
+
+
+/* Show the content with fade in effect */
+.content.show {
+    transform: translateX(0); 
+}
+.content.hide {
+    display: none;
+}
+
+.artwork {
+    height: var(--image-height);
+    width: var(--image-width);
+    background-size:contain;
+    background-position: center;
+    background-repeat:no-repeat;
+    opacity: 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.5s ease, opacity 0.5s ease;
+    overflow-x: hidden; 
+    object-fit: fill; 
+    -webkit-user-select:none;
+    -webkit-touch-callout:none;
+    user-select: none;
+    /* transform: translateY(100%); */
+}
+.artwork-name {
+    display: block;
+    color: white; /* Ensure the title and price appear on separate lines */
+    font-size: 18px; /* Adjust the font size as needed */
+    margin-bottom: 5px;
+    margin-top:20px;/* Add spacing between title and price */
+    opacity: 0;
+    /* transition: opacity 0.5s ease; */
+    transition: transform 0.5s ease, opacity 0.5s ease;
+    z-index: 1;
+}
+.artwork-price {
+    font-size: 16px; 
+    text-decoration: none !important;
+    color: white;
+    margin-top: 10px;
+    opacity: 0;
+    transition: transform 5s ease, opacity 5s ease;
+    z-index: 1;
+}
+.artwork-wrapper {
+    object-fit: fill;
+    transition-duration: 0.5s;
+}
+
+.artwork-wrapper:hover {
+    transform: scale(1.05);
+    transition: transform 0.3s ease;
+}
+.underline-link {
+    margin-bottom: 20px;
+}
+@keyframes slideInUp {
+    from {
+        transform: translateY(2%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+.fade-in {
+    opacity: 1;
+    animation: slideInUp 1s ease forwards; /* Set opacity to 1 to fade in */ /* Remove bottom offset to fade in from bottom to top */
+}
+
+.artwork:hover {
+    transform: scale(1.04);
+}
+.glance {
+    min-height:10vh;
+}
+
+.glance_inner {
+    margin-left: 5vw;
+    margin-right: 5vw;
+    text-align: top;
+    display: flex;
+    justify-content: center;
+    align-items: top;
+    height: 100%;
+    border-bottom: 1px solid hsla(0, 0%, 39%, .8);
+}
+
+.glance_inner.hide-border {
+    border-bottom: none;
+}

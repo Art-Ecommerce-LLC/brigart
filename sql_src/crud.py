@@ -29,7 +29,6 @@ def get_cookies(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Cookies).offset(skip).limit(limit).all()
 
 # Get by label
-
 def get_icon_by_label(db: Session, img_label: str):
     return db.query(models.Icons).filter(models.Icons.img_label == img_label).first()
 

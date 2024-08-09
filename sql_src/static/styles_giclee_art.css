@@ -1,0 +1,64 @@
+:root {
+    --base-font-size: 25px; /* Set the base font size */
+    --font-size-increase-factor: 0.01; /* Set the factor by which font size increases per pixel */
+    --base-margin-left: 25px;
+    --base-margin-right: 25px; /* Set the base left margin */
+    --margin-left-increase-factor: 0.1; /* Set the factor by which left margin increases per pixel */
+}
+
+.content {
+    flex: 1; /* Make the content flex-grow to take up remaining space */
+    display: flex;
+    flex-direction: column;
+    background-color: #040404;
+    margin-left:25px;
+    margin-right:25px;
+
+}
+
+.content.hide{
+    display: none;
+}
+
+
+.content_cart{
+    margin-left:var(--base-margin-left);
+    margin-right:var(--base-margin-right);
+    text-align:left;
+    color:white;
+    font-size:var(--base-font-size) + 14px;
+}
+
+.content_cart h1{
+    font-size: 50px;
+    min-height: 50px;
+}
+
+.content_cart h2{
+    font-weight: 325;
+    font-size: 26px;
+}
+.content_cart p {
+    font-size: 25px;
+    margin-bottom:100px;
+    max-width: 1300px;
+
+}
+
+
+@media (min-width: 1093px) {
+    .content_cart {
+        font-size: calc(var(--base-font-size) + (var(--font-size-increase-factor) * (100vw - 700px)));
+        margin-left: calc(30px + var(--base-margin-left) + (var(--margin-left-increase-factor) * (100vw - 700px)));
+    }
+    .content_cart h1 {
+        font-size: calc(41px + (var(--font-size-increase-factor) * (100vw - 700px)));
+    }
+    .content_cart h2 {
+        font-size: calc(25px + (var(--font-size-increase-factor) * (100vw - 700px)));
+    }
+    .content_cart p {
+        font-size: calc(19px + (var(--font-size-increase-factor) * (100vw - 700px)));
+    }
+
+}

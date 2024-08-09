@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="UTF-8">
+    <title>Art Showcase - Login</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles_login.css') }}?v={{ version }}">
+    <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
+    <script src="{{ url_for('static', path='/login.js') }}?v={{ version }}" defer></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="login-container">
+        <img src="{{ brig_logo_url }}" alt="Logo" class="logo" oncontextmenu="return false;" draggable="false">
+        <h1>Login</h1>
+        <form id="login-form" class="login-form">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+            <button type="button" id="login-button" onclick="login()">Login</button>
+        </form>
+        <br>
+        <div id="error-message" style="color:red; display:none;">Invalid credentials, please try again.</div>
+    </div>
+</body>
+</html>
