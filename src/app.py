@@ -85,20 +85,21 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 templates = Jinja2Templates(directory=templates_dir)
 
 
-
+# Figure out why email get's locked out
+# Make better templates
 @app.exception_handler(StarletteHTTPException)
+@limiter.limit("100/minute")
 async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
-    logger.warning(f"HTTP Exception: {exc.detail}")
     return templates.TemplateResponse("error_500.html", {"request": request}, status_code=exc.status_code)
 
 @app.exception_handler(RequestValidationError)
+@limiter.limit("100/minute")
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    logger.warning(f"Validation Error: {exc.errors()}")
     return templates.TemplateResponse("error_500.html", {"request": request}, status_code=400)
 
 @app.exception_handler(Exception)
+@limiter.limit("100/minute")
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Unhandled Exception: {exc}")
     return templates.TemplateResponse("error_500.html", {"request": request}, status_code=500)
 
 @app.get("/", response_class=HTMLResponse)

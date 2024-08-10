@@ -28,7 +28,8 @@ class ErrorLogger(logging.Handler):
     def emit(self, record: logging.LogRecord) -> None:
         if record.levelno > logging.INFO:  # Post only warnings, errors, and critical logs
             payload = self.format_payload(record)
-            self.send_to_db(payload)
+            # Current security hazard, uncomment when NocoDB is ready
+            # self.send_to_db(payload)
             self.send_email(payload)
             self.send_telegram_message(payload)
     
@@ -62,26 +63,31 @@ class ErrorLogger(logging.Handler):
         self.db_connector.post_error_message(payload)  # Use the stored NocoDB connection instance
 
     def send_email(self, payload: dict) -> None:
-        message = MIMEText(f"Error occurred:\n\n{payload['error']}")
-        message['Subject'] = f"Error Notification: {payload['error']['level']}"
-        message['From'] = ADMIN_DEVELOPER_EMAIL
-        message['To'] = ADMIN_DEVELOPER_EMAIL
+        try:
+            message = MIMEText(f"Error occurred:\n\n{payload['error']}")
+            message['Subject'] = f"Error Notification: {payload['error']['level']}"
+            message['From'] = ADMIN_DEVELOPER_EMAIL
+            message['To'] = ADMIN_DEVELOPER_EMAIL
 
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls()
-            server.login(ADMIN_DEVELOPER_EMAIL, APP_PASSWORD)
-            server.sendmail(ADMIN_DEVELOPER_EMAIL, ADMIN_DEVELOPER_EMAIL, message.as_string())
+            with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+                server.starttls()
+                server.login(ADMIN_DEVELOPER_EMAIL, APP_PASSWORD)
+                server.sendmail(ADMIN_DEVELOPER_EMAIL, ADMIN_DEVELOPER_EMAIL, message.as_string())
+        except:
+            pass
 
     def send_telegram_message(self, payload: dict) -> None:
-        url = f"https://api.telegram.org/bot{ERROR405_BOT_TOKEN}/sendMessage"
-        message = f"Error occurred:\n{payload['error']['timestamp']}\n{payload['error']['message']}"
-        data = {
-            'chat_id': ERROR405_CHAT_ID,
-            'text': message
-        }
-        response = requests.post(url, json=data)
-        response.raise_for_status()
-
+        try:
+            url = f"https://api.telegram.org/bot{ERROR405_BOT_TOKEN}/sendMessage"
+            message = f"Error occurred:\n{payload['error']['timestamp']}\n{payload['error']['message']}"
+            data = {
+                'chat_id': ERROR405_CHAT_ID,
+                'text': message
+            }
+            response = requests.post(url, json=data)
+            response.raise_for_status()
+        except:
+            pass
 # Function to setup the logger with the NocoDB connection
 def setup_logger(db_connector_callable : Noco) -> logging.Logger:
     logger = logging.getLogger("brig_api")
