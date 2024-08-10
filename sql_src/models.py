@@ -9,7 +9,7 @@ class Artwork(Base):
 
     id = Column(Integer, primary_key=True)
     img_label = Column(String)
-    img = Column(JSON)
+    img = Column(String)
     price = Column(String)
     created_at = Column(DateTime, default=datetime)
     updated_at = Column(DateTime, default=datetime, onupdate=datetime)
@@ -42,22 +42,11 @@ class Cookies(Base):
     created_at = Column(DateTime, default=datetime)
     updated_at = Column(DateTime, default=datetime, onupdate=datetime)
 
-@dataclass
-class ArtObject:
-    Id: int
-    ImgLabel: str
-    ArtUri: List[Dict[str, Union[str,int]]]
-    Price: str
-    CreatedAt: datetime
-    UpdatedAt: datetime
+class DisplayUris(Base):
+    __tablename__ = "nc_aojg___arturi"
 
-@dataclass
-class ArtUriObject:
-    Id: int
-    ImgLabel: str
-    ArtUri: str
-    Price: str
-    CreatedAt: datetime
-    UpdatedAt: datetime
+    id = Column(Integer, primary_key=True, index=True)
+    tableid = Column(Integer)
+    data_uri = Column(String)
 
 

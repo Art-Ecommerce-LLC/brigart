@@ -6,12 +6,13 @@ from contextlib import asynccontextmanager
 from fastapi.responses import ( 
     HTMLResponse, JSONResponse, RedirectResponse
 )
+from fastapi.responses import Response
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from src.artapi.config import STRIPE_SECRET_KEY, NOCODB_PATH
-from src.artapi.logger import logger
+from src.artapi.logger import setup_logger
 from src.artapi.middleware import add_middleware, limiter
 from src.artapi.models import (
     Title, TitleQuantity, TotalPrice
@@ -23,7 +24,7 @@ from src.artapi.noco_config import OPENAPI_URL, SHIPPING_RATE
 import datetime
 import stripe
 from datetime import datetime, timezone
-from src.artapi.nocodb_connector import get_noco_db
+from src.artapi.nocodb_connector import get_noco_db, NocoDBManager
 from src.artapi.stripe_connector import get_stripe_api, StripeAPI
 import asyncio
 # Initialize FastAPI App
@@ -31,6 +32,10 @@ desc = "Backend platform for BRIG ART"
 
 if OPENAPI_URL == "None":
     OPENAPI_URL = None
+
+# Initialize logger with an instance instead of a callable
+noco_instance = get_noco_db()  # Ensure this returns an instance of Noco
+logger = setup_logger(noco_instance)
 
 async def delete_expired_sessions_task():
     while True:
@@ -200,7 +205,6 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity, noco_db:
         cookie_id = noco_db.get_cookie_Id_from_session_id(session_id)
 
         if cookie_id == "" :
-            logger.warning("Cookie could not be found for the session id")
             noco_db.post_cookie_session_id_and_cookies(session_id, cookiesJson)
             return JSONResponse({"quantity": title_quantity.quantity})
 
@@ -225,7 +229,6 @@ async def shop_art(request: Request, sessionid: str, noco_db: Noco = Depends(get
     logger.info(f"Shop art page accessed by {request.client.host}")
     try:
         if request.session.get("session_id") != sessionid:
-            logger.warning(f"Session ID does not match {request.client.host}")
             return RedirectResponse(url="/shop_art_menu")       
                          
         img_quant_list = noco_db.get_cookie_from_session_id(sessionid)
@@ -544,7 +547,6 @@ async def shop_checkout(request: Request, sessionid: str, noco_db: Noco = Depend
     logger.info(f"Checkout page accessed by {request.client.host}")
     try:
         if request.session.get("session_id") != sessionid:
-            logger.warning(f"Session ID does not match {request.client.host}")
             return RedirectResponse(url="/shop_art_menu")
         
         img_quant_list = noco_db.get_cookie_from_session_id(sessionid)

@@ -14,9 +14,6 @@ from slowapi.errors import RateLimitExceeded
 
 from src.artapi.noco_config import MIDDLEWARE_STRING
 from src.artapi.config import DEVELOPMENT_ORIGINS, PRODUCTION_ORIGINS, ENVIORNMENT, CSP_POLICY, DEVELOPMENT_HOSTS, PRODUCTION_HOSTS
-
-from src.artapi.logger import logger # Import the custom logger
-
 # Initialize the Limiter
 limiter = Limiter(key_func=get_remote_address)
 
@@ -32,12 +29,9 @@ class ContentSecurityPolicyMiddleware(BaseHTTPMiddleware):
 
 class LoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Receive, call_next):
-        logger.info(f"Request: {request.method} {request.url}")
         try:
             response = await call_next(request)
-            logger.info(f"Response status: {response.status_code}")
         except Exception as e:
-            logger.error(f"Error handling request: {e}", exc_info=True)
             raise
         return response
 

@@ -6,7 +6,6 @@ from src.artapi.config import (
 from src.artapi.models import (
     ArtObject, IconObject, KeyObject, CookieObject, ProductMapObject
 )
-from src.artapi.logger import logger
 from PIL import Image
 from io import BytesIO
 from typing import Union
@@ -79,10 +78,8 @@ class Noco:
             params = {"limit": 200}
             response = self.session.get(self.get_nocodb_path(table), params=params)
             response.raise_for_status()
-            logger.info(f"Fetched data from NocoDB table {table}")
             return response.json()
         except Exception as e:
-            logger.error(f"Error fetching data from NocoDB table {table}: {e}")
             raise
 
     def get_nocodb_table_data_record(self, table: str, Id: int) -> dict:
@@ -102,11 +99,9 @@ class Noco:
         try:
             response = self.session.get(f"{self.get_nocodb_path(table)}/{Id}")
             response.raise_for_status()
-            logger.info(f"Fetched data with ID {Id} from NocoDB table {table}")
             return response.json()
         except Exception as e:
-            logger.error(f"Error fetching data with ID {Id} from NocoDB table {table}: {e}")
-
+            raise
     def delete_nocodb_table_data(self, table: str, Id: int) -> None:
         """
             Function to delete a record from a table by its ID
@@ -122,9 +117,7 @@ class Noco:
             body = {"Id": Id}
             response = self.session.delete(f"{self.get_nocodb_path(table)}", json=body)
             response.raise_for_status()
-            logger.info(f"Deleted data with ID {Id} from NocoDB table {table}")
         except Exception as e:
-            logger.error(f"Error deleting data with ID {Id} from NocoDB table {table}: {e}")
             raise
 
     def post_nocodb_table_data(self, table: str, data: dict) -> None:
@@ -141,9 +134,7 @@ class Noco:
         try:
             response = self.session.post(self.get_nocodb_path(table), json=data)
             response.raise_for_status()
-            logger.info(f"Posted data to NocoDB table {table}")
         except Exception as e:
-            logger.error(f"Error posting data to NocoDB table {table}: {e}")
             raise
 
     def patch_nocodb_table_data(self, table: str, data: dict) -> None:
@@ -160,9 +151,7 @@ class Noco:
         try:
             response = self.session.patch(self.get_nocodb_path(table), json=data)
             response.raise_for_status()
-            logger.info(f"Patched data in NocoDB table {table}")
         except Exception as e:
-            logger.error(f"Error patching data in NocoDB table {table}: {e}")
             raise
 
     def convert_paths_to_data_uris(self, paths: list) -> list:
@@ -173,10 +162,8 @@ class Noco:
                 img_data = self.session.get(url_path).content
                 data_uri = self.convert_to_data_uri(img_data)
                 data_uris.append(data_uri)
-            logger.info("Converted image paths to data URIs")
             return data_uris
         except Exception as e:
-            logger.error(f"Error converting paths to data URIs: {e}")
             raise
 
     def convert_to_data_uri(self, image_data: bytes) -> str:
@@ -203,10 +190,8 @@ class Noco:
                 resized_img.save(buffer, format="JPEG")
                 resized_img_data = buffer.getvalue()
             base64_data = base64.b64encode(resized_img_data).decode('utf-8')
-            logger.info("Converted image data to data URI")
             return f"data:image/jpeg;base64,{base64_data}"
         except Exception as e:
-            logger.error(f"Error converting image data to data URI: {e}")
             raise
     
     
@@ -228,7 +213,6 @@ class Noco:
                 self.previous_data.artwork = self.get_artwork_data_no_cache()
             return self._get_artwork_data_cached()
         except Exception as e:
-            logger.error(f"Error getting artwork data with cache: {e}")
             raise
 
     @lru_cache(maxsize=1)
@@ -246,7 +230,6 @@ class Noco:
         Clear the cache for artwork data.
         """
         self._get_artwork_data_cached.cache_clear()
-        logger.info("Cleared artwork data cache")
 
     def compare_timestamps(self) -> bool:
         """
@@ -257,17 +240,14 @@ class Noco:
         """
         try:
             if self.previous_data.artwork is None:
-                logger.info("No previous artwork data found")
                 self.previous_data.artwork = self.get_artwork_data_no_cache()
                 return False
             old_data = self.previous_data.artwork.updated_ats
             new_data = self.get_artwork_data_no_cache_no_datauri().updated_ats
             if new_data != old_data:
-                logger.info("Detected change in updated_at timestamps")
                 return True
             return False
         except Exception as e:
-            logger.error(f"Error comparing timestamps: {e}")
             raise
 
     def pull_single_key_record(self) -> dict:
@@ -275,12 +255,10 @@ class Noco:
             Pull a single key record using the functions from the Noco class
         """
         try:
-            # get Id = 1 from key record
-            key_data_1 = self.get_nocodb_table_data_record(NOCODB_TABLE_MAP.key_table, 1)
-            logger.info("Pulled single key record since connection was restored")
+            # get Id = 6 from key record
+            key_data_1 = self.get_nocodb_table_data_record(NOCODB_TABLE_MAP.key_table, 6)
             return key_data_1
         except Exception as e:
-            logger.error(f"Failed to pull single key record: {e}")
             raise
     
     def get_artwork_data_no_cache(self) -> ArtObject:
@@ -306,10 +284,8 @@ class Noco:
                 updated_ats=[item['UpdatedAt'] for item in data['list']],
                 Ids=[item['Id'] for item in data['list']]
             )
-            logger.info("Fetched and parsed artwork data from NocoDB without cache")
             return artwork_data
         except Exception as e:
-            logger.error(f"Error getting artwork data without cache: {e}")
             raise
 
     def get_artwork_data_no_cache_no_datauri(self) -> ArtObject:
@@ -333,10 +309,8 @@ class Noco:
                 updated_ats=[item['UpdatedAt'] for item in data['list']],
                 Ids=[item['Id'] for item in data['list']]
             )
-            logger.info("Fetched and parsed artwork data from NocoDB without cache and without data URIs")
             return artwork_data
         except Exception as e:
-            logger.error(f"Error getting artwork data without cache and without data URIs: {e}")
             raise
 
     def get_product_id_from_title(self, title: str, product_map_data: ProductMapObject) -> Union[str, None]:
@@ -352,41 +326,9 @@ class Noco:
         """
         try:
             index = product_map_data.noco_product_Ids.index(self.get_artwork_Id_from_title(title))
-            logger.info(f"Fetched product ID for title {title}")
             return product_map_data.stripe_product_ids[index]
         except ValueError:
-            logger.error(f"Product with title {title} not found")
             return None
-        
-    # def sync_stripe_product(self, product_id: str, title: str, price: str):
-    #     """
-    #         Sync a stripe product with the artwork data
-
-    #         Arguments:
-    #             product_id (str): The product ID to sync
-    #             title (str): The title of the product
-    #             price (str): The price of the product
-    #     """
-    #     try:
-    #         stripe_product = self.stripe_connector.retrieve_product(product_id)
-    #         stripe_price = self.stripe_connector.retrieve_price(stripe_product['prices']['data'][0]['id'])
-    #         if str(stripe_price['unit_amount']) != price:
-    #             self.stripe_connector.update_price(stripe_price['id'], price)
-    #         if stripe_product['name'] != title:
-    #             self.stripe_connector.update_product(product_id, title)
-    #         if not stripe_product['active']:
-    #             self.stripe_connector.unarchive_product(product_id)
-    #         if not stripe_price['active']:
-    #             self.stripe_connector.unarchive_price(stripe_price['id'])
-    #         stripe_image_url = stripe_product['images'][0]
-    #         stripe_image_to_uri = self.convert_to_data_uri(requests.get(stripe_image_url).content)
-    #         if stripe_image_to_uri != self.get_art_uri_from_title(title):
-    #             self.stripe_connector.update_product_image(product_id, f"{NOCODB_PATH}/{self.get_art_uri_from_title(title)}")
-    #     except Exception as e:
-    #         logger.error(f"Error syncing stripe product {product_id}: {e}")
-    #         raise
-
-
 
     def get_product_map_data_no_cache(self) -> ProductMapObject:
         """
@@ -407,10 +349,8 @@ class Noco:
                 created_ats=[item['CreatedAt'] for item in data['list']],
                 updated_ats=[item['UpdatedAt'] for item in data['list']]
             )
-            logger.info("Fetched and parsed product map data from NocoDB")
             return product_map_data
         except Exception as e:
-            logger.error(f"Error getting product map data: {e}")
             raise
 
   
@@ -430,7 +370,6 @@ class Noco:
             artwork_data = self.previous_data.artwork
             return artwork_data.updated_ats
         except Exception as e:
-            logger.error(f"Error getting updated_at timestamps for artwork data: {e}")
             raise
 
     def get_current_artwork_data_timestamps(self) -> list:
@@ -447,7 +386,6 @@ class Noco:
             data = self.get_nocodb_table_data(NOCODB_TABLE_MAP.img_table)
             return [item['UpdatedAt'] for item in data['list']]
         except Exception as e:
-            logger.error(f"Error getting updated_at timestamps for current artwork data: {e}")
             raise
 
     def compare_updated_at_timestamps(self, old_data: list, new_data: list) -> bool:
@@ -463,11 +401,9 @@ class Noco:
         """
         try:
             if old_data != new_data:
-                logger.info("Detected change in updated_at timestamps")
                 return True
             return False
         except Exception as e:
-            logger.error(f"Error comparing updated_at timestamps: {e}")
             raise
     
 
@@ -485,7 +421,6 @@ class Noco:
             data = self.get_nocodb_table_data(NOCODB_TABLE_MAP.icon_table)
             return [item['UpdatedAt'] for item in data['list']]
         except Exception as e:
-            logger.error(f"Error getting updated_at timestamps for current icon data: {e}")
             raise
 
 
@@ -508,7 +443,6 @@ class Noco:
                 self.previous_data.icon = self.get_icon_data_no_cache()
                 return self.previous_data.icon
         except Exception as e:
-            logger.error(f"Error getting icon data: {e}")
             raise
 
 
@@ -536,11 +470,9 @@ class Noco:
                 updated_ats=[item['UpdatedAt'] for item in data['list']],
                 Ids=[item['Id'] for item in data['list']]
             )
-            logger.info("Fetched and parsed icon data from NocoDB without cache")
             return icon_data
         
         except Exception as e:
-            logger.error(f"Error getting icon data without cache: {e}")
             raise
 
     def get_key_data(self) -> KeyObject:
@@ -560,10 +492,8 @@ class Noco:
                 envvars=[item['envvar'] for item in data['list']],
                 envvals=[item['envval'] for item in data['list']]
             )
-            logger.info("Fetched and parsed key data from NocoDB")
             return key_data
         except Exception as e:
-            logger.error(f"Error getting key data: {e}")
             raise
         
     def get_cookie_data(self) -> CookieObject:
@@ -584,10 +514,8 @@ class Noco:
                 cookies=[item['cookies'] for item in data['list']],
                 created_ats=[item['CreatedAt'] for item in data['list']]
             )
-            logger.info("Fetched and parsed cookie data from NocoDB")
             return cookie_data
         except Exception as e:
-            logger.error(f"Error getting cookie data: {e}")
             raise
 
 
@@ -607,10 +535,8 @@ class Noco:
         try:
             icon_data = self.get_icon_data()
             index = icon_data.titles.index(title)
-            logger.info(f"Fetched icon URI for title {title}")
             return icon_data.data_uris[index]
         except ValueError:
-            logger.error(f"Icon with title {title} not found")
             return ""
 
     def get_art_uri_from_title(self, title: str) -> str:
@@ -629,10 +555,8 @@ class Noco:
         try:
             artwork_data = self.get_artwork_data_with_cache()
             index = artwork_data.titles.index(title)
-            logger.info(f"Fetched artwork URI for title {title}")
             return artwork_data.data_uris[index]
         except ValueError:
-            logger.error(f"Artwork with title {title} not found")
             return ""
 
     def get_art_price_from_title(self, title: str) -> str:
@@ -651,10 +575,8 @@ class Noco:
         try:
             artwork_data = self.get_artwork_data_with_cache()
             index = artwork_data.titles.index(title)
-            logger.info(f"Fetched price for artwork title {title}")
             return artwork_data.prices[index]
         except ValueError:
-            logger.error(f"Artwork with title {title} not found")
             raise ValueError(f"Artwork with title {title} not found")
 
     def get_art_price_from_title_and_quantity(self, title: str, quantity: int) -> str:
@@ -672,7 +594,6 @@ class Noco:
                 ValueError: If the artwork with the title is not found
         """
         price = self.get_art_price_from_title(title)
-        logger.info(f"Calculated price for {quantity} of artwork title {title}")
         return str(int(price) * quantity)
 
     def get_full_cookie_from_session_id(self, session_id: str) -> dict:
@@ -691,10 +612,8 @@ class Noco:
         try:
             cookie_data = self.get_cookie_data()
             index = cookie_data.sessionids.index(session_id)
-            logger.info(f"Fetched full cookie for session ID {session_id}")
             return cookie_data.cookies[index]
         except ValueError:
-            logger.error(f"Session ID {session_id} not found")
             return {}
 
     def get_cookie_from_session_id(self, session_id: str) -> list:
@@ -714,10 +633,8 @@ class Noco:
             cookie_data = self.get_cookie_data()
             index = cookie_data.sessionids.index(session_id)
             img_quant_list = cookie_data.cookies[index]["img_quantity_list"]
-            logger.info(f"Fetched cookie for session ID {session_id}")
             return img_quant_list
         except ValueError:
-            logger.error(f"Session ID {session_id} not found")
             return []
 
     def delete_session_cookie(self, session_id: str) -> None:
@@ -730,13 +647,12 @@ class Noco:
             Raises:
                 Exception: If there is an error deleting the session cookie
         """
+        cookie_data = self.get_cookie_data()
         try:
-            cookie_data = self.get_cookie_data()
-            index = cookie_data.sessionids.index(session_id)
-            self.delete_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, cookie_data.Id[index])
-            logger.info(f"Deleted session cookie for session ID {session_id}")
+            if session_id in cookie_data.sessionids:
+                index = cookie_data.sessionids.index(session_id)
+                self.delete_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, cookie_data.Id[index])
         except Exception as e:
-            logger.error(f"Error deleting session cookie for session ID {session_id}: {e}")
             raise
 
     def post_cookie_session_id_and_cookies(self, sessionid: str, cookies: dict):
@@ -756,10 +672,8 @@ class Noco:
         }
         try:
             self.post_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, data)
-            logger.info(f"Posted cookie session ID {sessionid}")
         except Exception as e:
-            logger.error(f"Error posting cookies for session ID {sessionid}: {e}")
-
+            raise
     def patch_cookies_data(self, data: dict):
         """
             Patch the cookies data
@@ -772,9 +686,7 @@ class Noco:
         """
         try:
             self.patch_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, data)
-            logger.info("Patched cookies data")
         except Exception as e:
-            logger.error(f"Error patching cookies data: {e}")
             raise
 
     def get_cookie_Id_from_session_id(self, session_id: str) -> str:
@@ -793,10 +705,8 @@ class Noco:
         try:
             cookie_data = self.get_cookie_data()
             index = cookie_data.sessionids.index(session_id)
-            logger.info(f"Fetched cookie ID for session ID {session_id}")
             return cookie_data.Id[index]
         except ValueError:
-            logger.info(f"ID {session_id} not found")
             return ""
 
     def get_artwork_Id_from_title(self, title: str) -> Union[int, None]:
@@ -815,10 +725,8 @@ class Noco:
         try:
             artwork_data = self.get_artwork_data_with_cache()
             index = artwork_data.titles.index(title)
-            logger.info(f"Fetched artwork ID for title {title}")
             return artwork_data.Ids[index]
         except ValueError:
-            logger.error(f"Artwork with title {title} not found")
             return None
 
     def upload_image(self, file_to_upload: dict, path: str) -> dict:
@@ -841,26 +749,20 @@ class Noco:
             }
             response = self.session.post(self.get_storage_upload_path(), files=file_to_upload, params=params)
             response.raise_for_status()
-            logger.info("Uploaded image")
             return response.json()
         except Exception as e:
-            logger.error(f"Error uploading image: {e}")
             raise
 
     def post_image(self, data: dict) -> None:
         try:
             self.post_nocodb_table_data(NOCODB_TABLE_MAP.img_table, data)
-            logger.info("Posted image")
         except Exception as e:
-            logger.error(f"Error posting image: {e}")
             raise
 
     def patch_image(self, data: dict) -> None:
         try:
             self.patch_nocodb_table_data(NOCODB_TABLE_MAP.img_table, data)
-            logger.info("Patched image")
         except Exception as e:
-            logger.error(f"Error patching image: {e}")
             raise
 
     def delete_user_session_after_payment(self, session_id: str) -> None:
@@ -878,9 +780,7 @@ class Noco:
             cookie_data = self.get_cookie_data()
             index = cookie_data.sessionids.index(session_id)
             self.delete_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, cookie_data.Id[index])
-            logger.info(f"Deleted user session after payment for session ID {session_id}")
         except Exception as e:
-            logger.error(f"Error deleting user session after payment for session ID {session_id}: {e}")
             raise
 
     def get_cookie_session_begginging_time(self, sessionid: str) -> str:
@@ -896,15 +796,10 @@ class Noco:
         try:
             cookie_data = self.get_cookie_data()
             index = cookie_data.sessionids.index(sessionid)
-            logger.info(f"Fetched session beginning time for session ID {sessionid}")
             return cookie_data.created_ats[index]
         # Write exception for session id not being in list
-        except ValueError:
-            logger.error(f"Session ID {sessionid} not found")
+        except Exception:
             return ""
-        except Exception as e:
-            logger.error(f"Error getting session beginning time for session ID {sessionid}: {e}")
-            raise
 
     @staticmethod
     def get_version():
@@ -928,6 +823,20 @@ class Noco:
                 elapsed_time = (current_time - session_creation_time).total_seconds()
                 if elapsed_time > self.cookie_session_time_limit:
                     self.delete_session_cookie(session_id)
-                    logger.info(f"Deleted expired session {session_id}")
         except Exception as e:
-            logger.error(f"Error deleting expired sessions: {e}")
+            raise
+
+    def post_error_message(self, data: dict):
+        """
+            Post an error message to the error table
+
+            Arguments:
+                error_message (str): The error message to post
+            
+            Raises:
+                Exception: If there is an error posting the error message
+        """
+        try:
+            self.post_nocodb_table_data(NOCODB_TABLE_MAP.error_table, data)
+        except Exception as e:
+            raise

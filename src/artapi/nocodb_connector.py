@@ -1,7 +1,6 @@
 import time
 from src.artapi.noco import Noco
 from requests.exceptions import ConnectionError
-from src.artapi.logger import logger
 
 class NocoDBManager:
     MAX_RETRIES = 3
@@ -20,7 +19,6 @@ class NocoDBManager:
             self._test_connection(noco_instance)
             return noco_instance
         except ConnectionError as e:
-            logger.error(f"Failed to create Noco instance: {e}")
             raise
 
     def _test_connection(self, noco_instance : Noco):
@@ -39,7 +37,6 @@ class NocoDBManager:
                 self.noco_db = self._create_noco_instance()
                 return
             except ConnectionError as e:
-                logger.error(f"Connection attempt {attempt + 1} failed: {e}")
                 if attempt < self.MAX_RETRIES - 1:
                     time.sleep(self.RETRY_DELAY)
                 else:
@@ -52,7 +49,6 @@ class NocoDBManager:
         try:
             self.noco_db.pull_single_key_record()   
         except Exception as e:
-            logger.error(f"Session is invalid: {e}")
             self._handle_connection_error() 
 
     def get_noco_db(self):

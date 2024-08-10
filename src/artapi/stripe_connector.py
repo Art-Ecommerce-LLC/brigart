@@ -1,5 +1,4 @@
 from src.artapi.config import STRIPE_SECRET_KEY
-from src.artapi.logger import logger
 import stripe
 import tempfile
 import requests
@@ -16,9 +15,7 @@ class StripeAPI:
     def update_price(self, price_id: str, new_price: int) -> None:
         try:
             stripe.Price.modify(price_id, unit_amount=new_price)
-            logger.info(f"Updated price ID {price_id} to new price {new_price}")
         except Exception as e:
-            logger.error(f"Error updating price ID {price_id}: {e}")
             raise
 
     def create_price(self, product_id: str, new_price: int) -> stripe.Price:
@@ -28,42 +25,32 @@ class StripeAPI:
                 unit_amount=int(new_price) * 100,
                 currency='usd'
             )
-            logger.info(f"Created new price {new_price} for product ID {product_id}")
             return price
         except Exception as e:
-            logger.error(f"Error creating new price for product ID {product_id}: {e}")
             raise
 
     def archive_price(self, price_id: str) -> None:
         try:
             stripe.Price.modify(price_id, active=False)
-            logger.info(f"Archived price ID {price_id}")
         except Exception as e:
-            logger.error(f"Error archiving price ID {price_id}: {e}")
             raise
 
     def unarchive_price(self, price_id: str) -> None:
         try:
             stripe.Price.modify(price_id, active=True)
-            logger.info(f"Unarchived price ID {price_id}")
         except Exception as e:
-            logger.error(f"Error unarchiving price ID {price_id}: {e}")
             raise
 
     def archive_product(self, product_id: str) -> None:
         try:
             stripe.Product.modify(product_id, active=False)
-            logger.info(f"Archived product ID {product_id}")
         except Exception as e:
-            logger.error(f"Error archiving product ID {product_id}: {e}")
             raise
 
     def unarchive_product(self, product_id: str) -> None:
         try:
             stripe.Product.modify(product_id, active=True)
-            logger.info(f"Unarchived product ID {product_id}")
         except Exception as e:
-            logger.error(f"Error unarchiving product ID {product_id}: {e}")
             raise
 
     def list_products(self) -> stripe.Product:
@@ -90,14 +77,12 @@ class StripeAPI:
             with open(temp_file_path, "rb") as fp:
                 file = stripe.File.create(purpose='product_image', file=fp)
 
-            logger.info(f"Uploaded file from {temp_file_path}")
 
             # Clean up the temporary file
             os.remove(temp_file_path)
 
             return file
         except Exception as e:
-            logger.error(f"Error uploading file from {image_url}: {e}")
             raise
 
     def process_image(self, image_data: bytes) -> bytes:
@@ -123,29 +108,23 @@ class StripeAPI:
                 buffer = BytesIO()
                 resized_img.save(buffer, format="JPEG")
                 processed_img_data = buffer.getvalue()
-            logger.info("Processed image data")
             return processed_img_data
         except Exception as e:
-            logger.error(f"Error processing image data: {e}")
             raise
 
     def create_file_link(self, file_id: str) -> stripe.FileLink:
         try:
             file_link = stripe.FileLink.create(file=file_id)
-            logger.info(f"Created file link for file ID {file_id}")
             return file_link
         except Exception as e:
-            logger.error(f"Error creating file link for file ID {file_id}: {e}")
             raise
 
     def upload_image_to_stripe(self, file_url : str) -> stripe.FileLink:
         try:
             file = self.create_file(file_url)
             file_link = self.create_file_link(file.id)
-            logger.info(f"Uploaded image to Stripe: File ID {file.id}, File Link {file_link.url}")
             return file_link
         except Exception as e:
-            logger.error(f"Error uploading image to Stripe from {file_url}: {e}")
             raise
 
     def update_product_image(self, product_id: str, image_url: str) -> None:
@@ -153,9 +132,7 @@ class StripeAPI:
             existing_images = self.retrieve_product(product_id).images
             if existing_images != [image_url]:
                 stripe.Product.modify(product_id, images=[image_url])
-                logger.info(f"Updated image for product ID {product_id}")
         except Exception as e:
-            logger.error(f"Error updating image for product ID {product_id}: {e}")
             raise
 
     def create_product(self, title: str, price: int, file_link: str) -> stripe.Product:
@@ -171,10 +148,8 @@ class StripeAPI:
                 images=[file_link],
                 shippable=True,
             )
-            logger.info(f"Created new product {title}, product ID {new_product.id}")
             return new_product
         except Exception as e:
-            logger.error(f"Error creating product {title}: {e}")
             raise
 
     def sync_products(self, img_quant_list : list, path_list : list) -> list:
@@ -223,7 +198,6 @@ class StripeAPI:
                         )
             return line_items
         except Exception as e:
-            logger.error(f"Error syncing products: {e}")
             raise
     
     def retrieve_price(self, price_id: str) -> stripe.Price:
@@ -239,7 +213,6 @@ class StripeAPI:
                 return False
             return True
         except Exception as e:
-            logger.error(f"Error matching price for product ID {product_id}: {e}")
             raise
     
     def check_price_existence(self, product_id: str, price: int, quantity: int) -> stripe.Price:
@@ -259,7 +232,6 @@ class StripeAPI:
                 updated_product = stripe.Product.modify(product_id, default_price=price_id)
                 return updated_product.default_price
         except Exception as e:
-            logger.error(f"Error checking price existence: {e}")
             raise
 
 def get_stripe_api():

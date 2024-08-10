@@ -163,11 +163,20 @@ function startTimer(duration, display) {
         }
     }, 1000);
 }
+
     document.addEventListener('DOMContentLoaded', async () => {
         const remainingTime = await fetchSessionTime();
         const display = document.querySelector('#timer');
         startTimer(remainingTime, display);
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted || window.performance && window.performance.navigation.type === 2) {
+                // Force a full reload if the page was loaded from the cache
+                window.location.reload();
+                // Refresh quantity input values
+            }
+        });
     });
+
 
 </script>
 </body>
