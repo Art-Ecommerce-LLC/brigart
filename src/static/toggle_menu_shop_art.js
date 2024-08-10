@@ -467,15 +467,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         });
         // Add event listener to the image click event
-        const cartImage = document.querySelector('.cart-image');
-        cartImage.addEventListener('click', function() {
-            const checkoutContainer = document.querySelector('.checkout-container');
-            const checkoutMessage = document.querySelector('.empty-cart-message');
-            if (checkoutMessage) {
-                checkoutContainer.removeChild(checkoutMessage);
-                isMessageDisplayed = false; // Reset the flag when the message is removed
-            }
-        });
     });
 });
 // Toggle the menu on window resize

@@ -137,7 +137,7 @@ async function addToCart(title, quantityInputValue) {
         if (messageDiv2) {
             messageDiv2.remove();
         }
-
+        await updateCartQuantity(cart_quantity);
         const quantityBox = document.getElementById('quantityBox');
         quantityBox.style.display = 'none';
 
@@ -146,7 +146,7 @@ async function addToCart(title, quantityInputValue) {
         addToCartButton.classList.remove('add-to-cart-btn');
         addToCartButton.classList.add('checkout-btn');
         addToCartButton.setAttribute('onclick', 'checkoutRedirect(); return false;');
-        await updateCartQuantity(cart_quantity);
+        
     } catch (error) {
         displayTotalQuantityErrorMessage();
         console.error('Error:', error);
@@ -355,6 +355,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         window.location.href = '/';
     }
     scrollToImage();
+
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted || window.performance && window.performance.getEntriesByType("navigation")[0].type === 2) {
+            // Force a full reload if the page was loaded from the cache
+            window.location.reload();
+            // Refresh quantity input values
+        }
+    });
 });
 
 // Toggle the menu on window resize
