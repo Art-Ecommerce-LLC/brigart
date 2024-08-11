@@ -1,8 +1,6 @@
 # app/config.py
 import dotenv
 import os
-from src.artapi.models import TableMap
-
 # Get file path of .env file
 dotenv_path = dotenv.find_dotenv()
 
@@ -28,14 +26,8 @@ DEVELOPMENT_HOSTS = os.getenv("development_hosts")
 PRODUCTION_HOSTS = os.getenv("production_hosts")
 ENVIORNMENT = os.getenv("enviornment")
 
+DATABASE_URL = os.getenv("database_url")
+
 # Create an instance of TableMap
-NOCODB_TABLE_MAP = TableMap(
-    img_table=NOCODB_IMG_TABLE,
-    icon_table=NOCODB_ICON_TABLE,
-    key_table=NOCODB_KEY_TABLE,
-    cookies_table=NOCODB_COOKIES_TABLE,
-    product_map_table =NOCODB_PRODUCT_MAP_TABLE,
-    error_table = NOCODB_ERROR_TABLE
-)
 
 CSP_POLICY = os.getenv("csp_policy")

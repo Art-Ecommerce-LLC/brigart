@@ -43,18 +43,13 @@ def get_db():
 def get_version():
     return str(int(time.time()))
 
-@app.get("/redirectlogo")
-def redirect_logo(db: Session = Depends(get_db)):
-    try:
-        icon = crud.get_icon_by_label(db, "brig_logo")
-        data_uri = crud.convert_path_to_data_uri(icon.img)
-        return {"data_uri": data_uri}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request, db: Session = Depends(get_db)):
     try:
+
+        crud.sync_
+
         artworks = crud.get_art_uris(db, 0, 100)
         art_table = crud.get_artworks(db, 0, 100)
 
@@ -68,7 +63,7 @@ def index(request: Request, db: Session = Depends(get_db)):
         img_path = ast.literal_eval(icon.img)[0]["path"]
         logo_uri = crud.convert_path_to_data_uri(img_path)
 
-        
+
 
         context = {
             "art_uris": data_uris,

@@ -1,5 +1,5 @@
 import time
-from src.artapi.noco import Noco
+from .noco import Noco
 from requests.exceptions import ConnectionError
 
 class NocoDBManager:

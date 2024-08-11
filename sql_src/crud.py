@@ -111,3 +111,14 @@ def get_artworks_with_uri(db: Session, skip: int = 0, limit: int = 100):
 
 def get_art_uris(db: Session, skip: int = 0, limit: int = 100) -> List[schemas.DisplayUris]:
     return db.query(models.DisplayUris).offset(skip).limit(limit).all()
+
+
+def sync_art_and_display(db: Session):
+    try:
+        art_payload = get_artworks_with_uri(db)
+        db.query(models.DisplayUris).delete()
+        db.commit()
+        db.bulk_save_objects(art_payload)
+        db.commit()
+    except Exception as e:
+        print(f"Error in sync_art_and_display: {e}")

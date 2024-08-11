@@ -1,20 +1,23 @@
 import base64
 import requests
-from src.artapi.config import (
-    NOCODB_XC_TOKEN, NOCODB_PATH, NOCODB_TABLE_MAP
-)
-from src.artapi.models import (
-    ArtObject, IconObject, KeyObject, CookieObject, ProductMapObject
-)
 from PIL import Image
 from io import BytesIO
 from typing import Union
 import stripe
-from src.artapi.config import STRIPE_SECRET_KEY
-from src.artapi.stripe_connector import StripeAPI
 import time
 from datetime import datetime, timezone
 from functools import lru_cache
+
+from .config import (
+    NOCODB_XC_TOKEN, NOCODB_PATH, STRIPE_SECRET_KEY, DATABASE_URL
+)
+from .models import (
+    ArtObject, IconObject, KeyObject, CookieObject, ProductMapObject
+)
+from .stripe_connector import StripeAPI
+from . import crud
+from .tables import NOCODB_TABLE_MAP
+from .postgres import engine, SessionLocal, Base
 
 class CachedData:
 
@@ -25,12 +28,12 @@ class CachedData:
         self.cookie: Union[CookieObject, None] = None
         self.product_map: Union[ProductMapObject, None] = None
 
+
 class Noco:
     """
     Class to interact with NocoDB
     """
     _instance = None
-
 
     def __init__(self):
         self.headers = {'xc-token': NOCODB_XC_TOKEN}
@@ -42,15 +45,10 @@ class Noco:
         self.stripe_connector = StripeAPI()
         self.resolution_factor = 0.8
         self.cookie_session_time_limit = 60 * 15
-
-    def __del__(self):
-        # Ensure the session is closed when the object is deleted
-        self.session.close()
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(Noco, cls).__new__(cls)
-        return cls._instance
+        self.engine = engine
+        self.SessionLocal = SessionLocal
+        self.Base = Base
+        self.crud = crud
 
     def get_auth_headers(self) -> dict:
         return self.headers
@@ -272,7 +270,9 @@ class Noco:
             Exception: If there is an error getting the artwork data without cache
         """
         try:
-            data = self.get_nocodb_table_data(NOCODB_TABLE_MAP.img_table)
+            # Try to get data if it was a crud operation
+            data = self.crud.get_artworks(self.SessionLocal(), skip=0, limit=100)
+            # data = self.get_nocodb_table_data(NOCODB_TABLE_MAP.img_table)
             art_paths = [item['img'][0]['signedPath'] for item in data['list']]
             data_uris = self.convert_paths_to_data_uris(art_paths)
             artwork_data = ArtObject(
@@ -299,7 +299,8 @@ class Noco:
             Exception: If there is an error getting the artwork data without cache and without data URIs
         """
         try:
-            data = self.get_nocodb_table_data(NOCODB_TABLE_MAP.img_table)
+            # data = self.get_nocodb_table_data(NOCODB_TABLE_MAP.img_table)
+            data = self.crud.get_artworks(self.SessionLocal(), skip=0, limit=100)
             art_paths = [item['img'][0]['signedPath'] for item in data['list']]
             artwork_data = ArtObject(
                 art_paths=art_paths,

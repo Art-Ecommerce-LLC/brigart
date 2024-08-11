@@ -11,22 +11,23 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
+import os
+import uuid
+import datetime
+import stripe
+from datetime import datetime, timezone
+import asyncio
+
+from src.artapi.noco import Noco
+from src.artapi.noco_config import OPENAPI_URL, SHIPPING_RATE
+from src.artapi.nocodb_connector import get_noco_db, NocoDBManager
+from src.artapi.stripe_connector import get_stripe_api, StripeAPI
 from src.artapi.config import STRIPE_SECRET_KEY, NOCODB_PATH
 from src.artapi.logger import setup_logger
 from src.artapi.middleware import add_middleware, limiter
 from src.artapi.models import (
     Title, TitleQuantity, TotalPrice
 )
-from src.artapi.noco import Noco
-import os
-import uuid
-from src.artapi.noco_config import OPENAPI_URL, SHIPPING_RATE
-import datetime
-import stripe
-from datetime import datetime, timezone
-from src.artapi.nocodb_connector import get_noco_db, NocoDBManager
-from src.artapi.stripe_connector import get_stripe_api, StripeAPI
-import asyncio
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
 

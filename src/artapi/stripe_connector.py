@@ -1,11 +1,11 @@
-from src.artapi.config import STRIPE_SECRET_KEY
 import stripe
 import tempfile
 import requests
 import os
-from typing import List
 from PIL import Image
 from io import BytesIO
+
+from .config import STRIPE_SECRET_KEY
 
 class StripeAPI:
     def __init__(self):

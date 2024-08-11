@@ -27,25 +27,3 @@ class CookiesBase(BaseModel):
     cookies: dict
     created_at: datetime
     updated_at: datetime
-
-class TitleQuantity(BaseModel):
-    quantity: Union[int, str]
-    title: str
-
-class Title(BaseModel):
-    title: str
-
-class TotalPrice(BaseModel):
-    totalPrice: Union[int, str]
-
-class ImageData(BaseModel):
-    img: str
-    title: str
-    price: Union[int, str]
-    logo: str
-
-class DisplayUris(BaseModel):
-    Id: int
-    tableid: int
-    data_uri: str
-
