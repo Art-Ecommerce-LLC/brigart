@@ -172,8 +172,6 @@ async def shop_art_url(request: Request, title_quantity: TitleQuantity, noco_db:
             return JSONResponse({"quantity": title_quantity.quantity})
         
 
-
-
         session_id = request.session.get("session_id")
         img_quant_list = noco_db.get_cookie_from_session_id(session_id)
 
@@ -298,12 +296,8 @@ async def post_total_price(request: Request, total_price: TotalPrice, noco_db: N
         cookie_price_total = sum(int(item["price"]) for item in img_quant_list)
         if cookie_price_total == total_price.totalPrice:
             return JSONResponse({"totalPrice": total_price.totalPrice})
-        # Explore this later, if you can get rid of the HTTPException and simulate this error, return a value
         else:
-            logger.warning(f"Total price {total_price} does not match {cookie_price_total}")
-            # Return a valid price to prevent the user from changing the price
             return JSONResponse({"totalPrice": cookie_price_total})
-            # raise HTTPException(status_code=400, detail="Total price does not match")
         
     except Exception as e:
         logger.error(f"Error in post_total_price: {e}")
@@ -314,7 +308,6 @@ async def post_total_price(request: Request, total_price: TotalPrice, noco_db: N
 async def increase_quantity(request: Request, title: Title, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Increase quantity for {title.title} by {request.client.host}")
     try:
-
         session_id = request.session.get("session_id")
         if not session_id:
             logger.info(f"Session ID not found from request {request.client.host}")
