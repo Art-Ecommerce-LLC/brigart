@@ -468,8 +468,8 @@ class Noco:
         """
         try:
             return self.crud.get_artwork_by_label(self.SessionLocal(), title).price
-        except ValueError:
-            raise ValueError(f"Artwork with title {title} not found")
+        except:
+            raise
 
     def get_art_price_from_title_and_quantity(self, title: str, quantity: int) -> str:
         """
@@ -503,7 +503,7 @@ class Noco:
         """
         try:
             return self.crud.get_cookie_by_sessionid(self.SessionLocal(), session_id).cookies["img_quantity_list"]
-        except ValueError:
+        except:
             return []
 
     def delete_session_cookie(self, session_id: str) -> None:
@@ -518,7 +518,7 @@ class Noco:
         """
         try:
             self.crud.delete_cookie_from_sessionid(self.SessionLocal(), session_id)
-        except Exception as e:
+        except:
             raise
 
     def post_cookie_session_id_and_cookies(self, sessionid: str, cookies: dict):
@@ -534,7 +534,7 @@ class Noco:
         """
         try:
             self.crud.create_cookie(self.SessionLocal(), sessionid, cookies)
-        except Exception as e:
+        except:
             raise
     def patch_cookies_data(self, data: dict):
         """
@@ -548,7 +548,7 @@ class Noco:
         """
         try:
             self.crud.update_cookie(self.SessionLocal(), data["Id"], data["sessionids"], data["cookies"])
-        except Exception as e:
+        except:
             raise
 
     def get_cookie_Id_from_session_id(self, session_id: str) -> str:
@@ -566,7 +566,7 @@ class Noco:
         """
         try:
             return self.crud.get_cookie_by_sessionid(self.SessionLocal(), session_id).id
-        except ValueError:
+        except:
             return ""
 
     def upload_image(self, file_to_upload: dict, path: str) -> dict:
@@ -590,19 +590,19 @@ class Noco:
             response = self.request.post(self.get_storage_upload_path(), files=file_to_upload, params=params)
             response.raise_for_status()
             return response.json()
-        except Exception as e:
+        except:
             raise
 
     def post_image(self, data: dict) -> None:
         try:
             self.post_nocodb_table_data(NOCODB_TABLE_MAP.img_table, data)
-        except Exception as e:
+        except:
             raise
 
     def patch_image(self, data: dict) -> None:
         try:
             self.patch_nocodb_table_data(NOCODB_TABLE_MAP.img_table, data)
-        except Exception as e:
+        except:
             raise
 
     def get_cookie_session_begginging_time(self, sessionid: str) -> datetime:
@@ -617,7 +617,7 @@ class Noco:
         """
         try:
             return self.crud.get_cookie_by_sessionid(self.SessionLocal(), sessionid).created_at
-        except Exception:
+        except:
             return ""
 
     @staticmethod
@@ -641,8 +641,8 @@ class Noco:
                 if elapsed_time > self.cookie_session_time_limit:
                     self.delete_session_cookie(session_id)
 
-        except Exception as e:
-            raise Exception(f"Error deleting expired sessions: {str(e)}")
+        except:
+            raise 
 
 
     def post_error_message(self, data: dict):
@@ -657,5 +657,5 @@ class Noco:
         """
         try:
             self.post_nocodb_table_data(NOCODB_TABLE_MAP.error_table, data)
-        except Exception as e:
+        except:
             raise
