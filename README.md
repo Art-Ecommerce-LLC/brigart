@@ -14,6 +14,7 @@ The purpose of this project is to create a professional platform for the artist,
 - Automated product updates using the Stripe API that change the product data such as images, prices, and titles based off the database records
 - Error system that automatically pings the developer on telegram and over email the error code while also storing a ticket in the database
 - No need for api get operations with NocoDB, since it is pulling from PostreSQL
+- Database filter searching
 
 ## Features in the works
 - Backend migration from Render -> AWS with CI/CD
@@ -23,7 +24,8 @@ The purpose of this project is to create a professional platform for the artist,
 - Create portal where artist can set up there own website instances with ease, connect there accounts with Stripe Connect
 - Add feature to portal that allows artists to easily change art, prices and titles on there instance
 - Implement cookie payload caching similar to artwork caching to optimize speed
-- Make the only API Connection to Noco the the creation and upload of images, everything else make PostgreSQL create, read, update, and delete
+- Make the only API Connection to Noco the the creation and upload of images, everything else make PostgreSQL create, read, update, and delete, 
+- Sync img table to a datauri table to save money and load time
 
 ## Requirements
 - Git

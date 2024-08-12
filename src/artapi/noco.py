@@ -37,19 +37,22 @@ class Noco:
     _instance = None
 
     def __init__(self):
-        self.headers = {'xc-token': NOCODB_XC_TOKEN}
-        self.base_url = NOCODB_PATH
+        
+        
         self.previous_data = CachedData()
-        self.session = requests.Session()
-        self.session.headers.update(self.headers)
         stripe.api_key = STRIPE_SECRET_KEY 
         self.stripe_connector = StripeAPI()
         self.resolution_factor = 0.8
         self.cookie_session_time_limit = 60 * 15
+
         self.engine = engine
         self.SessionLocal = SessionLocal
         self.Base = Base
         self.crud = crud
+
+        self.request = requests
+        self.headers = {'xc-token': NOCODB_XC_TOKEN}
+        self.base_url = NOCODB_PATH
 
     def get_auth_headers(self) -> dict:
         return self.headers
@@ -73,7 +76,7 @@ class Noco:
         """
         try:
             body = {"Id": Id}
-            response = self.session.delete(f"{self.get_nocodb_path(table)}", json=body)
+            response = self.request.delete(f"{self.get_nocodb_path(table)}", json=body, headers=self.get_auth_headers())
             response.raise_for_status()
         except Exception as e:
             raise
@@ -90,7 +93,7 @@ class Noco:
                 Exception: If there is an error posting data to the table
         """
         try:
-            response = self.session.post(self.get_nocodb_path(table), json=data)
+            response = self.request.post(self.get_nocodb_path(table), json=data, headers=self.get_auth_headers())
             response.raise_for_status()
         except Exception as e:
             raise
@@ -107,7 +110,7 @@ class Noco:
                 Exception: If there is an error patching data in the table
         """
         try:
-            response = self.session.patch(self.get_nocodb_path(table), json=data)
+            response = self.request.patch(self.get_nocodb_path(table), json=data, headers=self.get_auth_headers())
             response.raise_for_status()
         except Exception as e:
             raise
@@ -353,23 +356,6 @@ class Noco:
             return key_data_1
         except Exception as e:
             raise
-
-    def get_product_id_from_title(self, title: str, product_map_data: ProductMapObject) -> Union[str, None]:
-        """
-            Get the product ID from the title
-
-            Arguments:
-                title (str): The title of the product
-                product_map_data (ProductMapObject): The product map data
-            
-            Returns:
-                str: The product ID for the title
-        """
-        try:
-            index = product_map_data.noco_product_Ids.index(self.get_artwork_Id_from_title(title))
-            return product_map_data.stripe_product_ids[index]
-        except ValueError:
-            return None
   
     def get_used_artwork_data_timestamps(self) -> list:
         """
@@ -481,9 +467,7 @@ class Noco:
                 ValueError: If the artwork with the title is not found
         """
         try:
-            artwork_data = self.get_artwork_data_with_cache()
-            index = artwork_data.titles.index(title)
-            return artwork_data.prices[index]
+            return self.crud.get_artwork_by_label(self.SessionLocal(), title).price
         except ValueError:
             raise ValueError(f"Artwork with title {title} not found")
 
@@ -504,26 +488,6 @@ class Noco:
         price = self.get_art_price_from_title(title)
         return str(int(price) * quantity)
 
-    def get_full_cookie_from_session_id(self, session_id: str) -> dict:
-        """
-            Get the full cookie data from the session ID
-
-            Arguments:
-                session_id (str): The session ID to fetch the cookie data
-            
-            Returns:
-                dict: The full cookie data for the session ID
-            
-            Raises:
-                ValueError: If the session ID is not found
-        """
-        try:
-            cookie_data = self.get_cookie_data()
-            index = cookie_data.sessionids.index(session_id)
-            return cookie_data.cookies[index]
-        except ValueError:
-            return {}
-
     def get_cookie_from_session_id(self, session_id: str) -> list:
         """
             Get the cookie data from the session ID
@@ -538,10 +502,7 @@ class Noco:
                 ValueError: If the session ID is not found
         """
         try:
-            cookie_data = self.get_cookie_data()
-            index = cookie_data.sessionids.index(session_id)
-            img_quant_list = cookie_data.cookies[index]["img_quantity_list"]
-            return img_quant_list
+            return self.crud.get_cookie_by_sessionid(self.SessionLocal(), session_id).cookies["img_quantity_list"]
         except ValueError:
             return []
 
@@ -555,11 +516,8 @@ class Noco:
             Raises:
                 Exception: If there is an error deleting the session cookie
         """
-        cookie_data = self.get_cookie_data()
         try:
-            if session_id in cookie_data.sessionids:
-                index = cookie_data.sessionids.index(session_id)
-                self.delete_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, cookie_data.Id[index])
+            self.crud.delete_cookie_from_sessionid(self.SessionLocal(), session_id)
         except Exception as e:
             raise
 
@@ -574,12 +532,8 @@ class Noco:
             Raises:
                 Exception: If there is an error posting the cookie session ID and cookies
         """
-        data = {
-            "sessionids": sessionid,
-            "cookies": cookies
-        }
         try:
-            self.post_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, data)
+            self.crud.create_cookie(self.SessionLocal(), sessionid, cookies)
         except Exception as e:
             raise
     def patch_cookies_data(self, data: dict):
@@ -593,7 +547,7 @@ class Noco:
                 Exception: If there is an error patching the cookies data
         """
         try:
-            self.patch_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, data)
+            self.crud.update_cookie(self.SessionLocal(), data["Id"], data["sessionids"], data["cookies"])
         except Exception as e:
             raise
 
@@ -611,31 +565,9 @@ class Noco:
                 ValueError: If the session ID is not found
         """
         try:
-            cookie_data = self.get_cookie_data()
-            index = cookie_data.sessionids.index(session_id)
-            return cookie_data.Id[index]
+            return self.crud.get_cookie_by_sessionid(self.SessionLocal(), session_id).id
         except ValueError:
             return ""
-
-    def get_artwork_Id_from_title(self, title: str) -> Union[int, None]:
-        """
-            Get the artwork ID from the title
-
-            Arguments:
-                title (str): The title of the artwork
-            
-            Returns:
-                int: The artwork ID for the title
-            
-            Raises:
-                ValueError: If the artwork with the title is not found
-        """
-        try:
-            artwork_data = self.get_artwork_data_with_cache()
-            index = artwork_data.titles.index(title)
-            return artwork_data.Ids[index]
-        except ValueError:
-            return None
 
     def upload_image(self, file_to_upload: dict, path: str) -> dict:
         """
@@ -655,7 +587,7 @@ class Noco:
             params = {
                 "path": path
             }
-            response = self.session.post(self.get_storage_upload_path(), files=file_to_upload, params=params)
+            response = self.request.post(self.get_storage_upload_path(), files=file_to_upload, params=params)
             response.raise_for_status()
             return response.json()
         except Exception as e:
@@ -673,24 +605,6 @@ class Noco:
         except Exception as e:
             raise
 
-    def delete_user_session_after_payment(self, session_id: str) -> None:
-        """
-            Delete the user session after payment
-
-            Arguments:
-                session_id (str): The session ID to delete
-            
-            Raises:
-                Exception: If there is an error deleting the user session after payment
-            
-        """
-        try:
-            cookie_data = self.get_cookie_data()
-            index = cookie_data.sessionids.index(session_id)
-            self.delete_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, cookie_data.Id[index])
-        except Exception as e:
-            raise
-
     def get_cookie_session_begginging_time(self, sessionid: str) -> datetime:
         """
             Get the session beginning time for the session ID
@@ -702,10 +616,7 @@ class Noco:
                 str: The session beginning time for the session ID
         """
         try:
-            cookie_data = self.get_cookie_data()
-            index = cookie_data.sessionids.index(sessionid)
-            return cookie_data.created_ats[index]
-        # Write exception for session id not being in list
+            return self.crud.get_cookie_by_sessionid(self.SessionLocal(), sessionid).created_at
         except Exception:
             return ""
 

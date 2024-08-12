@@ -2,7 +2,8 @@
 from pydantic import BaseModel
 from typing import List, Union, Dict, Any
 from dataclasses import dataclass
-from sqlalchemy import Column, Integer, String, DateTime, JSON, ARRAY
+from sqlalchemy import Column, Integer, String, DateTime, JSON
+from sqlalchemy.sql import func
 from datetime import datetime
 from dataclasses import dataclass
 from typing import List, Dict, Any, Union
@@ -45,8 +46,8 @@ class Cookies(Base):
     id = Column(Integer, primary_key=True)
     sessionids = Column(String)
     cookies = Column(JSON)
-    created_at = Column(DateTime, default=datetime)
-    updated_at = Column(DateTime, default=datetime, onupdate=datetime)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=False)
 
 class TitleQuantity(BaseModel):
     quantity: Union[int, str]
