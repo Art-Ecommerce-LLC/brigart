@@ -7,9 +7,10 @@ import stripe
 import time
 from datetime import datetime, timezone
 from functools import lru_cache
+import ast
 
 from .config import (
-    NOCODB_XC_TOKEN, NOCODB_PATH, STRIPE_SECRET_KEY, DATABASE_URL
+    NOCODB_XC_TOKEN, NOCODB_PATH, STRIPE_SECRET_KEY
 )
 from .models import (
     ArtObject, IconObject, KeyObject, CookieObject, ProductMapObject
@@ -59,47 +60,6 @@ class Noco:
     def get_storage_upload_path(self) -> str:
         return f"{self.base_url}/api/v2/storage/upload"
 
-    def get_nocodb_table_data(self, table: str) -> dict:
-        """
-            Function to get the data from a table with a limit of 200
-
-            Arguments:
-                table (str): The name of the table to fetch data from.
-
-            Returns:
-                dict: The JSON response containing the data from the table.
-
-            Raises:
-                Exception: If there is an error fetching data from the table.
-        """
-        try:
-            params = {"limit": 200}
-            response = self.session.get(self.get_nocodb_path(table), params=params)
-            response.raise_for_status()
-            return response.json()
-        except Exception as e:
-            raise
-
-    def get_nocodb_table_data_record(self, table: str, Id: int) -> dict:
-        """
-            Function to get a record from a table by its ID
-
-            Arguments:
-                table (str): The name of the table to fetch data from.
-                Id (int): The ID of the record to fetch.
-
-            Returns:
-                dict: The JSON response containing the data from the record.
-            
-            Raises:
-                Exception: If there is an error fetching data from the record
-        """
-        try:
-            response = self.session.get(f"{self.get_nocodb_path(table)}/{Id}")
-            response.raise_for_status()
-            return response.json()
-        except Exception as e:
-            raise
     def delete_nocodb_table_data(self, table: str, Id: int) -> None:
         """
             Function to delete a record from a table by its ID
@@ -153,11 +113,24 @@ class Noco:
             raise
 
     def convert_paths_to_data_uris(self, paths: list) -> list:
+        """
+
+            Convert a list of image paths to a list of data URIs
+
+            Arguments:
+                paths (list): A list of image paths to convert
+
+            Returns:
+                list: A list of data URIs of the image paths
+
+            Raises:
+                Exception: If there is an error converting the image paths to data URIs
+        """
         try:
             data_uris = []
             for path in paths:
                 url_path = f"{self.base_url}/{path}"
-                img_data = self.session.get(url_path).content
+                img_data = requests.get(url_path).content
                 data_uri = self.convert_to_data_uri(img_data)
                 data_uris.append(data_uri)
             return data_uris
@@ -191,9 +164,7 @@ class Noco:
             return f"data:image/jpeg;base64,{base64_data}"
         except Exception as e:
             raise
-    
-    
-    
+
     def get_artwork_data_with_cache(self) -> ArtObject:
         """
         Get the artwork data from NocoDB with caching.
@@ -206,7 +177,6 @@ class Noco:
         """
         try:
             if self.compare_timestamps():
-                # Clear the cache and update previous_data.artwork if timestamps are different
                 self.clear_artwork_data_cache()
                 self.previous_data.artwork = self.get_artwork_data_no_cache()
             return self._get_artwork_data_cached()
@@ -248,17 +218,78 @@ class Noco:
         except Exception as e:
             raise
 
-    def pull_single_key_record(self) -> dict:
+    def get_icon_data_no_cache(self) -> IconObject:
         """
-            Pull a single key record using the functions from the Noco class
+            Get the icon data from NocoDB without caching
+            
+            Returns:
+                IconObject: An object containing the icon data without caching
+                
+            Raises:
+                Exception: If there is an error getting the icon data without caching
+                
         """
         try:
-            # get Id = 6 from key record
-            key_data_1 = self.get_nocodb_table_data_record(NOCODB_TABLE_MAP.key_table, 6)
-            return key_data_1
+            data = self.crud.get_icons(self.SessionLocal(), skip=0, limit=100)
+            icon_paths = [ast.literal_eval(item.img)[0]['path'] for item in data]
+            data_uris = self.convert_paths_to_data_uris(icon_paths)
+            icon_data = IconObject(
+                icon_paths=icon_paths,
+                titles=[item.img_label for item in data],
+                data_uris=data_uris,
+                created_ats=[item.created_at for item in data],
+                updated_ats=[item.updated_at for item in data],
+                Ids=[item.id for item in data]
+            )
+            return icon_data
+        
         except Exception as e:
             raise
-    
+
+    def get_key_data(self) -> KeyObject:
+        """
+            Get the key data from NocoDB
+
+            Returns:
+                KeyObject: An object containing the key data
+            
+            Raises:
+                Exception: If there is an error getting the key data
+            
+        """
+        try:
+            data = self.crud.get_keys(self.SessionLocal(), skip=0, limit=100)
+            key_data = KeyObject(
+                envvars=[item.envvar for item in data],
+                envvals=[item.envval for item in data],
+            )
+            return key_data
+        except Exception as e:
+            raise
+        
+    def get_cookie_data(self) -> CookieObject:
+        """
+            Get the cookie data from NocoDB
+
+            Returns:
+                CookieObject: An object containing the cookie data
+            
+            Raises:
+                Exception: If there is an error getting the cookie data
+        """
+        try:
+            data = self.crud.get_cookies(self.SessionLocal(), skip=0, limit=100)
+            cookie_data = CookieObject(
+                Id=[item.id for item in data],
+                sessionids=[item.sessionids for item in data],
+                cookies=[item.cookies for item in data],
+                created_ats=[item.created_at for item in data]  
+            )
+            return cookie_data
+        except Exception as e:
+            raise
+
+
     def get_artwork_data_no_cache(self) -> ArtObject:
         """
         Get the artwork data from NocoDB without caching.
@@ -270,19 +301,16 @@ class Noco:
             Exception: If there is an error getting the artwork data without cache
         """
         try:
-            # Try to get data if it was a crud operation
             data = self.crud.get_artworks(self.SessionLocal(), skip=0, limit=100)
-            # data = self.get_nocodb_table_data(NOCODB_TABLE_MAP.img_table)
-            art_paths = [item['img'][0]['signedPath'] for item in data['list']]
-            data_uris = self.convert_paths_to_data_uris(art_paths)
+            art_paths = [ast.literal_eval(item.img)[0]['path'] for item in data]
             artwork_data = ArtObject(
                 art_paths=art_paths,
-                titles=[item['img_label'] for item in data['list']],
-                prices=[item['price'] for item in data['list']],
-                data_uris=data_uris,
-                created_ats=[item['CreatedAt'] for item in data['list']],
-                updated_ats=[item['UpdatedAt'] for item in data['list']],
-                Ids=[item['Id'] for item in data['list']]
+                titles=[item.img_label for item in data],
+                prices=[item.price for item in data],
+                data_uris=self.convert_paths_to_data_uris(art_paths),
+                created_ats=[item.created_at for item in data],
+                updated_ats=[item.updated_at for item in data],
+                Ids=[item.id for item in data]
             )
             return artwork_data
         except Exception as e:
@@ -299,18 +327,30 @@ class Noco:
             Exception: If there is an error getting the artwork data without cache and without data URIs
         """
         try:
-            # data = self.get_nocodb_table_data(NOCODB_TABLE_MAP.img_table)
             data = self.crud.get_artworks(self.SessionLocal(), skip=0, limit=100)
-            art_paths = [item['img'][0]['signedPath'] for item in data['list']]
+            art_paths = [ast.literal_eval(item.img)[0]['path'] for item in data]
             artwork_data = ArtObject(
                 art_paths=art_paths,
-                titles=[item['img_label'] for item in data['list']],
-                prices=[item['price'] for item in data['list']],
-                created_ats=[item['CreatedAt'] for item in data['list']],
-                updated_ats=[item['UpdatedAt'] for item in data['list']],
-                Ids=[item['Id'] for item in data['list']]
+                titles=[item.img_label for item in data],
+                prices=[item.price for item in data],
+                created_ats=[item.created_at for item in data],
+                updated_ats=[item.updated_at for item in data],
+                Ids=[item.id for item in data]
             )
+
             return artwork_data
+        except Exception as e:
+            raise
+    
+    def pull_single_key_record(self) -> dict:
+        """
+            Pull a single key record using the functions from the Noco class
+        """
+        try:
+            # Pull key data and get the first record
+
+            key_data_1 = self.get_key_data().envvals[0]
+            return key_data_1
         except Exception as e:
             raise
 
@@ -330,32 +370,7 @@ class Noco:
             return product_map_data.stripe_product_ids[index]
         except ValueError:
             return None
-
-    def get_product_map_data_no_cache(self) -> ProductMapObject:
-        """
-            Get the product map data from NocoDB
-
-            Returns:
-                ProductMapObject: An object containing the product map data
-
-            Raises:
-                Exception: If there is an error getting the product map data
-        """
-        try:
-            data = self.get_nocodb_table_data(NOCODB_TABLE_MAP.product_map_table)
-            product_map_data = ProductMapObject(
-                Id=[item['Id'] for item in data['list']],
-                noco_product_Ids=[item['noco_product_Id'] for item in data['list']],
-                stripe_product_ids=[item['stripe_product_id'] for item in data['list']],
-                created_ats=[item['CreatedAt'] for item in data['list']],
-                updated_ats=[item['UpdatedAt'] for item in data['list']]
-            )
-            return product_map_data
-        except Exception as e:
-            raise
-
   
-
     def get_used_artwork_data_timestamps(self) -> list:
         """
             Get the updated_at timestamps of the artwork data that was used in the previous iteration
@@ -370,22 +385,6 @@ class Noco:
         try:
             artwork_data = self.previous_data.artwork
             return artwork_data.updated_ats
-        except Exception as e:
-            raise
-
-    def get_current_artwork_data_timestamps(self) -> list:
-        """
-            Get the updated_at timestamps of the current artwork data
-
-            Returns:
-                list: A list of updated_at timestamps of the current artwork data
-            
-            Raises:
-                Exception: If there is an error getting the updated_at timestamps for the current artwork data
-        """
-        try:
-            data = self.get_nocodb_table_data(NOCODB_TABLE_MAP.img_table)
-            return [item['UpdatedAt'] for item in data['list']]
         except Exception as e:
             raise
 
@@ -407,25 +406,6 @@ class Noco:
         except Exception as e:
             raise
     
-
-    def get_current_icon_data_timestamps(self) -> list:
-        """
-            Get the updated_at timestamps of the current icon data
-
-            Returns:
-                list: A list of updated_at timestamps of the current icon data
-            
-            Raises:
-                Exception: If there is an error getting the updated_at timestamps for the current icon data
-        """
-        try:
-            data = self.get_nocodb_table_data(NOCODB_TABLE_MAP.icon_table)
-            return [item['UpdatedAt'] for item in data['list']]
-        except Exception as e:
-            raise
-
-
-
     def get_icon_data(self) -> IconObject:
         """
             Get the icon data from NocoDB
@@ -443,79 +423,6 @@ class Noco:
             else:
                 self.previous_data.icon = self.get_icon_data_no_cache()
                 return self.previous_data.icon
-        except Exception as e:
-            raise
-
-
-
-    def get_icon_data_no_cache(self) -> IconObject:
-        """
-            Get the icon data from NocoDB without caching
-            
-            Returns:
-                IconObject: An object containing the icon data without caching
-                
-            Raises:
-                Exception: If there is an error getting the icon data without caching
-                
-        """
-        try:
-            data = self.get_nocodb_table_data(NOCODB_TABLE_MAP.icon_table)
-            icon_paths = [item['img'][0]['signedPath'] for item in data['list']]
-            data_uris = self.convert_paths_to_data_uris(icon_paths)
-            icon_data = IconObject(
-                icon_paths=icon_paths,
-                titles=[item['img_label'] for item in data['list']],
-                data_uris=data_uris,
-                created_ats=[item['CreatedAt'] for item in data['list']],
-                updated_ats=[item['UpdatedAt'] for item in data['list']],
-                Ids=[item['Id'] for item in data['list']]
-            )
-            return icon_data
-        
-        except Exception as e:
-            raise
-
-    def get_key_data(self) -> KeyObject:
-        """
-            Get the key data from NocoDB
-
-            Returns:
-                KeyObject: An object containing the key data
-            
-            Raises:
-                Exception: If there is an error getting the key data
-            
-        """
-        try:
-            data = self.get_nocodb_table_data(NOCODB_TABLE_MAP.key_table)
-            key_data = KeyObject(
-                envvars=[item['envvar'] for item in data['list']],
-                envvals=[item['envval'] for item in data['list']]
-            )
-            return key_data
-        except Exception as e:
-            raise
-        
-    def get_cookie_data(self) -> CookieObject:
-        """
-            Get the cookie data from NocoDB
-
-            Returns:
-                CookieObject: An object containing the cookie data
-            
-            Raises:
-                Exception: If there is an error getting the cookie data
-        """
-        try:
-            data = self.get_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table)
-            cookie_data = CookieObject(
-                Id=[item['Id'] for item in data['list']],
-                sessionids=[item['sessionids'] for item in data['list']],
-                cookies=[item['cookies'] for item in data['list']],
-                created_ats=[item['CreatedAt'] for item in data['list']]
-            )
-            return cookie_data
         except Exception as e:
             raise
 
@@ -784,7 +691,7 @@ class Noco:
         except Exception as e:
             raise
 
-    def get_cookie_session_begginging_time(self, sessionid: str) -> str:
+    def get_cookie_session_begginging_time(self, sessionid: str) -> datetime:
         """
             Get the session beginning time for the session ID
 
@@ -806,26 +713,26 @@ class Noco:
     def get_version():
         return str(int(time.time()))
 
-    async def delete_expired_sessions(self):
+    async def delete_expired_sessions(self) -> None:
         """
-        Delete expired sessions every 15 minutes
+        Delete expired sessions every 15 minutes.
 
         Raises:
-            Exception: If there is an error deleting expired sessions
+            Exception: If there is an error deleting expired sessions.
         """
         try:
-            cookie_data = self.get_cookie_data()
+            cookie_data: CookieObject = self.get_cookie_data()
             sessions = cookie_data.sessionids
             created_ats = cookie_data.created_ats
             current_time = datetime.now(timezone.utc)
-
-            for session_id, creation_time_str in zip(sessions, created_ats):
-                session_creation_time = datetime.fromisoformat(creation_time_str.replace('Z', '+00:00'))
-                elapsed_time = (current_time - session_creation_time).total_seconds()
+            for session_id, creation_time in zip(sessions, created_ats):
+                elapsed_time = (current_time - creation_time.replace(tzinfo=timezone.utc)).total_seconds()
                 if elapsed_time > self.cookie_session_time_limit:
                     self.delete_session_cookie(session_id)
+
         except Exception as e:
-            raise
+            raise Exception(f"Error deleting expired sessions: {str(e)}")
+
 
     def post_error_message(self, data: dict):
         """

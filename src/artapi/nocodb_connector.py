@@ -15,18 +15,9 @@ class NocoDBManager:
         """
         try:
             noco_instance = Noco()
-            # Test connection to ensure it's valid
-            self._test_connection(noco_instance)
             return noco_instance
         except ConnectionError as e:
             raise
-
-    def _test_connection(self, noco_instance : Noco):
-        """
-        Perform a simple query to test if the connection is valid.
-        """
-        # Example test query - adjust according to your actual use case
-        noco_instance.pull_single_key_record()
 
     def _handle_connection_error(self):
         """
@@ -42,20 +33,10 @@ class NocoDBManager:
                 else:
                     raise
 
-    def _ensure_valid_session(self):
-        """
-        Ensure that the NocoDB session is valid. If not, recreate the NocoDB instance.
-        """
-        try:
-            self.noco_db.pull_single_key_record()   
-        except Exception as e:
-            self._handle_connection_error() 
-
     def get_noco_db(self):
         """
         Get the NocoDB instance, ensuring the session is valid.
         """
-        self._ensure_valid_session()
         return self.noco_db
 
 # Instantiate NocoDBManager

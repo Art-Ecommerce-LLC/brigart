@@ -72,8 +72,8 @@ class IconObject:
     icon_paths: List[str] = None
     titles: List[str] = None
     data_uris: List[str] = None
-    created_ats: List[str] = None
-    updated_ats: List[str] = None
+    created_ats: List[datetime] = None
+    updated_ats: List[datetime] = None
 
 @dataclass()
 class ArtObject:
@@ -82,8 +82,8 @@ class ArtObject:
     titles: List[str] = None
     prices: List[Union[int, str]] = None
     data_uris: List[str] = None
-    created_ats: List[str] = None
-    updated_ats: List[str] = None
+    created_ats: List[datetime] = None
+    updated_ats: List[datetime] = None
 
 @dataclass()
 class KeyObject:
@@ -95,15 +95,15 @@ class CookieObject:
     Id : List[int]
     sessionids: List[str]
     cookies: List[Dict[str, Any]]
-    created_ats: List[str] = None
+    created_ats: List[datetime] = None
 
 @dataclass()
 class ProductMapObject:
     Id: List[int]
     noco_product_Ids: List[int] = None
     stripe_product_ids: List[str] = None
-    created_ats: List[str] = None
-    updated_ats: List[str] = None
+    created_ats: List[datetime] = None
+    updated_ats: List[datetime] = None
 
 @dataclass()
 class ErrorObject:
@@ -111,8 +111,8 @@ class ErrorObject:
     error: List[dict] = None
     ticket_assignment: List[str] = None
     status: List[str] = None
-    created_ats: List[str] = None
-    updated_ats: List[str] = None
+    created_ats: List[datetime] = None
+    updated_ats: List[datetime] = None
     
 @dataclass
 class TableMap:

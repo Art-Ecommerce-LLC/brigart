@@ -13,7 +13,6 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 import os
 import uuid
-import datetime
 import stripe
 from datetime import datetime, timezone
 import asyncio
@@ -504,13 +503,12 @@ async def get_session_time(request: Request, noco_db: Noco = Depends(get_noco_db
         if not session_id:
             raise HTTPException(status_code=400, detail="Session ID not found")
 
-        session_creation_time_str = noco_db.get_cookie_session_begginging_time(session_id)
-        if session_creation_time_str == "":
+        session_creation_time = noco_db.get_cookie_session_begginging_time(session_id)
+        if session_creation_time == "":
             return JSONResponse({"remaining_time": 0})
 
-        session_creation_time = datetime.fromisoformat(session_creation_time_str.replace('Z', '+00:00'))  # Convert to datetime object
         current_time = datetime.now(timezone.utc)
-        elapsed_time = (current_time - session_creation_time).total_seconds()
+        elapsed_time = (current_time - session_creation_time.replace(tzinfo=timezone.utc)).total_seconds()
         remaining_time = max(0, 900 - elapsed_time)  # 30 minutes = 1800 seconds
 
         return JSONResponse({"remaining_time": int(remaining_time)})

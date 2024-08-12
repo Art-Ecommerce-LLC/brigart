@@ -1,5 +1,4 @@
 # Welcome to BrigArt
-
 The purpose of this project is to create a professional platform for the artist, Brig, to sell his prints.
 
 ## User Stories 
@@ -8,13 +7,13 @@ The purpose of this project is to create a professional platform for the artist,
 - A user wants to check out the artist's social media (Coming soon!)
 - A user wants to checkout the parent company's social media (Coming soon!)
 
-
 ## Current Features
 - The ability to automatically update prices, titles, and images on an HTML template without always writing new HTML code based off the data in the database
 - Selected images have their resolution reduced. Then they are turned into Data URI's which are sent to the HTML through the template context. They are recieved on the frontend in a background-image: url(...) to prevent users or browsers from easily downloading them.
 - Caching to optimize the retreival of large payloads that are pulled from a database
 - Automated product updates using the Stripe API that change the product data such as images, prices, and titles based off the database records
 - Error system that automatically pings the developer on telegram and over email the error code while also storing a ticket in the database
+- No need for api get operations with NocoDB, since it is pulling from PostreSQL
 
 ## Features in the works
 - Backend migration from Render -> AWS with CI/CD
@@ -24,7 +23,7 @@ The purpose of this project is to create a professional platform for the artist,
 - Create portal where artist can set up there own website instances with ease, connect there accounts with Stripe Connect
 - Add feature to portal that allows artists to easily change art, prices and titles on there instance
 - Implement cookie payload caching similar to artwork caching to optimize speed
-- Test singelton PostgreSQL connection on site speed and functionality to see if it is faster than singelton API connection to NocoDB
+- Make the only API Connection to Noco the the creation and upload of images, everything else make PostgreSQL create, read, update, and delete
 
 ## Requirements
 - Git
