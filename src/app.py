@@ -410,9 +410,7 @@ async def delete_item(request: Request, title: Title, noco_db: Noco = Depends(ge
                 img_quant_list.remove(each)
                 matched_price = each["price"]
                 break
-        else:
-            raise HTTPException(status_code=404, detail="Title not found in cart")
-        
+
         if img_quant_list == []:
             noco_db.delete_session_cookie(session_id)
             request.session.pop("session_id")
