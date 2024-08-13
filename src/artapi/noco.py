@@ -620,6 +620,21 @@ class Noco:
     @staticmethod
     def get_version():
         return str(int(time.time()))
+    
+    def delete_session_cookie_with_noco(self, session_id: str) -> None:
+        """
+            Delete the session cookie from the session ID
+
+            Arguments:
+                session_id (str): The session ID to delete the cookie data
+            
+            Raises:
+                Exception: If there is an error deleting the session cookie
+        """
+        try:
+            self.delete_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, self.get_cookie_Id_from_session_id(session_id))
+        except:
+            raise
 
     async def delete_expired_sessions(self) -> None:
         """
@@ -636,7 +651,7 @@ class Noco:
             for session_id, creation_time in zip(sessions, created_ats):
                 elapsed_time = (current_time - creation_time.replace(tzinfo=timezone.utc)).total_seconds()
                 if elapsed_time > self.cookie_session_time_limit:
-                    self.delete_session_cookie(session_id)
+                    self.delete_session_cookie_with_noco(session_id)
         except:
             raise 
 
