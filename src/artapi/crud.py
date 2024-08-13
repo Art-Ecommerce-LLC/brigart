@@ -7,6 +7,7 @@ def get_artwork(db: Session, artwork_id: int):
     return db.query(models.Artwork).filter(models.Artwork.id == artwork_id).first()
 
 def get_artworks(db: Session, skip: int = 0, limit: int = 100):
+    db.expire_all()
     return db.query(models.Artwork).offset(skip).limit(limit).all()
 
 def get_key(db: Session, key_id: int):
@@ -32,6 +33,7 @@ def get_icon_by_label(db: Session, img_label: str):
     return db.query(models.Icons).filter(models.Icons.img_label == img_label).first()
 
 def get_artwork_by_label(db: Session, img_label: str):
+    db.expire_all()
     return db.query(models.Artwork).filter(models.Artwork.img_label == img_label).first()
 
 def get_cookie_by_sessionid(db: Session, sessionids: str):

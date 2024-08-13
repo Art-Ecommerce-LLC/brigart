@@ -104,7 +104,7 @@ class StripeAPI:
                     img = img.convert('RGB')
                 width, height = img.size
                 new_size = (int(width * self.resolution_factor), int(height * self.resolution_factor))
-                resized_img = img.resize(new_size, Image.ANTIALIAS)
+                resized_img = img.resize(new_size, Image.Resampling.LANCZOS)
                 buffer = BytesIO()
                 resized_img.save(buffer, format="JPEG")
                 processed_img_data = buffer.getvalue()

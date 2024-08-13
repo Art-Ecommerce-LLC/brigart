@@ -12,7 +12,7 @@ from .postgres import Base
 
 
 class Artwork(Base):
-    __tablename__ = "nc_ge1h___testimgs_copy"
+    __tablename__ = "nc_zavl___imgs"
 
     id = Column(Integer, primary_key=True)
     img_label = Column(String)
