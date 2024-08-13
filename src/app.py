@@ -30,6 +30,10 @@ from src.artapi.models import (
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
 
+# Get the logger
+noco_db = NocoDBManager()
+logger = setup_logger()
+
 if OPENAPI_URL == "None":
     OPENAPI_URL = None
 
@@ -97,9 +101,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def global_exception_handler(request: Request, exc: Exception):
     return templates.TemplateResponse("error_500.html", {"request": request}, status_code=500)
 
-# Get the logger
-noco_db = NocoDBManager()
-logger = setup_logger(noco_db)
 
 @app.get("/", response_class=HTMLResponse)
 @limiter.limit("100/minute")
