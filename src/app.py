@@ -30,8 +30,6 @@ from src.artapi.models import (
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
 
-# Get the logger
-noco_db = NocoDBManager()
 logger = setup_logger()
 
 if OPENAPI_URL == "None":
