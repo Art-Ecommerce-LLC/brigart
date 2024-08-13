@@ -58,25 +58,7 @@ class Noco:
 
     def get_storage_upload_path(self) -> str:
         return f"{self.base_url}/api/v2/storage/upload"
-
-    def delete_nocodb_table_data(self, table: str, Id: int) -> None:
-        """
-            Function to delete a record from a table by its ID
-
-            Arguments:
-                table (str): The name of the table to delete data from.
-                Id (int): The ID of the record to delete.
-
-            Raises:
-                Exception: If there is an error deleting data from the table
-        """
-        try:
-            body = {"Id": Id}
-            response = self.request.delete(f"{self.get_nocodb_path(table)}", json=body, headers=self.get_auth_headers())
-            response.raise_for_status()
-        except Exception as e:
-            raise
-
+    
     def post_nocodb_table_data(self, table: str, data: dict) -> None:
         """
             Function to post data to a table
@@ -620,21 +602,6 @@ class Noco:
     @staticmethod
     def get_version():
         return str(int(time.time()))
-    
-    def delete_session_cookie_with_noco(self, session_id: str) -> None:
-        """
-            Delete the session cookie from the session ID
-
-            Arguments:
-                session_id (str): The session ID to delete the cookie data
-            
-            Raises:
-                Exception: If there is an error deleting the session cookie
-        """
-        try:
-            self.delete_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, self.get_cookie_Id_from_session_id(session_id))
-        except:
-            raise
 
     async def delete_expired_sessions(self) -> None:
         """
@@ -651,22 +618,6 @@ class Noco:
             for session_id, creation_time in zip(sessions, created_ats):
                 elapsed_time = (current_time - creation_time.replace(tzinfo=timezone.utc)).total_seconds()
                 if elapsed_time > self.cookie_session_time_limit:
-                    self.delete_session_cookie_with_noco(session_id)
+                    self.delete_session_cookie(session_id)
         except:
             raise 
-
-
-    def post_error_message(self, data: dict):
-        """
-            Post an error message to the error table
-
-            Arguments:
-                error_message (str): The error message to post
-            
-            Raises:
-                Exception: If there is an error posting the error message
-        """
-        try:
-            self.post_nocodb_table_data(NOCODB_TABLE_MAP.error_table, data)
-        except:
-            raise
