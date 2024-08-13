@@ -33,35 +33,11 @@ desc = "Backend platform for BRIG ART"
 if OPENAPI_URL == "None":
     OPENAPI_URL = None
 
-# Initialize logger with an instance instead of a callable
-noco_instance = get_noco_db()  # Ensure this returns an instance of Noco
-logger = setup_logger(noco_instance)
-
-async def delete_expired_sessions_task():
-    while True:
-        try:
-            noco_db = get_noco_db()
-            await noco_db.delete_expired_sessions()
-        except Exception as e:
-            logger.error(f"Error in lifespan: {e}")
-        await asyncio.sleep(60)
-        
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-      # Create an instance of Noco
-    task = asyncio.create_task(delete_expired_sessions_task())
-    yield
-    task.cancel()
-    try:
-        await task
-    except asyncio.CancelledError:
-        logger.info("Background task was cancelled")
     
 app = FastAPI(
     title="Brig API",
     description=desc,
-    openapi_url=OPENAPI_URL,
-    lifespan=lifespan
+    openapi_url=OPENAPI_URL
 )
 
 stripe.api_key = STRIPE_SECRET_KEY
@@ -84,6 +60,25 @@ templates_dir = os.path.join(script_dir, "templates")
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 templates = Jinja2Templates(directory=templates_dir)
 
+async def delete_expired_sessions_task():
+    while True:
+        try:
+            noco_db = get_noco_db()
+            await noco_db.delete_expired_sessions()
+        except Exception as e:
+            logger.error(f"Error in lifespan: {e}")
+        await asyncio.sleep(60)
+        
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+      # Create an instance of Noco
+    task = asyncio.create_task(delete_expired_sessions_task())
+    yield
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        logger.info("Background task was cancelled")
 
 # Figure out why email get's locked out
 # Make better templates
@@ -101,6 +96,10 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @limiter.limit("100/minute")
 async def global_exception_handler(request: Request, exc: Exception):
     return templates.TemplateResponse("error_500.html", {"request": request}, status_code=500)
+
+# Get the logger
+noco_db = NocoDBManager()
+logger = setup_logger(noco_db)
 
 @app.get("/", response_class=HTMLResponse)
 @limiter.limit("100/minute")
@@ -434,7 +433,7 @@ async def delete_item(request: Request, title: Title, noco_db: Noco = Depends(ge
 
 @app.get("/get_session_id")
 @limiter.limit("100/minute") 
-async def get_session_id(request: Request):
+async def get_session_id(request: Request, noco_db: Noco = Depends(get_noco_db)):
     logger.info(f"Get session ID by {request.client.host}")
     try:
         session_id = request.session.get("session_id")

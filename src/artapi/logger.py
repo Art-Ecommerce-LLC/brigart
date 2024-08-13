@@ -21,15 +21,12 @@ log_dir = "log"
 os.makedirs(log_dir, exist_ok=True)
 
 class ErrorLogger(logging.Handler):
-    def __init__(self, db_connector: Noco) -> None:
-        super().__init__()
-        self.db_connector = db_connector  # Store the NocoDB connection instance
+    def __init__(self) -> None:
+        super().__init__() 
     
     def emit(self, record: logging.LogRecord) -> None:
         if record.levelno > logging.INFO:  # Post only warnings, errors, and critical logs
             payload = self.format_payload(record)
-            # Current security hazard, uncomment when NocoDB is ready
-            # self.send_to_db(payload)
             self.send_email(payload)
             self.send_telegram_message(payload)
     
@@ -58,9 +55,6 @@ class ErrorLogger(logging.Handler):
     def format_time(self, record: logging.LogRecord) -> str:
         record_time = datetime.fromtimestamp(record.created).strftime('%Y-%m-%d %H:%M:%S')
         return record_time
-    
-    def send_to_db(self, payload: dict) -> None:
-        self.db_connector.post_error_message(payload)  # Use the stored NocoDB connection instance
 
     def send_email(self, payload: dict) -> None:
         try:
@@ -89,7 +83,7 @@ class ErrorLogger(logging.Handler):
         except:
             pass
 # Function to setup the logger with the NocoDB connection
-def setup_logger(db_connector_callable : Noco) -> logging.Logger:
+def setup_logger() -> logging.Logger:
     logger = logging.getLogger("brig_api")
     logger.setLevel(logging.INFO)
 
@@ -101,7 +95,7 @@ def setup_logger(db_connector_callable : Noco) -> logging.Logger:
     logger.addHandler(file_handler)
 
     # Add custom error logger to the main logger
-    error_logger = ErrorLogger(db_connector_callable)
+    error_logger = ErrorLogger(e)
     logger.addHandler(error_logger)
 
     return logger

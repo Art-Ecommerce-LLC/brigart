@@ -3,20 +3,18 @@ import requests
 from PIL import Image
 from io import BytesIO
 from typing import Union
-import stripe
 import time
 from datetime import datetime, timezone
 from functools import lru_cache
 import ast
 
 from .config import (
-    NOCODB_XC_TOKEN, NOCODB_PATH, STRIPE_SECRET_KEY
+    NOCODB_XC_TOKEN, NOCODB_PATH
 )
 from .models import (
     ArtObject, IconObject, KeyObject, CookieObject, ProductMapObject
 )
-from .stripe_connector import StripeAPI
-from . import crud
+from . import crud, models
 from .tables import NOCODB_TABLE_MAP
 from .postgres import engine, SessionLocal, Base
 
@@ -38,10 +36,7 @@ class Noco:
 
     def __init__(self):
         
-        
         self.previous_data = CachedData()
-        stripe.api_key = STRIPE_SECRET_KEY 
-        self.stripe_connector = StripeAPI()
         self.resolution_factor = 0.8
         self.cookie_session_time_limit = 60 * 15
 
@@ -53,6 +48,8 @@ class Noco:
         self.request = requests
         self.headers = {'xc-token': NOCODB_XC_TOKEN}
         self.base_url = NOCODB_PATH
+        self.models = models
+        self.models.Base.metadata.create_all(bind=self.engine)
 
     def get_auth_headers(self) -> dict:
         return self.headers
@@ -521,6 +518,22 @@ class Noco:
         except:
             raise
 
+    def delete_session_cookie_with_noco(self, session_id: str) -> None:
+        """
+            Delete the session cookie from the session ID using NocoDB
+
+            Arguments:
+                session_id (str): The session ID to delete the cookie data
+            
+            Raises:
+                Exception: If there is an error deleting the session cookie
+        """
+        try:
+            cookie_id = self.get_cookie_Id_from_session_id(session_id)
+            self.delete_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, cookie_id)
+        except:
+            raise
+
     def post_cookie_session_id_and_cookies(self, sessionid: str, cookies: dict):
         """
             Post the cookie session ID and cookies
@@ -639,8 +652,7 @@ class Noco:
             for session_id, creation_time in zip(sessions, created_ats):
                 elapsed_time = (current_time - creation_time.replace(tzinfo=timezone.utc)).total_seconds()
                 if elapsed_time > self.cookie_session_time_limit:
-                    self.delete_session_cookie(session_id)
-
+                    self.delete_session_cookie_with_noco(session_id)
         except:
             raise 
 
