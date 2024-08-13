@@ -25,7 +25,7 @@ The purpose of this project is to create a professional platform for the artist,
 - Add feature to portal that allows artists to easily change art, prices and titles on there instance
 - Implement cookie payload caching similar to artwork caching to optimize speed
 - Make the only API Connection to Noco the the creation and upload of images, everything else make PostgreSQL create, read, update, and delete, 
-- Sync img table to a datauri table to save money and load time
+- Sync img table to a datauri table to save money and load time, use SQL relationships
 
 ## Requirements
 - Git

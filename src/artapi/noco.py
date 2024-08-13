@@ -32,23 +32,25 @@ class Noco:
     """
     Class to interact with NocoDB
     """
-    _instance = None
-
     def __init__(self):
+        # Caching updates
         self.previous_data = CachedData()
         self.resolution_factor = 0.8
         self.cookie_session_time_limit = 60 * 15
 
+        # PostgreSQL database
         self.engine = engine
         self.SessionLocal = SessionLocal
         self.Base = Base
         self.crud = crud
+        self.models = models
+        self.models.Base.metadata.create_all(bind=self.engine)
 
+        # Requests for noco
         self.request = requests
         self.headers = {'xc-token': NOCODB_XC_TOKEN}
         self.base_url = NOCODB_PATH
-        self.models = models
-        self.models.Base.metadata.create_all(bind=self.engine)
+        
 
     def get_auth_headers(self) -> dict:
         return self.headers
@@ -73,7 +75,7 @@ class Noco:
         try:
             response = self.request.post(self.get_nocodb_path(table), json=data, headers=self.get_auth_headers())
             response.raise_for_status()
-        except Exception as e:
+        except:
             raise
 
     def patch_nocodb_table_data(self, table: str, data: dict) -> None:
@@ -90,7 +92,7 @@ class Noco:
         try:
             response = self.request.patch(self.get_nocodb_path(table), json=data, headers=self.get_auth_headers())
             response.raise_for_status()
-        except Exception as e:
+        except:
             raise
 
     def convert_paths_to_data_uris(self, paths: list) -> list:
@@ -115,7 +117,7 @@ class Noco:
                 data_uri = self.convert_to_data_uri(img_data)
                 data_uris.append(data_uri)
             return data_uris
-        except Exception as e:
+        except:
             raise
 
     def convert_to_data_uri(self, image_data: bytes) -> str:
@@ -143,7 +145,7 @@ class Noco:
                 resized_img_data = buffer.getvalue()
             base64_data = base64.b64encode(resized_img_data).decode('utf-8')
             return f"data:image/jpeg;base64,{base64_data}"
-        except Exception as e:
+        except:
             raise
 
     def get_artwork_data_with_cache(self) -> ArtObject:
@@ -161,7 +163,7 @@ class Noco:
                 self.clear_artwork_data_cache()
                 self.previous_data.artwork = self.get_artwork_data_no_cache()
             return self._get_artwork_data_cached()
-        except Exception as e:
+        except:
             raise
 
     @lru_cache(maxsize=1)
@@ -196,7 +198,7 @@ class Noco:
             if new_data != old_data:
                 return True
             return False
-        except Exception as e:
+        except:
             raise
 
     def get_icon_data_no_cache(self) -> IconObject:
@@ -224,7 +226,7 @@ class Noco:
             )
             return icon_data
         
-        except Exception as e:
+        except:
             raise
 
     def get_key_data(self) -> KeyObject:
@@ -245,7 +247,7 @@ class Noco:
                 envvals=[item.envval for item in data],
             )
             return key_data
-        except Exception as e:
+        except:
             raise
         
     def get_cookie_data(self) -> CookieObject:
@@ -267,7 +269,7 @@ class Noco:
                 created_ats=[item.created_at for item in data]  
             )
             return cookie_data
-        except Exception as e:
+        except:
             raise
 
 
@@ -294,7 +296,7 @@ class Noco:
                 Ids=[item.id for item in data]
             )
             return artwork_data
-        except Exception as e:
+        except:
             raise
 
     def get_artwork_data_no_cache_no_datauri(self) -> ArtObject:
@@ -320,7 +322,7 @@ class Noco:
             )
 
             return artwork_data
-        except Exception as e:
+        except:
             raise
     
     def pull_single_key_record(self) -> dict:
@@ -332,7 +334,7 @@ class Noco:
 
             key_data_1 = self.get_key_data().envvals[0]
             return key_data_1
-        except Exception as e:
+        except:
             raise
   
     def get_used_artwork_data_timestamps(self) -> list:
@@ -349,7 +351,7 @@ class Noco:
         try:
             artwork_data = self.previous_data.artwork
             return artwork_data.updated_ats
-        except Exception as e:
+        except:
             raise
 
     def compare_updated_at_timestamps(self, old_data: list, new_data: list) -> bool:
@@ -367,7 +369,7 @@ class Noco:
             if old_data != new_data:
                 return True
             return False
-        except Exception as e:
+        except:
             raise
     
     def get_icon_data(self) -> IconObject:
@@ -387,7 +389,7 @@ class Noco:
             else:
                 self.previous_data.icon = self.get_icon_data_no_cache()
                 return self.previous_data.icon
-        except Exception as e:
+        except:
             raise
 
 
@@ -408,7 +410,7 @@ class Noco:
             icon_data = self.get_icon_data()
             index = icon_data.titles.index(title)
             return icon_data.data_uris[index]
-        except ValueError:
+        except:
             return ""
 
     def get_art_uri_from_title(self, title: str) -> str:
@@ -428,7 +430,7 @@ class Noco:
             artwork_data = self.get_artwork_data_with_cache()
             index = artwork_data.titles.index(title)
             return artwork_data.data_uris[index]
-        except ValueError:
+        except:
             return ""
 
     def get_art_price_from_title(self, title: str) -> str:
