@@ -35,7 +35,6 @@ class Noco:
     _instance = None
 
     def __init__(self):
-        
         self.previous_data = CachedData()
         self.resolution_factor = 0.8
         self.cookie_session_time_limit = 60 * 15
@@ -484,7 +483,7 @@ class Noco:
         """
         price = self.get_art_price_from_title(title)
         return str(int(price) * quantity)
-
+    
     def get_cookie_from_session_id(self, session_id: str) -> list:
         """
             Get the cookie data from the session ID
@@ -518,22 +517,6 @@ class Noco:
         except:
             raise
 
-    def delete_session_cookie_with_noco(self, session_id: str) -> None:
-        """
-            Delete the session cookie from the session ID using NocoDB
-
-            Arguments:
-                session_id (str): The session ID to delete the cookie data
-            
-            Raises:
-                Exception: If there is an error deleting the session cookie
-        """
-        try:
-            cookie_id = self.get_cookie_Id_from_session_id(session_id)
-            self.delete_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table, cookie_id)
-        except:
-            raise
-
     def post_cookie_session_id_and_cookies(self, sessionid: str, cookies: dict):
         """
             Post the cookie session ID and cookies
@@ -564,7 +547,8 @@ class Noco:
         except:
             raise
 
-    def get_cookie_Id_from_session_id(self, session_id: str) -> str:
+
+    def get_cookie_Id_from_session_id(self, session_id: str) -> int:
         """
             Get the cookie ID from the session ID
 
@@ -645,14 +629,14 @@ class Noco:
             Exception: If there is an error deleting expired sessions.
         """
         try:
-            cookie_data: CookieObject = self.get_cookie_data()
+            cookie_data = self.get_cookie_data()
             sessions = cookie_data.sessionids
             created_ats = cookie_data.created_ats
             current_time = datetime.now(timezone.utc)
             for session_id, creation_time in zip(sessions, created_ats):
                 elapsed_time = (current_time - creation_time.replace(tzinfo=timezone.utc)).total_seconds()
                 if elapsed_time > self.cookie_session_time_limit:
-                    self.delete_session_cookie_with_noco(session_id)
+                    self.delete_session_cookie(session_id)
         except:
             raise 
 

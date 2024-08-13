@@ -27,19 +27,40 @@ from src.artapi.middleware import add_middleware, limiter
 from src.artapi.models import (
     Title, TitleQuantity, TotalPrice
 )
+
 # Initialize FastAPI App
 desc = "Backend platform for BRIG ART"
 
 logger = setup_logger()
 
+async def delete_expired_sessions_task():
+    while True:
+        try:
+            noco_db = get_noco_db()
+            await noco_db.delete_expired_sessions()
+        except Exception as e:
+            logger.error(f"Error in lifespan: {e}")
+        await asyncio.sleep(60)
+        
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+      # Create an instance of Noco
+    task = asyncio.create_task(delete_expired_sessions_task())
+    yield
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        logger.info("Background task was cancelled")
+
 if OPENAPI_URL == "None":
     OPENAPI_URL = None
-
     
 app = FastAPI(
     title="Brig API",
     description=desc,
-    openapi_url=OPENAPI_URL
+    openapi_url=OPENAPI_URL,
+    lifespan=lifespan
 )
 
 stripe.api_key = STRIPE_SECRET_KEY
@@ -62,25 +83,6 @@ templates_dir = os.path.join(script_dir, "templates")
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 templates = Jinja2Templates(directory=templates_dir)
 
-async def delete_expired_sessions_task():
-    while True:
-        try:
-            noco_db = get_noco_db()
-            await noco_db.delete_expired_sessions()
-        except Exception as e:
-            logger.error(f"Error in lifespan: {e}")
-        await asyncio.sleep(60)
-        
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-      # Create an instance of Noco
-    task = asyncio.create_task(delete_expired_sessions_task())
-    yield
-    task.cancel()
-    try:
-        await task
-    except asyncio.CancelledError:
-        logger.info("Background task was cancelled")
 
 # Figure out why email get's locked out
 # Make better templates
