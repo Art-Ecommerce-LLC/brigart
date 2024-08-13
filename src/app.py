@@ -128,7 +128,8 @@ async def shop(request: Request, title: str, noco_db: Noco = Depends(get_noco_db
             "img_title": title.replace("+", " "),
             "price": noco_db.get_art_price_from_title(title.replace("+", " ")),
             "brig_logo" : noco_db.get_icon_uri_from_title("brig_logo"),
-            "version": noco_db.get_version()
+            "version": noco_db.get_version(),
+            "brigcollage": noco_db.get_icon_uri_from_title("brigcollage")
         }
         return templates.TemplateResponse(request=request, name="shop.html", context=context)
     except Exception as e:

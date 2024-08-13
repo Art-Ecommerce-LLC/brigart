@@ -87,10 +87,14 @@ function toggleDropdown() {
     const content = document.querySelector('.content');
     const footer = document.querySelector('.footer');
     const pageLocationWrapper = document.querySelector('.page_location_wrapper');
+    const collageWrapper = document.querySelector('.collage_wrapper');
     // Toggle the 'show' class to control visibility
     dropdown.classList.toggle('show');
     content.classList.toggle('hide');
     footer.classList.toggle('hide');
+    if (collageWrapper) {
+        collageWrapper.classList.toggle('hide');
+    }
     if (pageLocationWrapper) {
         pageLocationWrapper.classList.toggle('hide');
     }
@@ -101,7 +105,9 @@ function toggleDropdown() {
     // Lock the page from scrolling when the dropdown is open
     if (dropdown.classList.contains('show')) {
         document.body.style.overflow = 'hidden';
-        
+        if (collageWrapper) {
+            collageWrapper.classList.add('hide');
+        }
         if (glance_h1 && glance) {
             glance_h1.style.display = 'none'
             glance.classList.add('hide-border');
@@ -114,6 +120,9 @@ function toggleDropdown() {
         if (glance_h1 && glance) {
             glance_h1.style.display = 'block'
             glance.classList.remove('hide-border');
+        }
+        if (collageWrapper) {
+            collageWrapper.classList.remove('hide');
         }
         if (pageLocationWrapper) {
             pageLocationWrapper.classList.remove('hide');
@@ -131,6 +140,7 @@ function toggleMenu() {
     const content = document.querySelector('.content');
     const footer = document.querySelector('.footer');
     const pageLocationWrapper = document.querySelector('.page_location_wrapper');
+    const collageWrapper = document.querySelector('.collage_wrapper');
     // Toggle the 'show' class to control visibility
 
     // Toggle the mobile menu
@@ -149,6 +159,9 @@ function toggleMenu() {
             if (pageLocationWrapper) {
                 pageLocationWrapper.classList.add('hide');
             }
+            if (collageWrapper) {
+                collageWrapper.classList.add('hide');
+            }
             content.classList.add('hide');
             footer.classList.add('hide');
         
@@ -162,6 +175,9 @@ function toggleMenu() {
             }
             if (pageLocationWrapper) {
                 pageLocationWrapper.classList.remove('hide');
+            }
+            if (collageWrapper) {
+                collageWrapper.classList.remove('hide');
             }
             content.classList.remove('hide');
             footer.classList.remove('hide');
@@ -178,6 +194,9 @@ function toggleMenu() {
         }
         if (pageLocationWrapper) {
             pageLocationWrapper.classList.remove('hide');
+        }
+        if (collageWrapper) {
+            collageWrapper.classList.remove('hide');
         }
         content.classList.remove('hide');
         footer.classList.remove('hide');

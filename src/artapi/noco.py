@@ -150,13 +150,13 @@ class Noco:
 
     def get_artwork_data_with_cache(self) -> ArtObject:
         """
-        Get the artwork data from NocoDB with caching.
+            Get the artwork data from NocoDB with caching.
 
-        Returns:
-            ArtObject: An object containing the artwork data
+            Returns:
+                ArtObject: An object containing the artwork data
 
-        Raises:
-            Exception: If there is an error getting the artwork data
+            Raises:
+                Exception: If there is an error getting the artwork data with cache
         """
         try:
             if self.compare_timestamps():
@@ -169,25 +169,25 @@ class Noco:
     @lru_cache(maxsize=1)
     def _get_artwork_data_cached(self) -> ArtObject:
         """
-        Get the artwork data from NocoDB, this method is cached.
+            Get the artwork data from NocoDB, this method is cached.
 
-        Returns:
-            ArtObject: An object containing the artwork data
+            Returns:
+                ArtObject: An object containing the artwork data
         """
         return self.previous_data.artwork
 
     def clear_artwork_data_cache(self):
         """
-        Clear the cache for artwork data.
+            Clear the cache for artwork data.
         """
         self._get_artwork_data_cached.cache_clear()
 
     def compare_timestamps(self) -> bool:
         """
-        Compare the timestamps of the current artwork data with the previous artwork data.
+            Compare the timestamps of the current artwork data with the previous artwork data.
 
-        Returns:
-            bool: True if the timestamps are different, False otherwise
+            Returns:
+                bool: True if the timestamps are different, False otherwise
         """
         try:
             if self.previous_data.artwork is None:
@@ -461,9 +461,6 @@ class Noco:
             
             Returns:
                 str: The total price of the artwork with the title and quantity
-            
-            Raises:
-                ValueError: If the artwork with the title is not found
         """
         price = self.get_art_price_from_title(title)
         return str(int(price) * quantity)
@@ -477,9 +474,6 @@ class Noco:
             
             Returns:
                 list: The cookie data for the session ID
-            
-            Raises:
-                ValueError: If the session ID is not found
         """
         try:
             return self.crud.get_cookie_by_sessionid(self.SessionLocal(), session_id).cookies["img_quantity_list"]
@@ -492,9 +486,7 @@ class Noco:
 
             Arguments:
                 session_id (str): The session ID to delete the cookie data
-            
-            Raises:
-                Exception: If there is an error deleting the session cookie
+    
         """
         try:
             self.crud.delete_cookie_from_sessionid(self.SessionLocal(), session_id)
@@ -508,9 +500,7 @@ class Noco:
             Arguments:
                 sessionid (str): The session ID to post
                 cookies (dict): The cookies to post
-            
-            Raises:
-                Exception: If there is an error posting the cookie session ID and cookies
+        
         """
         try:
             self.crud.create_cookie(self.SessionLocal(), sessionid, cookies)
@@ -522,9 +512,7 @@ class Noco:
 
             Arguments:
                 data (dict): The data to patch
-            
-            Raises:
-                Exception: If there is an error patching the cookies data
+        
         """
         try:
             self.crud.update_cookie(self.SessionLocal(), data["Id"], data["sessionids"], data["cookies"])
@@ -541,9 +529,7 @@ class Noco:
             
             Returns:
                 str: The cookie ID for the session ID
-            
-            Raises:
-                ValueError: If the session ID is not found
+        
         """
         try:
             return self.crud.get_cookie_by_sessionid(self.SessionLocal(), session_id).id
@@ -561,8 +547,6 @@ class Noco:
             Returns:
                 dict: The JSON response containing the uploaded image data
             
-            Raises:
-                Exception: If there is an error uploading the image
         """
         try:
             params = {
@@ -607,10 +591,7 @@ class Noco:
 
     async def delete_expired_sessions(self) -> None:
         """
-        Delete expired sessions every 15 minutes.
-
-        Raises:
-            Exception: If there is an error deleting expired sessions.
+            Delete expired sessions every 15 minutes.
         """
         try:
             cookie_data = self.get_cookie_data()
