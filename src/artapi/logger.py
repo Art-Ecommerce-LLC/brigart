@@ -95,7 +95,7 @@ def setup_logger() -> logging.Logger:
     logger.addHandler(file_handler)
 
     # Add custom error logger to the main logger
-    error_logger = ErrorLogger(e)
+    error_logger = ErrorLogger()
     logger.addHandler(error_logger)
 
     return logger
