@@ -32,11 +32,11 @@ from src.artapi.models import (
 desc = "Backend platform for BRIG ART"
 
 logger = setup_logger()
+noco_db = get_noco_db()
 
 async def delete_expired_sessions_task():
     while True:
         try:
-            noco_db = get_noco_db()
             await noco_db.delete_expired_sessions()
         except Exception as e:
             logger.error(f"Error in lifespan: {e}")
