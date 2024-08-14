@@ -45,16 +45,16 @@ desc = "Backend platform for BRIG ART"
 
 logger = setup_logger()
 
-def delete_expired_sessions_task():
+async def delete_expired_sessions_task():
     while True:
         try:
             Noco().delete_expired_sessions()
         except Exception as e:
             logger.error(f"Error in lifespan: {e}")
-        asyncio.sleep(60)
+        await asyncio.sleep(60)
         
 @asynccontextmanager
-def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI):
       # Create an instance of Noco
     task = asyncio.create_task(delete_expired_sessions_task())
     yield
@@ -71,7 +71,7 @@ app = FastAPI(
     title="Brig API",
     description=desc,
     openapi_url=OPENAPI_URL,
-    # lifespan=lifespan
+    lifespan=lifespan
 )
 
 stripe.api_key = STRIPE_SECRET_KEY
@@ -568,8 +568,7 @@ def shop_checkout(request: Request, sessionid: str, db: Session = Depends(get_db
 
         for item in img_quant_list:
             if item["title"] not in titles:
-                logger.warning(f"Title {item['title']} not found in titles")
-                raise HTTPException(status_code=404, detail="Title not found")
+                raise HTTPException(status_code=404, detail=f"Title not found, Abuse detected {request.client.host}")
             else: 
                 full_path = f"{NOCODB_PATH}/{img_path[titles.index(item['title'])]}"
                 path_list.append(full_path)

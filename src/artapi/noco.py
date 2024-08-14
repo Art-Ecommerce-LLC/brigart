@@ -35,7 +35,7 @@ class Noco:
         # Caching updates
         self.previous_data = CachedData()
         self.resolution_factor = 0.8
-        self.cookie_session_time_limit = 60 * 15
+        self.cookie_session_time_limit = 60*15
         # Requests for noco
         self.request = requests
         self.headers = {'xc-token': NOCODB_XC_TOKEN}
@@ -136,7 +136,7 @@ class Noco:
                 Exception: If there is an error deleting data from the table
         """
         try:
-            response = self.request.delete(f"{self.get_nocodb_path(table)}/{record_id}", headers=self.get_auth_headers())
+            response = self.request.delete(f"{self.get_nocodb_path(table)}", headers=self.get_auth_headers(), json={"Id": record_id})
             response.raise_for_status()
         except:
             raise
@@ -643,13 +643,15 @@ class Noco:
                 CookieObject: An object containing the cookie data
         """
         try:
+            # Turn created_at into datetime object with utc timezone
             response = self.get_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table)
             cookie_data = CookieObject(
                 Id=[item['Id'] for item in response['list']],
                 sessionids=[item['sessionids'] for item in response['list']],
                 cookies=[item['cookies'] for item in response['list']],
-                created_ats=[item['created_at'] for item in response['list']]
+                created_ats=[datetime.strptime(item['CreatedAt'],'%Y-%m-%d %H:%M:%S%z').replace(microsecond=0) for item in response['list']]
             )
+            print(cookie_data.created_ats)
             return cookie_data
         except:
             raise
@@ -682,20 +684,20 @@ class Noco:
             self.delete_noco_table_data(NOCODB_TABLE_MAP.cookies_table, self.get_noco_cookie_id_from_session_id(session_id))
         except:
             raise
-
-
-    def delete_expired_sessions(self, db : Session, crud: crud) -> None:
+    
+    # Update with optimized caching
+    def delete_expired_sessions(self) -> None:
         """
             Delete expired sessions every 15 minutes.
         """
         try:
-            cookie_data = self.get_cookie_data(db, crud)
+            cookie_data = self.get_noco_cookie_data()
             sessions = cookie_data.sessionids
             created_ats = cookie_data.created_ats
             current_time = datetime.now(timezone.utc)
             for session_id, creation_time in zip(sessions, created_ats):
                 elapsed_time = (current_time - creation_time.replace(tzinfo=timezone.utc)).total_seconds()
                 if elapsed_time > self.cookie_session_time_limit:
-                    self.delete_noco_session_cookie(db, crud, session_id)
+                    self.delete_noco_session_cookie(session_id)
         except:
             raise 
