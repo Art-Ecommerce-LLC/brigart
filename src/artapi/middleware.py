@@ -14,36 +14,53 @@ from slowapi.errors import RateLimitExceeded
 
 from .noco_config import MIDDLEWARE_STRING
 from .config import DEVELOPMENT_ORIGINS, PRODUCTION_ORIGINS, ENVIORNMENT, CSP_POLICY, DEVELOPMENT_HOSTS, PRODUCTION_HOSTS
+from starlette.datastructures import MutableHeaders
 
 # Initialize the Limiter
 limiter = Limiter(key_func=get_remote_address)
 
-class ContentSecurityPolicyMiddleware(BaseHTTPMiddleware):
+class ContentSecurityPolicyMiddleware:
     def __init__(self, app: ASGIApp, csp_policy: str):
-        super().__init__(app)
+        self.app = app
         self.csp_policy = csp_policy
 
-    async def dispatch(self, request: Receive, call_next):
-        response: Response = await call_next(request)
-        response.headers['Content-Security-Policy'] = self.csp_policy
-        return response
+    def __call__(self, scope: Scope, receive: Receive, send: Send):
+        async def send_wrapper(message):
+            if message["type"] == "http.response.start":
+                headers = MutableHeaders(scope=message)
+                headers["Content-Security-Policy"] = self.csp_policy
+            await send(message)
 
-class LoggingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Receive, call_next):
-        try:
-            response = await call_next(request)
-        except Exception as e:
-            raise
-        return response
+        return self.app(scope, receive, send_wrapper)
 
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Receive, call_next):
-        response = await call_next(request)
-        response.headers['X-Frame-Options'] = 'DENY'
-        response.headers['X-Content-Type-Options'] = 'nosniff'
-        response.headers['Referrer-Policy'] = 'no-referrer'
-        return response
+class LoggingMiddleware:
+    def __init__(self, app: ASGIApp):
+        self.app = app
 
+    def __call__(self, scope: Scope, receive: Receive, send: Send):
+        async def send_wrapper(message):
+            try:
+                await send(message)
+            except Exception as e:
+                # Log the error if needed
+                raise e
+
+        return self.app(scope, receive, send_wrapper)
+
+class SecurityHeadersMiddleware:
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    def __call__(self, scope: Scope, receive: Receive, send: Send):
+        async def send_wrapper(message):
+            if message["type"] == "http.response.start":
+                headers = MutableHeaders(scope=message)
+                headers["X-Frame-Options"] = "DENY"
+                headers["X-Content-Type-Options"] = "nosniff"
+                headers["Referrer-Policy"] = "no-referrer"
+            await send(message)
+
+        return self.app(scope, receive, send_wrapper)
 def get_allowed_origins() -> list:
     """Get the list of allowed origins based on the environment."""
     if ENVIORNMENT == "production":

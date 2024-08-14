@@ -27,7 +27,7 @@ PRODUCTION_HOSTS = os.getenv("production_hosts")
 ENVIORNMENT = os.getenv("enviornment")
 
 DATABASE_URL = os.getenv("database_url")
-
+SYNC_DATABASE_URL = os.getenv("sync_database_url")
 # Create an instance of TableMap
 
 CSP_POLICY = os.getenv("csp_policy")

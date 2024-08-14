@@ -4,7 +4,6 @@ from logging.handlers import RotatingFileHandler
 from datetime import datetime
 import smtplib
 from email.mime.text import MIMEText
-from src.artapi.nocodb_connector import Noco
 import requests
 from src.artapi.noco_config import (
     ADMIN_DEVELOPER_EMAIL, 

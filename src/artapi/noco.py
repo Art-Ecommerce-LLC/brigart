@@ -7,6 +7,7 @@ import time
 from datetime import datetime, timezone
 from functools import lru_cache
 import ast
+from sqlalchemy.orm import Session
 
 from .config import (
     NOCODB_XC_TOKEN, NOCODB_PATH
@@ -14,9 +15,8 @@ from .config import (
 from .models import (
     ArtObject, IconObject, KeyObject, CookieObject, ProductMapObject
 )
-from . import crud, models
+from . import crud
 from .tables import NOCODB_TABLE_MAP
-from .postgres import engine, SessionLocal, Base
 
 class CachedData:
 
@@ -27,7 +27,6 @@ class CachedData:
         self.cookie: Union[CookieObject, None] = None
         self.product_map: Union[ProductMapObject, None] = None
 
-
 class Noco:
     """
     Class to interact with NocoDB
@@ -37,20 +36,10 @@ class Noco:
         self.previous_data = CachedData()
         self.resolution_factor = 0.8
         self.cookie_session_time_limit = 60 * 15
-
-        # PostgreSQL database
-        self.engine = engine
-        self.SessionLocal = SessionLocal
-        self.Base = Base
-        self.crud = crud
-        self.models = models
-        self.models.Base.metadata.create_all(bind=self.engine)
-
         # Requests for noco
         self.request = requests
         self.headers = {'xc-token': NOCODB_XC_TOKEN}
         self.base_url = NOCODB_PATH
-        
 
     def get_auth_headers(self) -> dict:
         return self.headers
@@ -61,6 +50,46 @@ class Noco:
     def get_storage_upload_path(self) -> str:
         return f"{self.base_url}/api/v2/storage/upload"
     
+    def get_nocodb_table_data(self, table: str) -> dict:
+        """
+            Function to get data from a table
+
+            Arguments:
+                table (str): The name of the table to get data from.
+            
+            Returns:
+                dict: The data from the table
+            
+            Raises:
+                Exception: If there is an error getting data from the table
+        """
+        try:
+            response = self.request.get(self.get_nocodb_path(table), headers=self.get_auth_headers())
+            response.raise_for_status()
+            return response.json()
+        except:
+            raise
+
+    def get_key_data_with_api(self) -> KeyObject:
+        """
+            Get the key data from NocoDB using the API
+
+            Returns:
+                KeyObject: An object containing the key data
+            
+            Raises:
+                Exception: If there is an error getting the key data using the API
+        """
+        try:
+            response = self.get_nocodb_table_data(NOCODB_TABLE_MAP.key_table)
+            key_data = KeyObject(
+                envvars=[item['envvar'] for item in response['list']],
+                envvals=[item['envval'] for item in response['list']]
+            )
+            return key_data
+        except:
+            raise
+
     def post_nocodb_table_data(self, table: str, data: dict) -> None:
         """
             Function to post data to a table
@@ -91,6 +120,23 @@ class Noco:
         """
         try:
             response = self.request.patch(self.get_nocodb_path(table), json=data, headers=self.get_auth_headers())
+            response.raise_for_status()
+        except:
+            raise
+
+    def delete_noco_table_data(self, table: str, record_id: int) -> None:
+        """
+            Function to delete data from a table
+
+            Arguments:
+                table (str): The name of the table to delete data from.
+                record_id (int): The ID of the record to delete from the table.
+            
+            Raises:
+                Exception: If there is an error deleting data from the table
+        """
+        try:
+            response = self.request.delete(f"{self.get_nocodb_path(table)}/{record_id}", headers=self.get_auth_headers())
             response.raise_for_status()
         except:
             raise
@@ -148,7 +194,7 @@ class Noco:
         except:
             raise
 
-    def get_artwork_data_with_cache(self) -> ArtObject:
+    def get_artwork_data_with_cache(self, db: Session, crud: crud) -> ArtObject:
         """
             Get the artwork data from NocoDB with caching.
 
@@ -159,9 +205,9 @@ class Noco:
                 Exception: If there is an error getting the artwork data with cache
         """
         try:
-            if self.compare_timestamps():
+            if self.compare_timestamps(db, crud):
                 self.clear_artwork_data_cache()
-                self.previous_data.artwork = self.get_artwork_data_no_cache()
+                self.previous_data.artwork = self.get_artwork_data_no_cache(db, crud)
             return self._get_artwork_data_cached()
         except:
             raise
@@ -182,7 +228,7 @@ class Noco:
         """
         self._get_artwork_data_cached.cache_clear()
 
-    def compare_timestamps(self) -> bool:
+    def compare_timestamps(self, db : Session, crud : crud) -> bool:
         """
             Compare the timestamps of the current artwork data with the previous artwork data.
 
@@ -191,17 +237,17 @@ class Noco:
         """
         try:
             if self.previous_data.artwork is None:
-                self.previous_data.artwork = self.get_artwork_data_no_cache()
+                self.previous_data.artwork = self.get_artwork_data_no_cache(db, crud)
                 return False
             old_data = self.previous_data.artwork.updated_ats
-            new_data = self.get_artwork_data_no_cache_no_datauri().updated_ats
+            new_data = self.get_artwork_data_no_cache_no_datauri(db, crud).updated_ats
             if new_data != old_data:
                 return True
             return False
         except:
             raise
 
-    def get_icon_data_no_cache(self) -> IconObject:
+    def get_icon_data_no_cache(self, db: Session, crud: crud) -> IconObject:
         """
             Get the icon data from NocoDB without caching
             
@@ -213,7 +259,7 @@ class Noco:
                 
         """
         try:
-            data = self.crud.get_icons(self.SessionLocal(), skip=0, limit=100)
+            data = crud.get_icons(db, skip=0, limit=100)
             icon_paths = [ast.literal_eval(item.img)[0]['path'] for item in data]
             data_uris = self.convert_paths_to_data_uris(icon_paths)
             icon_data = IconObject(
@@ -229,7 +275,7 @@ class Noco:
         except:
             raise
 
-    def get_key_data(self) -> KeyObject:
+    def get_key_data(self, db: Session, crud: crud) -> KeyObject:
         """
             Get the key data from NocoDB
 
@@ -241,7 +287,7 @@ class Noco:
             
         """
         try:
-            data = self.crud.get_keys(self.SessionLocal(), skip=0, limit=100)
+            data = crud.get_keys(db, skip=0, limit=100)
             key_data = KeyObject(
                 envvars=[item.envvar for item in data],
                 envvals=[item.envval for item in data],
@@ -250,7 +296,7 @@ class Noco:
         except:
             raise
         
-    def get_cookie_data(self) -> CookieObject:
+    def get_cookie_data(self, db: Session, crud: crud) -> CookieObject:
         """
             Get the cookie data from NocoDB
 
@@ -261,7 +307,7 @@ class Noco:
                 Exception: If there is an error getting the cookie data
         """
         try:
-            data = self.crud.get_cookies(self.SessionLocal(), skip=0, limit=100)
+            data = crud.get_cookies(db, skip=0, limit=100)
             cookie_data = CookieObject(
                 Id=[item.id for item in data],
                 sessionids=[item.sessionids for item in data],
@@ -273,7 +319,7 @@ class Noco:
             raise
 
 
-    def get_artwork_data_no_cache(self) -> ArtObject:
+    def get_artwork_data_no_cache(self, db: Session, crud: crud) -> ArtObject:
         """
         Get the artwork data from NocoDB without caching.
 
@@ -284,7 +330,7 @@ class Noco:
             Exception: If there is an error getting the artwork data without cache
         """
         try:
-            data = self.crud.get_artworks(self.SessionLocal(), skip=0, limit=100)
+            data = crud.get_artworks(db, skip=0, limit=100)
             art_paths = [ast.literal_eval(item.img)[0]['path'] for item in data]
             artwork_data = ArtObject(
                 art_paths=art_paths,
@@ -299,7 +345,7 @@ class Noco:
         except:
             raise
 
-    def get_artwork_data_no_cache_no_datauri(self) -> ArtObject:
+    def get_artwork_data_no_cache_no_datauri(self, db: Session, crud: crud) -> ArtObject:
         """
         Get the artwork data from NocoDB without caching and without data URIs.
 
@@ -310,7 +356,7 @@ class Noco:
             Exception: If there is an error getting the artwork data without cache and without data URIs
         """
         try:
-            data = self.crud.get_artworks(self.SessionLocal(), skip=0, limit=100)
+            data = crud.get_artworks(db, skip=0, limit=100)
             art_paths = [ast.literal_eval(item.img)[0]['path'] for item in data]
             artwork_data = ArtObject(
                 art_paths=art_paths,
@@ -325,14 +371,14 @@ class Noco:
         except:
             raise
     
-    def pull_single_key_record(self) -> dict:
+    def pull_single_key_record(self, db: Session, crud: crud) -> dict:
         """
             Pull a single key record using the functions from the Noco class
         """
         try:
             # Pull key data and get the first record
 
-            key_data_1 = self.get_key_data().envvals[0]
+            key_data_1 = self.get_key_data(db, crud).envvals[0]
             return key_data_1
         except:
             raise
@@ -372,7 +418,7 @@ class Noco:
         except:
             raise
     
-    def get_icon_data(self) -> IconObject:
+    def get_icon_data(self, db: Session, crud: crud) -> IconObject:
         """
             Get the icon data from NocoDB
             
@@ -387,13 +433,13 @@ class Noco:
             if self.previous_data.icon:
                 return self.previous_data.icon
             else:
-                self.previous_data.icon = self.get_icon_data_no_cache()
+                self.previous_data.icon = self.get_icon_data_no_cache(db, crud)
                 return self.previous_data.icon
         except:
             raise
 
 
-    def get_icon_uri_from_title(self, title: str) -> str:
+    def get_icon_uri_from_title(self, db: Session, crud: crud, title: str) -> str:
         """
             Get the icon URI from the title
 
@@ -407,13 +453,13 @@ class Noco:
                 ValueError: If the icon with the title is not found
         """
         try:
-            icon_data = self.get_icon_data()
+            icon_data = self.get_icon_data(db, crud)
             index = icon_data.titles.index(title)
             return icon_data.data_uris[index]
         except:
             return ""
 
-    def get_art_uri_from_title(self, title: str) -> str:
+    def get_art_uri_from_title(self, db: Session, crud: crud, title: str) -> str:
         """
             Get the artwork URI from the title
 
@@ -427,13 +473,13 @@ class Noco:
                 ValueError: If the artwork with the title is not found
         """
         try:
-            artwork_data = self.get_artwork_data_with_cache()
+            artwork_data = self.get_artwork_data_with_cache(db, crud)
             index = artwork_data.titles.index(title)
             return artwork_data.data_uris[index]
         except:
             return ""
 
-    def get_art_price_from_title(self, title: str) -> str:
+    def get_art_price_from_title(self,db: Session, crud: crud, title: str,) -> str:
         """
             Get the price of the artwork from the title
 
@@ -447,11 +493,11 @@ class Noco:
                 ValueError: If the artwork with the title is not found
         """
         try:
-            return self.crud.get_artwork_by_label(self.SessionLocal(), title).price
+            return crud.get_artwork_by_label(db, title).price
         except:
             raise
 
-    def get_art_price_from_title_and_quantity(self, title: str, quantity: int) -> str:
+    def get_art_price_from_title_and_quantity(self, db: Session, crud: crud, title: str, quantity: int) -> str:
         """
             Get the total price of the artwork from the title and quantity
 
@@ -462,10 +508,10 @@ class Noco:
             Returns:
                 str: The total price of the artwork with the title and quantity
         """
-        price = self.get_art_price_from_title(title)
+        price = self.get_art_price_from_title(db, crud, title)
         return str(int(price) * quantity)
     
-    def get_cookie_from_session_id(self, session_id: str) -> list:
+    def get_cookie_from_session_id(self, db: Session, crud: crud, session_id: str) -> list:
         """
             Get the cookie data from the session ID
 
@@ -476,11 +522,11 @@ class Noco:
                 list: The cookie data for the session ID
         """
         try:
-            return self.crud.get_cookie_by_sessionid(self.SessionLocal(), session_id).cookies["img_quantity_list"]
+            return crud.get_cookie_by_sessionid(db, session_id).cookies["img_quantity_list"]
         except:
             return []
 
-    def delete_session_cookie(self, session_id: str) -> None:
+    def delete_session_cookie(self, db: Session, crud: crud, session_id: str) -> None:
         """
             Delete the session cookie from the session ID
 
@@ -489,11 +535,11 @@ class Noco:
     
         """
         try:
-            self.crud.delete_cookie_from_sessionid(self.SessionLocal(), session_id)
+            crud.delete_cookie_from_sessionid(db, session_id)
         except:
             raise
 
-    def post_cookie_session_id_and_cookies(self, sessionid: str, cookies: dict):
+    def post_cookie_session_id_and_cookies(self, db: Session, crud: crud, sessionid: str, cookies: dict):
         """
             Post the cookie session ID and cookies
 
@@ -503,10 +549,10 @@ class Noco:
         
         """
         try:
-            self.crud.create_cookie(self.SessionLocal(), sessionid, cookies)
+            crud.create_cookie(db, sessionid, cookies)
         except:
             raise
-    def patch_cookies_data(self, data: dict):
+    def patch_cookies_data(self, db: Session, crud: crud, data: dict):
         """
             Patch the cookies data
 
@@ -515,12 +561,12 @@ class Noco:
         
         """
         try:
-            self.crud.update_cookie(self.SessionLocal(), data["Id"], data["sessionids"], data["cookies"])
+            crud.update_cookie(db, data["Id"], data["sessionids"], data["cookies"])
         except:
             raise
 
 
-    def get_cookie_Id_from_session_id(self, session_id: str) -> int:
+    def get_cookie_Id_from_session_id(self, db: Session, crud: crud, session_id: str) -> int:
         """
             Get the cookie ID from the session ID
 
@@ -532,7 +578,7 @@ class Noco:
         
         """
         try:
-            return self.crud.get_cookie_by_sessionid(self.SessionLocal(), session_id).id
+            return crud.get_cookie_by_sessionid(db, session_id).id
         except:
             return ""
 
@@ -570,7 +616,7 @@ class Noco:
         except:
             raise
 
-    def get_cookie_session_begginging_time(self, sessionid: str) -> datetime:
+    def get_cookie_session_begginging_time(self, db: Session, crud: crud, sessionid: str) -> datetime:
         """
             Get the session beginning time for the session ID
 
@@ -581,26 +627,75 @@ class Noco:
                 str: The session beginning time for the session ID
         """
         try:
-            return self.crud.get_cookie_by_sessionid(self.SessionLocal(), sessionid).created_at
+            return crud.get_cookie_by_sessionid(db, sessionid).created_at
         except:
             return ""
 
     @staticmethod
     def get_version():
         return str(int(time.time()))
+    
+    def get_noco_cookie_data(self) -> CookieObject:
+        """
+            Get the cookie data from NocoDB
 
-    async def delete_expired_sessions(self) -> None:
+            Returns:
+                CookieObject: An object containing the cookie data
+        """
+        try:
+            response = self.get_nocodb_table_data(NOCODB_TABLE_MAP.cookies_table)
+            cookie_data = CookieObject(
+                Id=[item['Id'] for item in response['list']],
+                sessionids=[item['sessionids'] for item in response['list']],
+                cookies=[item['cookies'] for item in response['list']],
+                created_ats=[item['created_at'] for item in response['list']]
+            )
+            return cookie_data
+        except:
+            raise
+    
+    def get_noco_cookie_id_from_session_id(self, session_id: str) -> int:
+        """
+            Get the cookie ID from the session ID
+
+            Arguments:
+                session_id (str): The session ID to fetch the cookie ID
+            
+            Returns:
+                int: The cookie ID for the session ID
+        """
+        try:
+            cookie_data = self.get_noco_cookie_data()
+            index = cookie_data.sessionids.index(session_id)
+            return cookie_data.Id[index]
+        except:
+            return ""
+    
+    def delete_noco_session_cookie(self, session_id: str) -> None:
+        """
+            Delete the session cookie from the session ID
+
+            Arguments:
+                session_id (str): The session ID to delete the cookie data
+        """
+        try:
+            self.delete_noco_table_data(NOCODB_TABLE_MAP.cookies_table, self.get_noco_cookie_id_from_session_id(session_id))
+        except:
+            raise
+
+
+    def delete_expired_sessions(self, db : Session, crud: crud) -> None:
         """
             Delete expired sessions every 15 minutes.
         """
         try:
-            cookie_data = self.get_cookie_data()
+            cookie_data = self.get_cookie_data(db, crud)
             sessions = cookie_data.sessionids
             created_ats = cookie_data.created_ats
             current_time = datetime.now(timezone.utc)
             for session_id, creation_time in zip(sessions, created_ats):
                 elapsed_time = (current_time - creation_time.replace(tzinfo=timezone.utc)).total_seconds()
                 if elapsed_time > self.cookie_session_time_limit:
-                    self.delete_session_cookie(session_id)
+                    self.delete_noco_session_cookie(db, crud, session_id)
         except:
             raise 

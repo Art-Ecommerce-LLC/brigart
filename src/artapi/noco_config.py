@@ -1,9 +1,10 @@
 import os
-from src.artapi.nocodb_connector import get_noco_db
+from src.artapi.noco import Noco
 
-noco_db = get_noco_db()
+# Pull in the Noco object and postgreSQL connection
 
-key_data = noco_db.get_key_data()
+noco = Noco()
+key_data = noco.get_key_data_with_api()
 
 for i in range(len(key_data.envvars)):
     os.environ[key_data.envvars[i]] = key_data.envvals[i]
