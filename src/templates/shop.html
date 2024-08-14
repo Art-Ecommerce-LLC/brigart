@@ -101,11 +101,13 @@
         </div>
 </div>
 <div class="collage_wrapper">
-    <div class="display_header" style="width: 80%; height: 100%; max-width: 900px;">
-        <p style="font-size: 30px; margin-top: 50px; border: 2px solid black; padding: 10px; border-radius: 5px; text-align: center">Display size</p>
+    <div class="display_header" onclick="toggleDisplay()">
+        <p class="display_p">
+            Display size
+            <span class="arrow">&#9660;</span>
+        </p>
     </div>
-    <div class="collage_container" style="background-image: url('{{ brigcollage }}')">
-    </div>
+    <div class="collage_container" style="background-image: url('{{ brigcollage }}')"></div>
 </div>
 <footer class="footer">
     <div class="container">

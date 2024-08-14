@@ -17,8 +17,22 @@ function toggleLockPageLinksButtons(boolean) {
     });
 
 }
-
-
+function toggleDisplay() {
+    var container = document.querySelector('.collage_container');
+    var arrow = document.querySelector('.arrow');
+    
+    // Toggle the open class to expand/collapse the container
+    container.classList.toggle('open');
+    arrow.classList.toggle('open');
+    if (container.classList.contains('open')) {
+        setTimeout(function() {
+            window.scrollTo({
+                top: document.body.scrollHeight,
+                behavior: 'smooth'
+            });
+        }, 60*5); // Delay to match the height transition duration
+    }
+}
 async function togglePageLockShop(title) {
     // Change the opacity of the body to 0.5 before starting the addToCart function
     // Lock all buttons on the page
