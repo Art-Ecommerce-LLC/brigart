@@ -651,7 +651,6 @@ class Noco:
                 cookies=[item['cookies'] for item in response['list']],
                 created_ats=[datetime.strptime(item['CreatedAt'],'%Y-%m-%d %H:%M:%S%z').replace(microsecond=0) for item in response['list']]
             )
-            print(cookie_data.created_ats)
             return cookie_data
         except:
             raise
