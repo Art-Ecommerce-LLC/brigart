@@ -43,25 +43,46 @@ def get_key_by_envvar(db: Session, envvar: str):
     return db.query(models.Keys).filter(models.Keys.envvar == envvar).first()
 
 
-# Create, Update, Delete for cookies
 def create_cookie(db: Session, sessionids: str, cookies: dict):
     created_at = datetime.now(dt.timezone(dt.timedelta(hours=-8)))
     db_cookie = models.Cookies(sessionids=sessionids, cookies=cookies, created_at=created_at)
-    db.add(db_cookie)
-    db.commit()
-    db.refresh(db_cookie)
+    try:
+        db.add(db_cookie)
+        db.commit()
+        db.refresh(db_cookie)
+    except Exception as e:
+        db.rollback()  # Rollback the transaction in case of an error
+        print(f"Error creating cookie: {e}")
+        raise  # Optionally re-raise the exception
+    finally:
+        db.close()  # Ensure the session is closed
 
-# Update cookie by id
 def update_cookie(db: Session, cookie_id: int, sessionids: str, cookies: dict):
     updated_at = datetime.now(dt.timezone(dt.timedelta(hours=-8)))
-    db_cookie = db.query(models.Cookies).filter(models.Cookies.id == cookie_id).first()
-    db_cookie.sessionids = sessionids
-    db_cookie.cookies = cookies
-    db_cookie.updated_at = updated_at
-    db.commit()
-    db.refresh(db_cookie)
+    try:
+        db_cookie = db.query(models.Cookies).filter(models.Cookies.id == cookie_id).first()
+        if db_cookie:
+            db_cookie.sessionids = sessionids
+            db_cookie.cookies = cookies
+            db_cookie.updated_at = updated_at
+            db.commit()
+            db.refresh(db_cookie)
+        else:
+            print("Cookie not found")
+    except Exception as e:
+        db.rollback()  # Rollback the transaction in case of an error
+        print(f"Error updating cookie: {e}")
+        raise  # Optionally re-raise the exception
+    finally:
+        db.close()  # Ensure the session is closed
 
-# Delete cookie by id
 def delete_cookie_from_sessionid(db: Session, sessionids: str):
-    db.query(models.Cookies).filter(models.Cookies.sessionids == sessionids).delete()
-    db.commit()
+    try:
+        db.query(models.Cookies).filter(models.Cookies.sessionids == sessionids).delete()
+        db.commit()
+    except Exception as e:
+        db.rollback()  # Rollback the transaction in case of an error
+        print(f"Error deleting cookie: {e}")
+        raise  # Optionally re-raise the exception
+    finally:
+        db.close()  # Ensure the session is closed

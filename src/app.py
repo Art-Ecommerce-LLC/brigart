@@ -143,7 +143,7 @@ def shop(request: Request, title: str, db: Session = Depends(get_db)):
             "price": noco_db.get_art_price_from_title(db, crud, title.replace("+", " ")),
             "brig_logo" : noco_db.get_icon_uri_from_title(db, crud, "brig_logo"),
             "version": noco_db.get_version(),
-            "brigcollage": noco_db.get_icon_uri_from_title(db, crud, "brigcollage")
+            "fireplacesize": noco_db.get_icon_uri_from_title(db, crud, "collage6")
         }
         return templates.TemplateResponse(request=request, name="shop.html", context=context)
     except Exception as e:

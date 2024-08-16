@@ -6,7 +6,6 @@ function toggleIcon() {
 async function checkoutRedirect() {
     try {
         const sessionId = await get_session_id();
-        console.log(sessionId); // Log the sessionId to check its value
         window.location.href = `/shop_art/${sessionId}`;
     } catch (error) {
         console.error('Error in checkoutRedirect:', error);
@@ -31,10 +30,8 @@ async function get_session_id() {
             throw new Error('Network response was not ok');
         }
         const data = await response.json();
-        console.log('Session ID received:', data.session_id); // Log the received sessionId
         return data.session_id; // Ensure the correct key is used
     } catch (error) {
-        console.error('Error fetching session id:', error);
         throw error; // Rethrow error to be caught in calling function
     }
 }

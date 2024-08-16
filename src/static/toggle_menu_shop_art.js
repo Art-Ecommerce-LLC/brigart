@@ -28,7 +28,6 @@ async function togglePageLock(responsePromise) {
     } finally {
         // Ensure spinner removal and page unlocking happen after response handling
         document.body.style.opacity = '1';
-        spinner.remove();
         setButtonsState(false)// Re-enable the buttons here to ensure they are re-enabled even after an error
     }
 }
@@ -95,8 +94,6 @@ async function updateTotalPrice() {
         if (!isNaN(price)) {
             totalPrice += price;
         }
-        console.log('Total price:', totalPrice);
-        console.log('Price element:', priceElement.innerText);
     });
 
     try {
@@ -115,9 +112,10 @@ async function updateTotalPrice() {
     
 
         } else {
-            console.log('Total price is not valid');
+            throw new Error('Total price is not valid');
         }
     } catch (error) {
+        window.location.reload();
         console.error('Error checking total price:', error);
     }
 }
@@ -208,19 +206,16 @@ async function increaseQuantity(button) {
         // Update the UI
         quantityElement.value = newQuantity;
         quantityPrice.innerText = '$' + responseData.price;
-        console.log('Quantity:', newQuantity);
-        console.log('Price:', responseData.price);
         await updateCartQuantity(cartQuantity + 1);
         updateTotalPrice();
         removeMaxQuantityErrorMessage();
         setButtonsState(false);
         // Grab and Remove spinner element
-        let spinner = document.querySelector('.spinner');
-        spinner.remove();
 
     } catch (error) {
         console.error('Error:', error);
         setButtonsState(false);
+        window.location.reload();
     }
 }
 
@@ -270,6 +265,7 @@ async function decreaseQuantity(button) {
         console.error('Error:', error);
         // Re-enable the button in case of error
         setButtonsState(false);
+        window.location.reload();
     }
 }
 
@@ -308,7 +304,8 @@ async function removeItem(button, img_title) {
         setButtonsState(false); // Re-enable the buttons
     } catch (error) {
         console.error('Error:', error);
-        setButtonsState(false); // Re-enable the buttons in case of error
+        setButtonsState(false);
+        window.location.reload(); // Re-enable the buttons in case of error
     }
 }
 async function removeItemButton(button) {
@@ -355,7 +352,8 @@ async function removeItemButton(button) {
         setButtonsState(false); // Re-enable the buttons
     } catch (error) {
         console.error('Error:', error);
-        setButtonsState(false); // Re-enable the buttons in case of error
+        setButtonsState(false);
+        window.location.reload(); // Re-enable the buttons in case of error
     }
 }
 
