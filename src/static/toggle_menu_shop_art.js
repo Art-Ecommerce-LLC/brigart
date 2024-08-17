@@ -4,9 +4,6 @@ function toggleIcon() {
 
 }
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 async function togglePageLock(responsePromise) {
     document.body.style.opacity = '0.5';
@@ -28,19 +25,39 @@ async function togglePageLock(responsePromise) {
     } finally {
         // Ensure spinner removal and page unlocking happen after response handling
         document.body.style.opacity = '1';
-        setButtonsState(false)// Re-enable the buttons here to ensure they are re-enabled even after an error
+    }
+}
+
+function spinnerRemove() {
+    const spinner = document.querySelector('.spinner');
+    if (spinner) {
+        spinner.remove();
+
+        // Ensure the page is unlocked after spinner removal
+        document.body.style.opacity = '1';
+
     }
 }
 
 function setButtonsState(boolean) {
-    const links = document.querySelectorAll('a');
-    const buttons = document.querySelectorAll('button');
-    links.forEach(link => {
-        link.disabled = boolean;
-    });
-    buttons.forEach(button => {
-        button.disabled = boolean;
-    });
+    try {
+        const links = document.querySelectorAll('a');
+        const buttons = document.querySelectorAll('button');
+
+        links.forEach(link => {
+            link.disabled = boolean;
+        });
+        buttons.forEach(button => {
+            button.disabled = boolean;
+        });
+    }
+    catch (error) {
+        console.error('Error setting buttons state:');
+    }
+    finally {
+        return;
+    }
+
 }
 
 async function getCartQuantity() {
@@ -209,13 +226,12 @@ async function increaseQuantity(button) {
         await updateCartQuantity(cartQuantity + 1);
         updateTotalPrice();
         removeMaxQuantityErrorMessage();
-        setButtonsState(false);
-        // Grab and Remove spinner element
-
     } catch (error) {
-        console.error('Error:', error);
-        setButtonsState(false);
+        console.error('Error in increase quantity');
         window.location.reload();
+    } finally {
+        setButtonsState(false);
+        spinnerRemove();
     }
 }
 
@@ -260,12 +276,16 @@ async function decreaseQuantity(button) {
         }
 
         // Re-enable the button
-        setButtonsState(false);
+        
+
     } catch (error) {
         console.error('Error:', error);
         // Re-enable the button in case of error
         setButtonsState(false);
         window.location.reload();
+    } finally {
+        setButtonsState(false);
+        spinnerRemove();
     }
 }
 
@@ -301,11 +321,14 @@ async function removeItem(button, img_title) {
         updateTotalPrice(); // Update total price after updating cart quantity
         removeMaxQuantityErrorMessage(); // Remove the error message here
 
-        setButtonsState(false); // Re-enable the buttons
+         // Re-enable the buttons
     } catch (error) {
         console.error('Error:', error);
         setButtonsState(false);
         window.location.reload(); // Re-enable the buttons in case of error
+    } finally {
+        setButtonsState(false);
+        spinnerRemove();
     }
 }
 async function removeItemButton(button) {
@@ -349,11 +372,13 @@ async function removeItemButton(button) {
         await updateTotalPrice(); // Update total price after updating cart quantity
         removeMaxQuantityErrorMessage(); // Remove the error message here
 
-        setButtonsState(false); // Re-enable the buttons
     } catch (error) {
         console.error('Error:', error);
+        window.location.reload(); 
+    } finally {
+        // Re-enable the buttons
         setButtonsState(false);
-        window.location.reload(); // Re-enable the buttons in case of error
+        spinnerRemove();
     }
 }
 
@@ -431,6 +456,8 @@ function initializeLoadingBar(isLoading) {
 
 // Initial toggle when the page loads
 document.addEventListener('DOMContentLoaded', async function() {
+    setButtonsState(false);
+    spinnerRemove();
     getCartQuantity().then(cartQuantity => {
         initializeLoadingBar(true);
         updateCartQuantity(cartQuantity);
@@ -469,3 +496,62 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 // Toggle the menu on window resize
 window.addEventListener('resize', toggleMenu);
+
+async function fetchSessionTime() {
+    const response = await fetch('/get_session_time');
+    const data = await response.json();
+    return data.remaining_time;
+}
+
+async function deleteSession() {
+try {
+    const response = await fetch('/delete_session', { method: 'POST' });
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+    // Reload the page after deleting the session
+    window.location.reload();
+} catch (error) {
+    console.error('Error deleting session:', error);
+}
+}
+
+function startTimer(duration, display) {
+let timer = duration, minutes, seconds;
+const interval = setInterval(() => {
+    minutes = parseInt(timer / 60, 10);
+    seconds = parseInt(timer % 60, 10);
+
+    minutes = minutes < 10 ? "0" + minutes : minutes;
+    seconds = seconds < 10 ? "0" + seconds : seconds;
+
+    display.textContent = minutes + ":" + seconds;
+
+    if (--timer < 0) {
+        clearInterval(interval);
+        deleteSession();
+    }
+}, 1000);
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const remainingTime = await fetchSessionTime();
+    const display = document.querySelector('#timer');
+    startTimer(remainingTime, display);
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted || window.performance && window.performance.getEntriesByType("navigation")[0].type === 2) {
+            // Force a full reload if the page was loaded from the cache
+            window.location.reload();
+            // Refresh quantity input values
+        }
+    });
+});
+ // Additional check for visibility change (when user switches back to the tab/app)
+ document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible') {
+        const remainingTime = await fetchSessionTime();
+        if (remainingTime <= 0) {
+            deleteSession(); // Handle session expiration if the user returns after it expired
+        }
+    }
+});

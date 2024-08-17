@@ -233,10 +233,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 });
 
-
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
 async function togglePageLock(responsePromise) {
     setButtonsState(true); // Disable buttons
     document.body.style.opacity = '0.5'; // Dim the background
