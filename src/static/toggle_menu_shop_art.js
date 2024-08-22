@@ -534,6 +534,15 @@ const interval = setInterval(() => {
 }, 1000);
 }
 
+// Debounce function
+function debounce(func, delay) {
+    let timeout;
+    return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     const remainingTime = await fetchSessionTime();
     const display = document.querySelector('#timer');
@@ -546,29 +555,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 });
-async function updateOnVisibilityChange() {
-    document.addEventListener('visibilitychange', async () => {
-        if (document.visibilityState === 'visible') {
-            try {
-                // Fetch the remaining session time
-                const remainingTime = await fetchSessionTime();
-                const display = document.querySelector('#timer');
+// Debounced visibility change handler
+const handleVisibilityChange = debounce(async () => {
+    if (document.visibilityState === 'visible') {
+        try {
+            // Fetch the remaining session time
+            const remainingTime = await fetchSessionTime();
+            const display = document.querySelector('#timer');
 
-                // Restart the timer with the updated remaining time
-                startTimer(remainingTime, display);
+            // Restart the timer with the updated remaining time
+            startTimer(remainingTime, display);
 
-                // Fetch and update the cart quantity
-                const cartQuantity = await getCartQuantity();
-                await updateCartQuantity(cartQuantity);
+            // Fetch and update the cart quantity
+            const cartQuantity = await getCartQuantity();
+            await updateCartQuantity(cartQuantity);
 
-                // Update the total price
-                await updateTotalPrice();
-                console.log("change")
-            } catch (error) {
-                console.error('Error updating on visibility change:', error);
-            }
+            // Update the total price
+            await updateTotalPrice();
+            console.log("Visibility change handled with debounce");
+        } catch (error) {
+            console.error('Error updating on visibility change:', error);
         }
-    });
+    }
+}, 300); // 300ms delay
+
+// Initialize visibility change handling
+function updateOnVisibilityChange() {
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 }
 
 // Initialize the updateOnVisibilityChange function
