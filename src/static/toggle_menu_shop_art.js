@@ -454,46 +454,7 @@ function initializeLoadingBar(isLoading) {
     }
 }
 
-// Initial toggle when the page loads
-document.addEventListener('DOMContentLoaded', async function() {
-    setButtonsState(false);
-    spinnerRemove();
-    getCartQuantity().then(cartQuantity => {
-        initializeLoadingBar(true);
-        updateCartQuantity(cartQuantity);
-        toggleMenu();
-        document.getElementById('currentYear').innerText = new Date().getFullYear();
-        updateTotalPrice();
-        initializeLoadingBar(false);
-        let isMessageDisplayed = false;
-        // Add event listener to the checkout button
-        document.querySelector('.checkout-btn').addEventListener('click', async function() {
-            // Redirect to the /checkout endpoint
-            let totalPrice = parseFloat(document.getElementById('total-price').innerText.replace('$', ''));
-            if (totalPrice === 0 && !isMessageDisplayed) {
-                // Instead of an alert, display a message above checkout-btn class saying Add Items To Cart to Checkout in the checkout-container class div only once if the button is clicked
-                const checkoutContainer = document.querySelector('.checkout-container');
-                const checkoutBtn = document.querySelector('.checkout-btn');
-                const checkoutMessage = document.createElement('p');
-                checkoutMessage.innerText = 'Add Items to Checkout';
-                checkoutMessage.classList.add('empty-cart-message');
-                checkoutContainer.insertBefore(checkoutMessage, checkoutBtn);
 
-                isMessageDisplayed = true; // Set the flag to true after displaying the message
-
-                return;
-            } else if (totalPrice === 0 && isMessageDisplayed) {
-                return; // Don't do anything if the message is already displayed
-            } else {
-                await get_session_id().then(session_id => {
-                    window.location.href = `/checkout/${session_id}`;
-                });
-            }
-
-        });
-        // Add event listener to the image click event
-    });
-});
 // Toggle the menu on window resize
 window.addEventListener('resize', toggleMenu);
 
@@ -517,51 +478,109 @@ try {
 }
 
 function startTimer(duration, display) {
-let timer = duration, minutes, seconds;
-const interval = setInterval(() => {
-    minutes = parseInt(timer / 60, 10);
-    seconds = parseInt(timer % 60, 10);
-
-    minutes = minutes < 10 ? "0" + minutes : minutes;
-    seconds = seconds < 10 ? "0" + seconds : seconds;
-
-    display.textContent = minutes + ":" + seconds;
-
-    if (--timer < 0) {
-        clearInterval(interval);
-        deleteSession();
+    // Clear any existing timer
+    if (timerInterval) {
+        clearInterval(timerInterval);
     }
-}, 1000);
-}
 
-// Debounce function
-function debounce(func, delay) {
-    let timeout;
-    return function (...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), delay);
-    };
-}
+    let timer = duration, minutes, seconds;
+    timerInterval = setInterval(() => {
+        minutes = parseInt(timer / 60, 10);
+        seconds = parseInt(timer % 60, 10);
 
-document.addEventListener('DOMContentLoaded', async () => {
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+
+        display.textContent = minutes + ":" + seconds;
+
+        if (--timer < 0) {
+            clearInterval(timerInterval);
+            deleteSession();
+        }
+    }, 1000);
+}
+let domContentLoaded = false;
+
+document.addEventListener('DOMContentLoaded', async function() {
     const remainingTime = await fetchSessionTime();
     const display = document.querySelector('#timer');
     startTimer(remainingTime, display);
-    window.addEventListener('pageshow', function(event) {
-        if (event.persisted || window.performance && window.performance.getEntriesByType("navigation")[0].type === 2) {
-            // Force a full reload if the page was loaded from the cache
-            window.location.reload();
-            // Refresh quantity input values
+    
+    // Set the DOMContentLoaded flag to true after the main initialization is done
+    domContentLoaded = true;
+
+    // Initialize the page elements
+    setButtonsState(false);
+    spinnerRemove();
+
+    // Fetch and update the cart quantity
+    const cartQuantity = await getCartQuantity();
+    initializeLoadingBar(true);
+    updateCartQuantity(cartQuantity);
+
+    // Initialize the menu
+    toggleMenu();
+
+    // Set the current year
+    document.getElementById('currentYear').innerText = new Date().getFullYear();
+
+    // Update the total price
+    updateTotalPrice();
+
+    // Hide the loading bar
+    initializeLoadingBar(false);
+
+    let isMessageDisplayed = false;
+
+    // Add event listener to the checkout button
+    document.querySelector('.checkout-btn').addEventListener('click', async function() {
+        let totalPrice = parseFloat(document.getElementById('total-price').innerText.replace('$', ''));
+        if (totalPrice === 0 && !isMessageDisplayed) {
+            const checkoutContainer = document.querySelector('.checkout-container');
+            const checkoutBtn = document.querySelector('.checkout-btn');
+            const checkoutMessage = document.createElement('p');
+            checkoutMessage.innerText = 'Add Items to Checkout';
+            checkoutMessage.classList.add('empty-cart-message');
+            checkoutContainer.insertBefore(checkoutMessage, checkoutBtn);
+
+            isMessageDisplayed = true;
+            return;
+        } else if (totalPrice === 0 && isMessageDisplayed) {
+            return;
+        } else {
+            await get_session_id().then(session_id => {
+                window.location.href = `/checkout/${session_id}`;
+            });
         }
     });
+
+    // Handle page load from cache (e.g., when the user navigates back)
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted || (window.performance && window.performance.getEntriesByType("navigation")[0].type === 'back_forward')) {
+            window.location.reload();
+        }
+    });
+
+    // Handle visibility change after DOMContentLoaded
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 });
-// Debounced visibility change handler
 const handleVisibilityChange = debounce(async () => {
-    if (document.visibilityState === 'visible') {
+    if (document.visibilityState === 'visible' && domContentLoaded) {
         try {
+            // Show loading indicator and disable buttons
+            initializeLoadingBar(true);
+            setButtonsState(true);
+
+            const display = document.querySelector('#timer');
+
+            // Clear any existing timer before fetching the new session time
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null; // Reset the timer interval variable
+            }
+
             // Fetch the remaining session time
             const remainingTime = await fetchSessionTime();
-            const display = document.querySelector('#timer');
 
             // Restart the timer with the updated remaining time
             startTimer(remainingTime, display);
@@ -572,17 +591,25 @@ const handleVisibilityChange = debounce(async () => {
 
             // Update the total price
             await updateTotalPrice();
-            console.log("Visibility change handled with debounce");
+
+            console.log("Visibility change handled");
         } catch (error) {
             console.error('Error updating on visibility change:', error);
+            // Optionally, you can display an error message to the user here
+        } finally {
+            // Hide loading indicator and re-enable buttons
+            initializeLoadingBar(false);
+            setButtonsState(false);
         }
     }
-}, 300); // 300ms delay
+}, 300);
 
-// Initialize visibility change handling
-function updateOnVisibilityChange() {
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+function debounce(func, delay) {
+    let timeout;
+    return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+    };
 }
 
-// Initialize the updateOnVisibilityChange function
-updateOnVisibilityChange();
+let timerInterval = null; // Global variable to hold the timer interval
