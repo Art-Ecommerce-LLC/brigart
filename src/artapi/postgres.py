@@ -5,7 +5,7 @@ from .config import DATABASE_URL
 
 
 engine = create_engine(
-    DATABASE_URL
+    DATABASE_URL, pool_pre_ping=True, pool_size=20, max_overflow=0
 )
 SessionLocal = sessionmaker(
     autocommit=False, 
