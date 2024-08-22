@@ -546,12 +546,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 });
- // Additional check for visibility change (when user switches back to the tab/app)
- document.addEventListener('visibilitychange', async () => {
-    if (document.visibilityState === 'visible') {
-        const remainingTime = await fetchSessionTime();
-        if (remainingTime <= 0) {
-            deleteSession(); // Handle session expiration if the user returns after it expired
+async function updateOnVisibilityChange() {
+    document.addEventListener('visibilitychange', async () => {
+        if (document.visibilityState === 'visible') {
+            try {
+                // Fetch the remaining session time
+                const remainingTime = await fetchSessionTime();
+                const display = document.querySelector('#timer');
+
+                // Restart the timer with the updated remaining time
+                startTimer(remainingTime, display);
+
+                // Fetch and update the cart quantity
+                const cartQuantity = await getCartQuantity();
+                await updateCartQuantity(cartQuantity);
+
+                // Update the total price
+                await updateTotalPrice();
+                console.log("change")
+            } catch (error) {
+                console.error('Error updating on visibility change:', error);
+            }
         }
-    }
-});
+    });
+}
+
+// Initialize the updateOnVisibilityChange function
+updateOnVisibilityChange();
