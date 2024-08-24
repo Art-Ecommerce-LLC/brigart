@@ -84,6 +84,9 @@ async function updateCartQuantity(cart_quantity) {
         document.getElementById('cartQuantity').innerText = cart_quantity;
         document.getElementById('mobileCartQuantity').innerText = cart_quantity;
     } else {
+        document.querySelectorAll('.info_container').forEach(infoContainer => {
+            infoContainer.style.display = 'none';
+        });
         document.getElementById('cartQuantity').innerText = '';
         document.getElementById('mobileCartQuantity').innerText = '';
         // Add a button right below h1 with id moreShop that leads to /shop_art_menu 
