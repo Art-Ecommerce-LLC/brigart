@@ -12,12 +12,16 @@ from .postgres import Base
 
 
 class Artwork(Base):
-    __tablename__ = "nc_zavl___imgs"
+    # Dev table
+    __tablename__ = "nc_8b87___imgs"
 
     id = Column(Integer, primary_key=True)
     img_label = Column(String)
     img = Column(String)
     price = Column(String)
+    uri = Column(String, nullable=True) 
+    height = Column(String)
+    width = Column(String)
     created_at = Column(DateTime, default=datetime)
     updated_at = Column(DateTime, default=datetime, onupdate=datetime)
 
@@ -79,10 +83,13 @@ class IconObject:
 @dataclass()
 class ArtObject:
     Ids: List[int]
-    art_paths: List[str] = None
+    # Update so no need for art_paths and just use datauris
+    art_paths : List[str] = None
     titles: List[str] = None
     prices: List[Union[int, str]] = None
     data_uris: List[str] = None
+    heights: List[str] = None
+    widths: List[str] = None
     created_ats: List[datetime] = None
     updated_ats: List[datetime] = None
 

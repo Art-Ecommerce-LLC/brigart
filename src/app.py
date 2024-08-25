@@ -136,13 +136,18 @@ def homepage(request: Request, db: Session = Depends(get_db)):
 def shop(request: Request, title: str, db: Session = Depends(get_db)):
     logger.info(f"Shop page accessed for title {title} by {request.client.host}")
     try:
-
+        height = noco_db.get_artwork_height_from_title(db, crud, title.replace("+", " "))
+        width = noco_db.get_artwork_width_from_title(db, crud, title.replace("+", " "))
         context = {
             "img_uri": noco_db.get_art_uri_from_title(db, crud, title.replace("+", " ")),
             "img_title": title.replace("+", " "),
             "price": noco_db.get_art_price_from_title(db, crud, title.replace("+", " ")),
             "brig_logo" : noco_db.get_icon_uri_from_title(db, crud, "brig_logo"),
+            "height": height,
+            "width": width,
             "version": noco_db.get_version(),
+            "heightmargin": str(float(height) + 1),
+            "widthmargin": str(float(width) + 1),
             "fireplacesize": noco_db.get_icon_uri_from_title(db, crud, "collage6")
         }
         return templates.TemplateResponse(request=request, name="shop.html", context=context)
@@ -599,3 +604,57 @@ def shop_checkout(request: Request, sessionid: str, db: Session = Depends(get_db
     except Exception as e:
         logger.error(f"Error in shop_checkout: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
+    
+# Update the artwork order in the database and sync there uris
+
+
+# @app.get("/sync-uris", response_class=JSONResponse)
+# def sync_uris_endpoint(request: Request, db: Session = Depends(get_db)):
+#     """
+#     Endpoint to synchronize artwork URIs by generating reduced-resolution Data URIs
+#     from existing images and updating the database accordingly.
+#     """
+#     logger.info(f"/sync-uris endpoint accessed by: {request.client.host}")
+#     try:
+#         noco_db.sync_data_uris(db, crud)
+#         return {"message": "Artwork URIs synchronized successfully."}
+#     except Exception as e:
+#         logger.error(f"Error syncing artwork URIs: {e}")
+#         raise HTTPException(status_code=500, detail="An error occurred while syncing artwork URIs.")
+    
+
+# @app.get("/reorder_artwork", response_class=HTMLResponse)
+# @limiter.limit("100/minute")
+# def reorder_artwork_page(request: Request, db: Session = Depends(get_db)):
+#     try:
+#         # Fetch artwork URIs and titles from the database
+#         art_uris = noco_db.get_artwork_data_with_cache(db, crud).data_uris
+#         art_titles = noco_db.get_artwork_data_with_cache(db, crud).titles
+        
+#         context = {
+#             "art_uris": art_uris,
+#             "art_titles": art_titles,
+#             "version": noco_db.get_version()
+#         }
+        
+#         return templates.TemplateResponse("drag_and_drop.html", {"request": request, **context})
+    
+#     except Exception as e:
+#         logger.error(f"Error in reorder_artwork_page: {e}")
+#         raise HTTPException(status_code=500, detail="Internal server error")
+# @app.post("/update_artwork_order")
+# @limiter.limit("100/minute")
+# async def update_artwork_order(request: Request, db: Session = Depends(get_db)):
+#     form_data = await request.form()
+#     new_order = form_data.getlist("art_order[]")
+#     logger.info(f"New artwork order: {new_order}")
+    
+#     try:
+#         # Update the artwork order in the database
+#         noco_db.update_artwork_order(db, new_order)
+        
+#         return RedirectResponse(url="/", status_code=302)
+    
+#     except Exception as e:
+#         logger.error(f"Failed to update artwork order: {e}")
+#         raise HTTPException(status_code=500, detail="Internal server error")

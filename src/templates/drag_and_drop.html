@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drag and Drop Art Showcase</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles.css') }}?v={{ version }}" />
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/general_styles.css') }}?v={{ version }}" />
+    <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon" />
+    <script src="{{ url_for('static', path='/drag_and_drop.js') }}?v={{ version }}"></script>
+</head>
+<body>
+
+<div class="header">
+    <h1>Reorder Your Art</h1>
+</div>
+
+<form method="post" action="/update_artwork_order" id="artworkForm">
+    <div class="artwork-container" id="artworkContainer">
+        {% for art_uri, art_title in zip(art_uris, art_titles) %}
+            <div class="artwork-item" draggable="true" data-index="{{ loop.index0 }}">
+                <div class="artwork" style="background-image: url('{{ art_uri }}');"></div>
+                <input type="hidden" name="art_order[]" value="{{ art_title }}">
+            </div>
+        {% endfor %}
+    </div>
+    <button type="submit">Save Order</button>
+</form>
+
+<footer class="footer">
+    <p>&copy; <span id="currentYear"></span> Art Ecommerce, LLC. All rights reserved.</p>
+</footer>
+
+<script>
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+</script>
+
+</body>
+</html>

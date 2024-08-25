@@ -7,9 +7,15 @@ class ArtworkBase(BaseModel):
     img_label: str
     img: str
     price: str
+    uri: str = None
+    height: str
+    width: str
     created_at: datetime
     updated_at: datetime
 
+    class Config:
+        orm_mode = True
+        
 class KeysBase(BaseModel):
     envvar: str
     envval: str

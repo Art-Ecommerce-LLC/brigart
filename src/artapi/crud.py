@@ -42,6 +42,8 @@ def get_cookie_by_sessionid(db: Session, sessionids: str):
 def get_key_by_envvar(db: Session, envvar: str):
     return db.query(models.Keys).filter(models.Keys.envvar == envvar).first()
 
+def get_artwork_by_id(db: Session, artwork_id: int):
+    return db.query(models.Artwork).filter(models.Artwork.id == artwork_id).first()
 
 def create_cookie(db: Session, sessionids: str, cookies: dict):
     created_at = datetime.now(dt.timezone(dt.timedelta(hours=-8)))
@@ -86,3 +88,23 @@ def delete_cookie_from_sessionid(db: Session, sessionids: str):
         raise  # Optionally re-raise the exception
     finally:
         db.close()  # Ensure the session is closed
+
+def update_artwork_uri(db: Session, artwork_id: int, new_uri: str) -> None:
+    """
+    Update the 'uri' field of a specific artwork record.
+
+    :param db: Database session.
+    :param artwork_id: ID of the artwork to update.
+    :param new_uri: The new Data URI to set.
+    """
+    try:
+        artwork = get_artwork_by_id(db, artwork_id)
+        if artwork:
+            artwork.uri = new_uri
+            # Make pacific time
+            artwork.updated_at = datetime.now(dt.timezone(dt.timedelta(hours=-8)))
+            db.commit()
+
+    except:
+        db.rollback()
+        raise

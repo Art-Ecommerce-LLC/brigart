@@ -4,6 +4,7 @@ from PIL import Image
 from io import BytesIO
 from typing import Union
 import time
+import datetime as dt
 from datetime import datetime, timezone
 from functools import lru_cache
 import ast
@@ -333,10 +334,12 @@ class Noco:
             data = crud.get_artworks(db, skip=0, limit=100)
             art_paths = [ast.literal_eval(item.img)[0]['path'] for item in data]
             artwork_data = ArtObject(
-                art_paths=art_paths,
                 titles=[item.img_label for item in data],
+                art_paths=art_paths,
                 prices=[item.price for item in data],
-                data_uris=self.convert_paths_to_data_uris(art_paths),
+                data_uris=[item.uri for item in data],
+                heights=[item.height for item in data],
+                widths=[item.width for item in data],
                 created_ats=[item.created_at for item in data],
                 updated_ats=[item.updated_at for item in data],
                 Ids=[item.id for item in data]
@@ -359,9 +362,12 @@ class Noco:
             data = crud.get_artworks(db, skip=0, limit=100)
             art_paths = [ast.literal_eval(item.img)[0]['path'] for item in data]
             artwork_data = ArtObject(
-                art_paths=art_paths,
                 titles=[item.img_label for item in data],
+                art_paths=art_paths,
                 prices=[item.price for item in data],
+                heights=[item.height for item in data],
+                widths=[item.width for item in data],
+                data_uris=[item.uri for item in data],
                 created_ats=[item.created_at for item in data],
                 updated_ats=[item.updated_at for item in data],
                 Ids=[item.id for item in data]
@@ -700,3 +706,79 @@ class Noco:
                     self.delete_noco_session_cookie(session_id)
         except:
             raise 
+
+
+    def sync_data_uris(self, db: Session, crud: crud) -> None:
+        """
+        Synchronize the 'uri' fields in the Artwork table by generating reduced-resolution
+        Data URIs from the existing images.
+        """
+        try:
+            # Fetch all artwork records
+            artworks = crud.get_artworks(db, skip=0, limit=1000)  # Adjust limit as needed
+            
+            if not artworks:
+                return
+
+            for artwork in artworks:
+                try:
+                    # Extract image path from the 'img' field
+                    img_data = ast.literal_eval(artwork.img)
+                    if not img_data or 'path' not in img_data[0]:
+                        continue
+
+                    img_path = img_data[0]['path']
+                    full_img_url = f"{self.base_url}/{img_path}"
+
+                    # Fetch image content
+                    response = requests.get(full_img_url)
+                    response.raise_for_status()
+                    image_content = response.content
+
+                    # Generate reduced-resolution Data URI
+                    data_uri = self.convert_to_data_uri(image_content)
+                    # Update the 'uri' field in the database
+                    crud.update_artwork_uri(db, artwork.id, data_uri)
+                    
+                except:
+                    continue  # Continue processing other artworks even if one fails
+
+        except:
+            raise
+
+
+    def get_artwork_height_from_title(self, db: Session, crud: crud, title: str) -> str:
+        """
+            Get the height of the artwork from the title
+
+            Arguments:
+                title (str): The title of the artwork
+            
+            Returns:
+                str: The height of the artwork with the title
+
+            Raises:
+                ValueError: If the artwork with the title is not found
+        """
+        try:
+            return crud.get_artwork_by_label(db, title).height
+        except:
+            raise
+
+    def get_artwork_width_from_title(self, db: Session, crud: crud, title: str) -> str:
+        """
+            Get the width of the artwork from the title
+
+            Arguments:
+                title (str): The title of the artwork
+            
+            Returns:
+                str: The width of the artwork with the title
+
+            Raises:
+                ValueError: If the artwork with the title is not found
+        """
+        try:
+            return crud.get_artwork_by_label(db, title).width
+        except:
+            raise
