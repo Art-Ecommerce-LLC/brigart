@@ -13,7 +13,7 @@ from .postgres import Base
 
 class Artwork(Base):
     # Dev table
-    __tablename__ = "nc_ynif___imgs"
+    __tablename__ = "nc_tqpi___imgs"
 
     id = Column(Integer, primary_key=True)
     sortorder = Column(Integer, nullable=True)

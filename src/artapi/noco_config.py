@@ -23,3 +23,5 @@ APP_PASSWORD = os.getenv("app_password")
 # Telegram Config
 ERROR405_BOT_TOKEN = os.getenv("error405_bot_token")
 ERROR405_CHAT_ID = os.getenv("error405_chat_id")
+
+PROD_WEBSITE = os.getenv("prod_website")

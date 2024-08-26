@@ -1,6 +1,6 @@
 # app/main.py
 from fastapi import (
-    FastAPI, Request, HTTPException, Depends, Form
+    FastAPI, Request, HTTPException, Depends, Response
 )
 from contextlib import asynccontextmanager
 from fastapi.responses import ( 
@@ -18,10 +18,16 @@ from datetime import datetime, timezone
 import asyncio
 from sqlalchemy.orm import Session
 from typing import List
+import xml.etree.ElementTree as ET
+import xml.dom.minidom as minidom
+import requests
+import base64
+import ast
+
 
 from src.artapi import models, crud, schemas
 from src.artapi.noco import Noco
-from src.artapi.noco_config import OPENAPI_URL, SHIPPING_RATE
+from src.artapi.noco_config import OPENAPI_URL, SHIPPING_RATE, PROD_WEBSITE
 from src.artapi.stripe_connector import get_stripe_api, StripeAPI
 from src.artapi.config import STRIPE_SECRET_KEY, NOCODB_PATH
 from src.artapi.logger import setup_logger
@@ -709,3 +715,139 @@ def shop_checkout(request: Request, sessionid: str, db: Session = Depends(get_db
 #     except Exception as e:
 #         logger.error(f"Error in reorder_artwork_page: {e}")
 #         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+
+@app.get("/export_artwork_data/")
+def export_artwork_data(db: Session = Depends(get_db)):
+    try:
+        # Fetch artwork data from the backend
+        artwork_data = noco_db.get_artwork_data_with_cache(db, crud)
+        
+        # Create the root XML element
+        root = ET.Element('products')
+
+        # Iterate through the artwork data
+        for title, price in zip(artwork_data.titles, artwork_data.prices):
+            # Create the product element
+            product = ET.SubElement(root, 'product')
+            
+            # Create title element
+            title_element = ET.SubElement(product, 'title')
+            title_element.text = title
+            
+            # Create price element
+            price_element = ET.SubElement(product, 'price')
+            price_element.text = str(price)
+        
+        # Convert the XML tree to a string
+        xml_str = ET.tostring(root, encoding='utf-8')
+        
+        # Parse the string for pretty printing
+        dom = minidom.parseString(xml_str)
+        pretty_xml = dom.toprettyxml(indent="  ")
+        
+        # Return the pretty-printed XML as a response
+        return Response(content=pretty_xml, media_type="application/xml")
+    
+    except Exception as e:
+        logger.error(f"Error in export_artwork_data: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+    
+
+@app.get("/stream_image/{artwork_id}")
+def stream_reduced_image(artwork_id: int, db: Session = Depends(get_db)):
+    try:
+        # Fetch the artwork data by ID
+        artwork = crud.get_artwork_by_id(db, artwork_id)
+        if not artwork:
+            raise HTTPException(status_code=404, detail="Artwork not found")
+        
+        # Reduce the resolution of the image
+        img_path = ast.literal_eval(artwork.img)
+        img_data = requests.get(f"{noco_db.base_url}/{img_path[0]['path']}").content
+        reduced_res_image = noco_db.convert_to_data_uri(img_data)
+
+        # Decode the base64 image data
+        image_data = base64.b64decode(reduced_res_image.split(',')[1])
+        
+        # Stream the image
+        return Response(content=image_data, media_type="image/jpeg")
+    
+    except Exception as e:
+        logger.error(f"Error streaming image: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+    
+
+# @app.get("/download_image/{artwork_id}")
+# def download_reduced_image(artwork_id: int, db: Session = Depends(get_db)):
+#     try:
+#         # Fetch the artwork data by ID
+#         artwork = crud.get_artwork_by_id(db, artwork_id)
+#         if not artwork:
+#             raise HTTPException(status_code=404, detail="Artwork not found")
+        
+#         # Reduce the resolution of the image
+#         img_path = ast.literal_eval(artwork.img)
+#         img_data = requests.get(f"{noco_db.base_url}/{img_path[0]['path']}").content
+#         reduced_res_image = noco_db.convert_to_data_uri(img_data)
+
+#         # Decode the base64 image data
+#         image_data = base64.b64decode(reduced_res_image.split(',')[1])
+        
+#         # Prepare the response headers for download
+#         headers = {
+#             'Content-Disposition': f'attachment; filename="{artwork.img_label}_reduced.jpg"'
+#         }
+#         return Response(content=image_data, media_type="image/jpeg", headers=headers)
+    
+#     except Exception as e:
+#         logger.error(f"Error downloading image: {e}")
+#         raise HTTPException(status_code=500, detail="Internal server error")
+    
+@app.get("/export_google_feed/")
+def export_google_feed(db: Session = Depends(get_db)):
+    try:
+        # Fetch artwork data from the backend
+        artwork_data = noco_db.get_artwork_data_with_cache(db, crud)
+        
+        # Create the root RSS element and associate the Google namespace with the "g" prefix
+        ET.register_namespace('g', "http://base.google.com/ns/1.0")
+        rss = ET.Element('rss', version='2.0')
+        channel = ET.SubElement(rss, 'channel')
+        
+        # Channel info (customize as needed)
+        ET.SubElement(channel, 'title').text = "Brig Light Art"
+        ET.SubElement(channel, 'link').text = PROD_WEBSITE
+        ET.SubElement(channel, 'description').text = "Brig Light Art products"
+        
+        # Iterate through the artwork data and create items
+        for title, price, id, height, width in zip(artwork_data.titles, artwork_data.prices, artwork_data.Ids, artwork_data.heights, artwork_data.widths):
+            item = ET.SubElement(channel, 'item')
+            ET.SubElement(item, '{http://base.google.com/ns/1.0}id').text = str(id)
+            ET.SubElement(item, '{http://base.google.com/ns/1.0}title').text = title
+            # Make the description the size of the artwork
+            cutheight = str(float(height) + 1)
+            cutwidth = str(float(width) + 1)
+            description = f"Size: ~{str(float(height))} W x ~{str(float(width))} H inches. Cut to size: ~{cutheight} W x ~{cutwidth} H inches with a 1 inch white border."
+            ET.SubElement(item, '{http://base.google.com/ns/1.0}description').text = description # Customize as needed
+
+            ET.SubElement(item, '{http://base.google.com/ns/1.0}link').text = f"{PROD_WEBSITE}/shop/{str(title).replace(' ', '+')}"
+            ET.SubElement(item, '{http://base.google.com/ns/1.0}image_link').text = f"{PROD_WEBSITE}/stream_image/{str(id)}"  # Replace with actual image link
+            ET.SubElement(item, '{http://base.google.com/ns/1.0}price').text = f"{price} USD"
+            ET.SubElement(item, '{http://base.google.com/ns/1.0}condition').text = "new"  # Example condition
+            ET.SubElement(item, '{http://base.google.com/ns/1.0}availability').text = "in stock"  # Example availability
+        
+        # Convert the XML tree to a string
+        xml_str = ET.tostring(rss, encoding='utf-8')
+        
+        # Parse the string for pretty printing
+        dom = minidom.parseString(xml_str)
+        pretty_xml = dom.toprettyxml(indent="  ")
+        
+        # Return the pretty-printed XML as a response
+        return Response(content=pretty_xml, media_type="application/xml")
+    
+    except Exception as e:
+        logger.error(f"Error in export_google_feed: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
