@@ -13,9 +13,10 @@ from .postgres import Base
 
 class Artwork(Base):
     # Dev table
-    __tablename__ = "nc_8b87___imgs"
+    __tablename__ = "nc_ynif___imgs"
 
     id = Column(Integer, primary_key=True)
+    sortorder = Column(Integer, nullable=True)
     img_label = Column(String)
     img = Column(String)
     price = Column(String)
@@ -87,11 +88,14 @@ class ArtObject:
     art_paths : List[str] = None
     titles: List[str] = None
     prices: List[Union[int, str]] = None
+    sortorders: List[int] = None
     data_uris: List[str] = None
     heights: List[str] = None
     widths: List[str] = None
+    sortorder: List[int] = None
     created_ats: List[datetime] = None
     updated_ats: List[datetime] = None
+
 
 @dataclass()
 class KeyObject:
@@ -129,5 +133,6 @@ class TableMap:
     key_table: str
     cookies_table: str
     error_table: str
+
 
 

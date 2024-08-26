@@ -336,6 +336,7 @@ class Noco:
             artwork_data = ArtObject(
                 titles=[item.img_label for item in data],
                 art_paths=art_paths,
+                sortorder=[item.sortorder for item in data],
                 prices=[item.price for item in data],
                 data_uris=[item.uri for item in data],
                 heights=[item.height for item in data],
@@ -364,6 +365,7 @@ class Noco:
             artwork_data = ArtObject(
                 titles=[item.img_label for item in data],
                 art_paths=art_paths,
+                sortorder=[item.sortorder for item in data],
                 prices=[item.price for item in data],
                 heights=[item.height for item in data],
                 widths=[item.width for item in data],

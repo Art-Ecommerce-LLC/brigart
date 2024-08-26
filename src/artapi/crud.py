@@ -108,3 +108,9 @@ def update_artwork_uri(db: Session, artwork_id: int, new_uri: str) -> None:
     except:
         db.rollback()
         raise
+
+def get_artwork_by_sortorder(db: Session, sortorder: int):
+    return db.query(models.Artwork).filter(models.Artwork.sortorder == sortorder).first()
+
+def get_artwork_by_title(db: Session, title: str):
+    return db.query(models.Artwork).filter(models.Artwork.img_label == title).first()

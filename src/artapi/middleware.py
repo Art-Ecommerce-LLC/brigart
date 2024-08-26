@@ -19,19 +19,19 @@ from starlette.datastructures import MutableHeaders
 # Initialize the Limiter
 limiter = Limiter(key_func=get_remote_address)
 
-class ContentSecurityPolicyMiddleware:
-    def __init__(self, app: ASGIApp, csp_policy: str):
-        self.app = app
-        self.csp_policy = csp_policy
+# class ContentSecurityPolicyMiddleware:
+#     def __init__(self, app: ASGIApp, csp_policy: str):
+#         self.app = app
+#         self.csp_policy = csp_policy
 
-    def __call__(self, scope: Scope, receive: Receive, send: Send):
-        async def send_wrapper(message):
-            if message["type"] == "http.response.start":
-                headers = MutableHeaders(scope=message)
-                headers["Content-Security-Policy"] = self.csp_policy
-            await send(message)
+#     def __call__(self, scope: Scope, receive: Receive, send: Send):
+#         async def send_wrapper(message):
+#             if message["type"] == "http.response.start":
+#                 headers = MutableHeaders(scope=message)
+#                 headers["Content-Security-Policy"] = self.csp_policy
+#             await send(message)
 
-        return self.app(scope, receive, send_wrapper)
+#         return self.app(scope, receive, send_wrapper)
 
 class LoggingMiddleware:
     def __init__(self, app: ASGIApp):
@@ -112,10 +112,10 @@ def add_middleware(app: FastAPI):
         minimum_size=1000,
         compresslevel=9,
     )
-    app.add_middleware(
-        ContentSecurityPolicyMiddleware,
-        csp_policy=CSP_POLICY
-    )
+    # app.add_middleware(
+    #     ContentSecurityPolicyMiddleware,
+    #     csp_policy=CSP_POLICY
+    # )
 
     # Additional Middleware
     app.add_middleware(LoggingMiddleware)

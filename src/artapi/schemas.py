@@ -10,12 +10,17 @@ class ArtworkBase(BaseModel):
     uri: str = None
     height: str
     width: str
+    sort_order: int = None
     created_at: datetime
     updated_at: datetime
 
     class Config:
-        orm_mode = True
-        
+        from_attributes = True
+
+class ArtworkOrder(BaseModel):
+    title: str
+    sortOrder: int
+
 class KeysBase(BaseModel):
     envvar: str
     envval: str

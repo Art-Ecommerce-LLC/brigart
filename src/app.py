@@ -1,6 +1,6 @@
 # app/main.py
 from fastapi import (
-    FastAPI, Request, HTTPException, Depends
+    FastAPI, Request, HTTPException, Depends, Form
 )
 from contextlib import asynccontextmanager
 from fastapi.responses import ( 
@@ -17,8 +17,9 @@ import stripe
 from datetime import datetime, timezone
 import asyncio
 from sqlalchemy.orm import Session
+from typing import List
 
-from src.artapi import models, crud
+from src.artapi import models, crud, schemas
 from src.artapi.noco import Noco
 from src.artapi.noco_config import OPENAPI_URL, SHIPPING_RATE
 from src.artapi.stripe_connector import get_stripe_api, StripeAPI
@@ -115,14 +116,22 @@ def global_exception_handler(request: Request, exc: Exception):
 noco_db = Noco()
 
 @app.get("/", response_class=HTMLResponse)
-@limiter.limit("100/minute")
 def homepage(request: Request, db: Session = Depends(get_db)):
     logger.info(f"Homepage accessed by: {request.client.host}")
     try:
+        artwork_data = noco_db.get_artwork_data_with_cache(db, crud)
+        
+        # Sort artwork by sortorder
+        sorted_artwork = sorted(
+            zip(artwork_data.sortorder, artwork_data.data_uris, artwork_data.titles),
+            key=lambda x: x[0]
+        )
+        
+        art_uris, art_titles = zip(*[(art[1], art[2]) for art in sorted_artwork])
 
         context = {
-            "art_uris": noco_db.get_artwork_data_with_cache(db, crud).data_uris,
-            "art_titles": noco_db.get_artwork_data_with_cache(db, crud).titles,
+            "art_uris": art_uris,
+            "art_titles": art_titles,
             "brig_logo": noco_db.get_icon_uri_from_title(db, crud, "brig_logo"),
             "version": noco_db.get_version()
         }
@@ -143,8 +152,8 @@ def shop(request: Request, title: str, db: Session = Depends(get_db)):
             "img_title": title.replace("+", " "),
             "price": noco_db.get_art_price_from_title(db, crud, title.replace("+", " ")),
             "brig_logo" : noco_db.get_icon_uri_from_title(db, crud, "brig_logo"),
-            "height": height,
-            "width": width,
+            "height": str(float(height)),
+            "width": str(float(width)),
             "version": noco_db.get_version(),
             "heightmargin": str(float(height) + 1),
             "widthmargin": str(float(width) + 1),
@@ -605,9 +614,8 @@ def shop_checkout(request: Request, sessionid: str, db: Session = Depends(get_db
         logger.error(f"Error in shop_checkout: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
     
+# Dev APIS
 # Update the artwork order in the database and sync there uris
-
-
 # @app.get("/sync-uris", response_class=JSONResponse)
 # def sync_uris_endpoint(request: Request, db: Session = Depends(get_db)):
 #     """
@@ -657,4 +665,47 @@ def shop_checkout(request: Request, sessionid: str, db: Session = Depends(get_db
     
 #     except Exception as e:
 #         logger.error(f"Failed to update artwork order: {e}")
+#         raise HTTPException(status_code=500, detail="Internal server error")
+# @app.post("/update_artwork_order")
+# def update_artwork_order(order: list[schemas.ArtworkOrder], db: Session = Depends(get_db)) -> None:
+#     try:
+#         # Temporarily disable autoflush
+#         with db.no_autoflush:
+#             # Update the sort order in the database using the provided title and new sortOrder
+#             for item in order:
+#                 artwork = crud.get_artwork_by_title(db, item.title)
+#                 if artwork:
+#                     artwork.sortorder = item.sortOrder  # Set the new sort order
+#                     artwork.updated_at = datetime.now(timezone.utc)  # Ensure updated_at is set correctly
+
+#             # Commit the changes to the database
+#             db.commit()
+
+#         # Clear cache to reflect changes if using caching
+#         noco_db.clear_artwork_data_cache()
+#     except Exception as e:
+#         db.rollback()  # Rollback in case of error
+#         raise HTTPException(status_code=500, detail=f"Internal server error")
+    
+# @app.get("/reorder_artwork", response_class=HTMLResponse)
+# def reorder_artwork_page(request: Request, db: Session = Depends(get_db)):
+#     try:
+#         # Fetch artwork URIs, titles, and sort order from the database
+#         artwork_data = noco_db.get_artwork_data_with_cache(db, crud)
+        
+#         # Sort artwork by sortorder
+#         sorted_artwork = sorted(
+#             zip(artwork_data.sortorder, artwork_data.data_uris, artwork_data.titles),
+#             key=lambda x: x[0]
+#         )
+        
+#         artworks = list(zip([art[1] for art in sorted_artwork], [art[2] for art in sorted_artwork]))
+        
+#         context = {
+#             "artworks": artworks,
+#             "version": noco_db.get_version()
+#         }
+#         return templates.TemplateResponse("drag_and_drop.html", {"request": request, **context})
+#     except Exception as e:
+#         logger.error(f"Error in reorder_artwork_page: {e}")
 #         raise HTTPException(status_code=500, detail="Internal server error")
