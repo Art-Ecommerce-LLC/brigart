@@ -719,7 +719,7 @@ def shop_checkout(request: Request, sessionid: str, db: Session = Depends(get_db
 
 @app.get("/stream_image/{artwork_id}")
 @limiter.limit("100/minute")
-def stream_reduced_image(artwork_id: int, db: Session = Depends(get_db)):
+def stream_reduced_image(request: Request, artwork_id: int, db: Session = Depends(get_db)):
     try:
         # Fetch the artwork data by ID
         artwork = crud.get_artwork_by_id(db, artwork_id)
@@ -770,7 +770,7 @@ def stream_reduced_image(artwork_id: int, db: Session = Depends(get_db)):
     
 @app.get("/export_google_feed/")
 @limiter.limit("100/minute")
-def export_google_feed(db: Session = Depends(get_db)):
+def export_google_feed(request: Request, db: Session = Depends(get_db)):
     try:
         # Fetch artwork data from the backend
         artwork_data = noco_db.get_artwork_data_with_cache(db, crud)
