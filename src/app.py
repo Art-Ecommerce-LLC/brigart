@@ -717,45 +717,8 @@ def shop_checkout(request: Request, sessionid: str, db: Session = Depends(get_db
 #         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-
-@app.get("/export_artwork_data/")
-def export_artwork_data(db: Session = Depends(get_db)):
-    try:
-        # Fetch artwork data from the backend
-        artwork_data = noco_db.get_artwork_data_with_cache(db, crud)
-        
-        # Create the root XML element
-        root = ET.Element('products')
-
-        # Iterate through the artwork data
-        for title, price in zip(artwork_data.titles, artwork_data.prices):
-            # Create the product element
-            product = ET.SubElement(root, 'product')
-            
-            # Create title element
-            title_element = ET.SubElement(product, 'title')
-            title_element.text = title
-            
-            # Create price element
-            price_element = ET.SubElement(product, 'price')
-            price_element.text = str(price)
-        
-        # Convert the XML tree to a string
-        xml_str = ET.tostring(root, encoding='utf-8')
-        
-        # Parse the string for pretty printing
-        dom = minidom.parseString(xml_str)
-        pretty_xml = dom.toprettyxml(indent="  ")
-        
-        # Return the pretty-printed XML as a response
-        return Response(content=pretty_xml, media_type="application/xml")
-    
-    except Exception as e:
-        logger.error(f"Error in export_artwork_data: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
-    
-
 @app.get("/stream_image/{artwork_id}")
+@limiter.limit("100/minute")
 def stream_reduced_image(artwork_id: int, db: Session = Depends(get_db)):
     try:
         # Fetch the artwork data by ID
@@ -806,6 +769,7 @@ def stream_reduced_image(artwork_id: int, db: Session = Depends(get_db)):
 #         raise HTTPException(status_code=500, detail="Internal server error")
     
 @app.get("/export_google_feed/")
+@limiter.limit("100/minute")
 def export_google_feed(db: Session = Depends(get_db)):
     try:
         # Fetch artwork data from the backend
