@@ -806,17 +806,25 @@ def export_google_feed(request: Request, db: Session = Depends(get_db)):
             item = ET.SubElement(channel, 'item')
             ET.SubElement(item, '{http://base.google.com/ns/1.0}id').text = str(id)
             ET.SubElement(item, '{http://base.google.com/ns/1.0}title').text = title
+            
+            # Add brand, MPN, and optionally GTIN
+            ET.SubElement(item, '{http://base.google.com/ns/1.0}brand').text = "Art Ecommerce LLC"
+            ET.SubElement(item, '{http://base.google.com/ns/1.0}mpn').text = f"PRINT-{id}"  # Example MPN
+            
+            # If you have GTINs, you can add them here
+            # ET.SubElement(item, '{http://base.google.com/ns/1.0}gtin').text = "your_gtin_here"
+            
             # Make the description the size of the artwork
             cutheight = str(float(height) + 1)
             cutwidth = str(float(width) + 1)
-            description = f"Size: ~{str(float(height))} W x ~{str(float(width))} H inches. Cut to size: ~{cutheight} W x ~{cutwidth} H inches with a 1 inch white border."
-            ET.SubElement(item, '{http://base.google.com/ns/1.0}description').text = description # Customize as needed
-
+            description = f"Large prints with a one inch white border. Refer to briglightart.com/shop/{str(title).replace(' ', '+')} for more details on specific sizes."
+            ET.SubElement(item, '{http://base.google.com/ns/1.0}description').text = description
+            
             ET.SubElement(item, '{http://base.google.com/ns/1.0}link').text = f"{PROD_WEBSITE}/shop/{str(title).replace(' ', '+')}"
-            ET.SubElement(item, '{http://base.google.com/ns/1.0}image_link').text = f"{PROD_WEBSITE}/stream_image/{str(id)}"  # Replace with actual image link
+            ET.SubElement(item, '{http://base.google.com/ns/1.0}image_link').text = f"{PROD_WEBSITE}/stream_image/{str(id)}"
             ET.SubElement(item, '{http://base.google.com/ns/1.0}price').text = f"{price} USD"
-            ET.SubElement(item, '{http://base.google.com/ns/1.0}condition').text = "new"  # Example condition
-            ET.SubElement(item, '{http://base.google.com/ns/1.0}availability').text = "in stock"  # Example availability
+            ET.SubElement(item, '{http://base.google.com/ns/1.0}condition').text = "new"
+            ET.SubElement(item, '{http://base.google.com/ns/1.0}availability').text = "in stock"
         
         # Convert the XML tree to a string
         xml_str = ET.tostring(rss, encoding='utf-8')
@@ -831,7 +839,6 @@ def export_google_feed(request: Request, db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error in export_google_feed: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
-
 
 # @app.get("/export_csv/")
 # @limiter.limit("100/minute")
