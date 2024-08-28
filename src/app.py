@@ -25,7 +25,7 @@ import base64
 import ast
 
 
-from src.artapi import models, crud, schemas
+from src.artapi import models, crud, schemas, utils
 from src.artapi.noco import Noco
 from src.artapi.noco_config import OPENAPI_URL, SHIPPING_RATE, PROD_WEBSITE
 from src.artapi.stripe_connector import get_stripe_api, StripeAPI
@@ -121,6 +121,7 @@ def global_exception_handler(request: Request, exc: Exception):
 
 noco_db = Noco()
 
+
 @app.get("/", response_class=HTMLResponse)
 def homepage(request: Request, db: Session = Depends(get_db)):
     logger.info(f"Homepage accessed by: {request.client.host}")
@@ -147,22 +148,27 @@ def homepage(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/shop/{title}", response_class=HTMLResponse)
-@limiter.limit("100/minute") 
+@limiter.limit("100/minute")
 def shop(request: Request, title: str, db: Session = Depends(get_db)):
     logger.info(f"Shop page accessed for title {title} by {request.client.host}")
     try:
-        height = noco_db.get_artwork_height_from_title(db, crud, title.replace("+", " "))
-        width = noco_db.get_artwork_width_from_title(db, crud, title.replace("+", " "))
+        height = float(noco_db.get_artwork_height_from_title(db, crud, title.replace("+", " ")))
+        width = float(noco_db.get_artwork_width_from_title(db, crud, title.replace("+", " ")))
+        
+        # Convert height and width to formatted string
+        height_str = utils.format_inches(height)
+        width_str = utils.format_inches(width)
+        
         context = {
             "img_uri": noco_db.get_art_uri_from_title(db, crud, title.replace("+", " ")),
             "img_title": title.replace("+", " "),
             "price": noco_db.get_art_price_from_title(db, crud, title.replace("+", " ")),
             "brig_logo" : noco_db.get_icon_uri_from_title(db, crud, "brig_logo"),
-            "height": str(float(height)),
-            "width": str(float(width)),
+            "height": height_str,  # Send as formatted string
+            "width": width_str,    # Send as formatted string
             "version": noco_db.get_version(),
-            "heightmargin": str(float(height) + 1),
-            "widthmargin": str(float(width) + 1),
+            "heightmargin": utils.format_inches(height + 1),  # Adjust margin with formatted string
+            "widthmargin": utils.format_inches(width + 1),    # Adjust margin with formatted string
             "fireplacesize": noco_db.get_icon_uri_from_title(db, crud, "collage6")
         }
         return templates.TemplateResponse(request=request, name="shop.html", context=context)
@@ -297,11 +303,20 @@ def shop_art(request: Request, sessionid: str, db: Session = Depends(get_db)):
 def shop_art_menu(request: Request, db: Session = Depends(get_db)):
     logger.info(f"Shop art menu page accessed by {request.client.host}")
     try:
+        artwork_data = noco_db.get_artwork_data_with_cache(db, crud)
+        
+        # Sort artwork by sortorder
+        sorted_artwork = sorted(
+            zip(artwork_data.sortorder, artwork_data.data_uris, artwork_data.titles, artwork_data.prices),
+            key=lambda x: x[0]
+        )
+        
+        art_uris, art_titles, price_list = zip(*[(art[1], art[2], art[3]) for art in sorted_artwork])
 
         context = {
-            "art_uris":noco_db.get_artwork_data_with_cache(db, crud).data_uris,
-            "titles": noco_db.get_artwork_data_with_cache(db, crud).titles,
-            "price_list": noco_db.get_artwork_data_with_cache(db, crud).prices,
+            "art_uris": art_uris,
+            "titles": art_titles,
+            "price_list": price_list,
             "brig_logo": noco_db.get_icon_uri_from_title(db, crud, "brig_logo"),
             "version" : noco_db.get_version()
         }

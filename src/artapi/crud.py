@@ -54,7 +54,6 @@ def create_cookie(db: Session, sessionids: str, cookies: dict):
         db.refresh(db_cookie)
     except Exception as e:
         db.rollback()  # Rollback the transaction in case of an error
-        print(f"Error creating cookie: {e}")
         raise  # Optionally re-raise the exception
     finally:
         db.close()  # Ensure the session is closed
@@ -73,7 +72,6 @@ def update_cookie(db: Session, cookie_id: int, sessionids: str, cookies: dict):
             print("Cookie not found")
     except Exception as e:
         db.rollback()  # Rollback the transaction in case of an error
-        print(f"Error updating cookie: {e}")
         raise  # Optionally re-raise the exception
     finally:
         db.close()  # Ensure the session is closed
@@ -84,7 +82,6 @@ def delete_cookie_from_sessionid(db: Session, sessionids: str):
         db.commit()
     except Exception as e:
         db.rollback()  # Rollback the transaction in case of an error
-        print(f"Error deleting cookie: {e}")
         raise  # Optionally re-raise the exception
     finally:
         db.close()  # Ensure the session is closed

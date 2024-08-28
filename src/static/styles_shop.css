@@ -11,7 +11,32 @@
 .product p {
     margin: 0;
 }
-
+.fraction {
+    display: inline-block;
+    vertical-align: middle;
+    text-align: center;
+    line-height: 1;
+}
+.fraction .numerator {
+    display: block;
+    font-size: 0.75em; /* Adjust the size as needed */
+    margin-bottom: 2px; /* Increase the space below the numerator */
+}
+.fraction .denominator {
+    display: block;
+    font-size: 0.75em; /* Adjust the size as needed */
+    margin-top: 2px; /* Increase the space above the denominator */
+}
+.fraction .fraction-bar {
+    display: block;
+    width: 100%; /* Extend the line across the fraction */
+    height: 1px; /* Thickness of the horizontal line */
+    background-color: black; /* Line color */
+    margin: 1px 0; /* Add space above and below the line */
+}
+.inch-mark {
+    margin-left: 4px; /* Adjust this value to increase the space */
+}
 .content {
     display: flex;
     flex-direction: column;
