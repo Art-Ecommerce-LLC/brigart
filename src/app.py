@@ -4,7 +4,7 @@ from fastapi import (
 )
 from contextlib import asynccontextmanager
 from fastapi.responses import ( 
-    HTMLResponse, JSONResponse, RedirectResponse
+    HTMLResponse, JSONResponse, RedirectResponse, FileResponse
 )
 from fastapi.responses import Response
 from fastapi.templating import Jinja2Templates
@@ -23,7 +23,8 @@ import xml.dom.minidom as minidom
 import requests
 import base64
 import ast
-
+import csv
+import tempfile
 
 from src.artapi import models, crud, schemas, utils
 from src.artapi.noco import Noco
@@ -830,3 +831,44 @@ def export_google_feed(request: Request, db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error in export_google_feed: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+# @app.get("/export_csv/")
+# @limiter.limit("100/minute")
+# def export_csv(request: Request, db: Session = Depends(get_db)):
+#     try:
+#         # Fetch artwork data from the backend
+#         artwork_data = noco_db.get_artwork_data_with_cache(db, crud)
+        
+#         # Create a list to store the CSV rows
+#         csv_rows = []
+        
+#         # Add the header row
+#         header_row = ["TITLE", "PRICE", "CONDITION", "DESCRIPTION"]
+#         csv_rows.append(header_row)
+        
+#         # Iterate through the artwork data and create rows
+#         for title, price in zip(artwork_data.titles, artwork_data.prices):
+#             condition = "new"
+#             description = f"Refer to briglightart.com/shop/{str(title).replace(' ', '+')} for more details."
+#             row = [title, price, condition, description]
+#             csv_rows.append(row)
+        
+#         # Create a temporary file to store the CSV data
+#         with tempfile.NamedTemporaryFile(mode='w', newline='', delete=False) as temp_file:
+#             # Write the CSV rows to the temporary file
+#             writer = csv.writer(temp_file)
+#             writer.writerows(csv_rows)
+#             temp_file_name = temp_file.name  # Capture the name of the temp file
+        
+#         # Prepare the response headers for download
+#         headers = {
+#             'Content-Disposition': 'attachment; filename="google_feed.csv"'
+#         }
+        
+#         # Return the CSV file as a response
+#         return FileResponse(temp_file_name, media_type="text/csv", headers=headers)
+    
+#     except Exception as e:
+#         logger.error(f"Error in export_csv: {e}")
+#         raise HTTPException(status_code=500, detail="Internal server error")
