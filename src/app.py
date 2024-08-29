@@ -168,8 +168,8 @@ def shop(request: Request, title: str, db: Session = Depends(get_db)):
             "height": height_str,  # Send as formatted string
             "width": width_str,    # Send as formatted string
             "version": noco_db.get_version(),
-            "heightmargin": utils.format_inches(height + 1),  # Adjust margin with formatted string
-            "widthmargin": utils.format_inches(width + 1),    # Adjust margin with formatted string
+            "heightmargin": utils.format_inches(height + 0.5),  # Adjust margin with formatted string
+            "widthmargin": utils.format_inches(width + 0.5),    # Adjust margin with formatted string
             "fireplacesize": noco_db.get_icon_uri_from_title(db, crud, "collage6")
         }
         return templates.TemplateResponse(request=request, name="shop.html", context=context)
@@ -817,7 +817,7 @@ def export_google_feed(request: Request, db: Session = Depends(get_db)):
             # Make the description the size of the artwork
             cutheight = str(float(height) + 1)
             cutwidth = str(float(width) + 1)
-            description = f"Large prints with a one inch white border. Refer to briglightart.com/shop/{str(title).replace(' ', '+')} for more details on specific sizes."
+            description = f"Large prints with a half inch border. Refer to briglightart.com/shop/{str(title).replace(' ', '+')} for more details on specific sizes."
             ET.SubElement(item, '{http://base.google.com/ns/1.0}description').text = description
             
             ET.SubElement(item, '{http://base.google.com/ns/1.0}link').text = f"{PROD_WEBSITE}/shop/{str(title).replace(' ', '+')}"
