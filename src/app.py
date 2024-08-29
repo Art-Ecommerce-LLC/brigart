@@ -817,7 +817,7 @@ def export_google_feed(request: Request, db: Session = Depends(get_db)):
             # Make the description the size of the artwork
             cutheight = str(float(height) + 1)
             cutwidth = str(float(width) + 1)
-            description = f"Large prints with a half inch border. Refer to briglightart.com/shop/{str(title).replace(' ', '+')} for more details on specific sizes."
+            description = f"Large Giclée prints with a half inch white border. Refer to briglightart.com/shop/{str(title).replace(' ', '+')} for more details on specific sizes."
             ET.SubElement(item, '{http://base.google.com/ns/1.0}description').text = description
             
             ET.SubElement(item, '{http://base.google.com/ns/1.0}link').text = f"{PROD_WEBSITE}/shop/{str(title).replace(' ', '+')}"
