@@ -588,6 +588,37 @@ def delete_session(request: Request, db: Session = Depends(get_db)):
         return JSONResponse({"message": "Session deleted"})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/confirmation/{sessionid}", response_class=HTMLResponse)
+@limiter.limit("100/minute")
+def confirmation(request: Request, sessionid: str, db: Session = Depends(get_db)):
+    logger.info(f"Confirmation page accessed by {request.client.host}")
+    try:
+        if request.session.get("session_id") != sessionid:
+            return RedirectResponse(url="/shop_art_menu")
+        
+        img_quant_list = noco_db.get_cookie_from_session_id(db, crud, sessionid)
+        img_path = noco_db.get_artwork_data_with_cache(db, crud).art_paths
+        titles = noco_db.get_artwork_data_with_cache(db, crud).titles
+        path_list = []
+
+        for item in img_quant_list:
+            if item["title"] not in titles:
+                raise HTTPException(status_code=404, detail=f"Title not found, Abuse detected {request.client.host}")
+            else: 
+                full_path = f"{NOCODB_PATH}/{img_path[titles.index(item['title'])]}"
+                path_list.append(full_path)
+
+        context = {
+            "img_quant_list": img_quant_list,
+            "brig_logo_url": noco_db.get_icon_uri_from_title(db, crud, "brig_logo"),
+            "version": noco_db.get_version()
+        }
+        return templates.TemplateResponse(request=request, name="confirmation.html", context=context)
+    
+    except Exception as e:
+        logger.error(f"Error in confirmation: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/checkout/{sessionid}", response_class=HTMLResponse)
 @limiter.limit("100/minute") 
@@ -629,6 +660,12 @@ def shop_checkout(request: Request, sessionid: str, db: Session = Depends(get_db
             shipping_options = [{
                 'shipping_rate' : SHIPPING_RATE,
             }],
+            after_completion={
+                'type': 'redirect',
+                'redirect': {
+                    'url': f"{PROD_WEBSITE}/confirmation/{sessionid}",
+                },
+            },
         )
         return RedirectResponse(url=payment_link.url)
     

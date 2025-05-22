@@ -95,17 +95,8 @@
         <div class="order-confirmation">
             <h1>Order Confirmation</h1>
             <p>Thank you for your purchase! Your order has been successfully placed.</p>
-            <div class="order-details">
-                <h2>Order Details</h2>
-                <p><strong>Order Number:</strong> {{ order_number }}</p>
-            </div>
-            <div class="order-items">
-                <h2>Order Items</h2>
-                {% for item in order_details %}
-                    <p><strong>Order Items:</strong> {{ item.title }} - Quantity: {{ item.quantity }} - Price: {{ item.price }}</p>
-                {% endfor %}
-               </div>
-        </div>
+            <p>I will personally review your order and send you a confirmation email in the next few days.</p>
+            <p>If you have any questions or need assistance, please feel free to reach out to me at 858-519-2727</p>
     </div>
 </div>
 

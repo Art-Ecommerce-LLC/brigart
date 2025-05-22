@@ -11,7 +11,13 @@ for i in range(len(key_data.envvars)):
 
 MIDDLEWARE_STRING = os.getenv("middleware_string")
 OPENAPI_URL = os.getenv("openapi_url")
-SHIPPING_RATE = os.getenv("shipping_rate")
+
+if os.getenv("enviornment") == "development":
+    SHIPPING_RATE = os.getenv("test_shipping_rate")
+    PROD_WEBSITE = os.getenv("dev_website")
+elif os.getenv("enviornment") == "production":
+    SHIPPING_RATE = os.getenv("shipping_rate")
+    PROD_WEBSITE = os.getenv("prod_website")
 ADMIN_DEVELOPER_NUMBER = os.getenv("admin_developer_number")
 ADMIN_DEVELOPER_EMAIL = os.getenv("admin_developer_email")
 
@@ -24,4 +30,5 @@ APP_PASSWORD = os.getenv("app_password")
 ERROR405_BOT_TOKEN = os.getenv("error405_bot_token")
 ERROR405_CHAT_ID = os.getenv("error405_chat_id")
 
-PROD_WEBSITE = os.getenv("prod_website")
+
+

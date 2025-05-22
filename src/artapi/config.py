@@ -5,7 +5,7 @@ import os
 dotenv_path = dotenv.find_dotenv()
 
 # Load environment variables from .env file
-dotenv.load_dotenv(dotenv_path)
+dotenv.load_dotenv(dotenv_path, override=True)
 
 NOCODB_PATH = os.getenv("nocodb_path")
 NOCODB_XC_TOKEN = os.getenv("nocodb_xc_token")
